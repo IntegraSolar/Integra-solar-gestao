@@ -143,7 +143,7 @@ export default function LandingPage() {
             Ver planos
           </a>
         </motion.div>
-        <motion.div variants={fadeUp} className="mt-12 flex items-center justify-center gap-8 text-sm text-[#78716c]">
+        <motion.div variants={fadeUp} className="mt-12 flex items-center justify-center gap-8 text-sm text-[#57534e]">
           <span className="flex items-center gap-1.5"><Check className="w-4 h-4 text-[#28944a]" /> 7 dias grátis</span>
           <span className="flex items-center gap-1.5"><Check className="w-4 h-4 text-[#28944a]" /> Sem cartão</span>
           <span className="flex items-center gap-1.5"><Check className="w-4 h-4 text-[#28944a]" /> Cancele quando quiser</span>
@@ -201,7 +201,7 @@ export default function LandingPage() {
           {METRICS.map((m) => (
             <motion.div key={m.label} variants={fadeUp} className="text-center">
               <p style={{ fontFamily: "'Sora', sans-serif" }} className="text-3xl sm:text-4xl font-bold text-white">{m.value}</p>
-              <p className="text-sm text-white/60 mt-2 leading-snug">{m.label}</p>
+              <p className="text-sm text-white/80 mt-2 leading-snug">{m.label}</p>
             </motion.div>
           ))}
         </motion.div>
@@ -244,7 +244,7 @@ export default function LandingPage() {
               <div key={i} className="flex items-start gap-4 py-3 border-b border-gray-50 last:border-0">
                 <XIcon className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
                 <div className="flex-1">
-                  <p className="text-sm text-[#a8a29e] line-through">{row.bad}</p>
+                  <p className="text-sm text-[#57534e] line-through">{row.bad}</p>
                   <div className="flex items-start gap-2 mt-1.5">
                     <Check className="w-4 h-4 text-[#28944a] mt-0.5 flex-shrink-0" />
                     <p className="text-sm font-medium text-[#0d3019]">{row.good}</p>
@@ -298,7 +298,7 @@ export default function LandingPage() {
               <h3 style={{ fontFamily: "'Sora', sans-serif" }} className="text-lg font-bold text-[#0d3019]">{plan.name}</h3>
               <div className="mt-2 flex items-baseline gap-1">
                 <span style={{ fontFamily: "'Sora', sans-serif" }} className="text-3xl font-bold text-[#0d3019]">{plan.price}</span>
-                <span className="text-sm text-[#78716c]">{plan.period}</span>
+                <span className="text-sm text-[#57534e]">{plan.period}</span>
               </div>
               {plan.saving && <p className="mt-1 text-sm font-medium text-[#28944a]">{plan.saving}</p>}
               <ul className="mt-6 space-y-2.5 flex-1">
@@ -331,7 +331,7 @@ export default function LandingPage() {
             <motion.div key={i} variants={fadeUp} className="bg-white rounded-lg border border-gray-100 overflow-hidden">
               <button onClick={() => setOpenFaq(openFaq === i ? null : i)} className="w-full flex items-center justify-between px-5 py-4 text-left">
                 <span className="text-sm font-medium text-[#0d3019]">{item.q}</span>
-                <ChevronDown className={`w-4 h-4 text-[#78716c] transition-transform ${openFaq === i ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`w-4 h-4 text-[#57534e] transition-transform ${openFaq === i ? 'rotate-180' : ''}`} />
               </button>
               {openFaq === i && <div className="px-5 pb-4 text-sm text-[#57534e] leading-relaxed">{item.a}</div>}
             </motion.div>
@@ -364,11 +364,11 @@ export default function LandingPage() {
       <footer className="border-t border-gray-100 py-8 px-4 sm:px-6 bg-white">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <Image src="/Logo integra solar - Com nome.png" alt="Integra Solar" width={110} height={32} className="h-7 w-auto" />
-          <div className="flex gap-6 text-sm text-[#78716c]">
+          <div className="flex gap-6 text-sm text-[#57534e]">
             <Link href="/login" className="hover:text-[#1c1917]">Entrar</Link>
             <a href="#planos" className="hover:text-[#1c1917]">Planos</a>
           </div>
-          <p className="text-xs text-[#a8a29e]">&copy; {new Date().getFullYear()} Integra Solar</p>
+          <p className="text-xs text-[#57534e]">&copy; {new Date().getFullYear()} Integra Solar</p>
         </div>
       </footer>
 
@@ -376,11 +376,11 @@ export default function LandingPage() {
       {showDemo && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.4)' }}>
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-2xl w-full max-w-md p-8 relative">
-            <button onClick={() => setShowDemo(false)} className="absolute top-4 right-4 text-[#a8a29e] hover:text-[#1c1917]">
+            <button onClick={() => setShowDemo(false)} className="absolute top-4 right-4 text-[#57534e] hover:text-[#1c1917]">
               <XIcon className="w-5 h-5" />
             </button>
             <h3 style={{ fontFamily: "'Sora', sans-serif" }} className="text-xl font-bold text-[#0d3019] mb-1">Agende uma demonstração</h3>
-            <p className="text-sm text-[#78716c] mb-6">20 minutos. Sem compromisso. Veja se faz sentido para sua empresa.</p>
+            <p className="text-sm text-[#57534e] mb-6">20 minutos. Sem compromisso. Veja se faz sentido para sua empresa.</p>
             <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); window.open(WHATSAPP_URL, '_blank'); setShowDemo(false) }}>
               <input type="text" required className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#28944a]" placeholder="Seu nome" />
               <input type="email" required className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#28944a]" placeholder="E-mail" />
