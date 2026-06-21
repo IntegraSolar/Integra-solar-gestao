@@ -66,8 +66,11 @@ export function LoginForm() {
         </SubmitButton>
       </form>
 
-      <p className="mt-8 text-center text-xs text-[#A8BCCE]">
-        Acesso por convite. Fale com seu administrador para obter acesso.
+      <p className="mt-6 text-center text-sm text-[#A8BCCE]">
+        Ainda não tem conta?{' '}
+        <Link href="/register" className="font-semibold text-[#28944a] hover:underline">
+          Criar conta empresarial
+        </Link>
       </p>
     </div>
   )
