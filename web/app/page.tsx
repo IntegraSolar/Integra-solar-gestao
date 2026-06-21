@@ -208,11 +208,11 @@ export default function LandingPage() {
 
       {/* ── Métricas ────────────────────────────────────────────── */}
       <Section className="max-w-4xl mx-auto">
-        <motion.div variants={stagger} className="bg-[#0d3019] rounded-2xl p-10 sm:p-14 grid grid-cols-2 md:grid-cols-4 gap-8">
+        <motion.div variants={stagger} className="bg-[#28944a] rounded-2xl p-10 sm:p-14 grid grid-cols-2 md:grid-cols-4 gap-8">
           {METRICS.map((m) => (
             <motion.div key={m.label} variants={fadeUp} className="text-center">
               <p style={{ fontFamily: "'Sora', sans-serif" }} className="text-3xl sm:text-4xl font-bold text-white">{m.value}</p>
-              <p className="text-sm text-white mt-2 leading-snug">{m.label}</p>
+              <p className="text-sm text-white/90 mt-2 leading-snug">{m.label}</p>
             </motion.div>
           ))}
         </motion.div>
