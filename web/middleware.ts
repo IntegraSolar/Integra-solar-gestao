@@ -9,6 +9,7 @@ const PUBLIC_ROUTES = [
   '/accept-invite',
   '/auth/callback',
   '/api/webhooks',
+  '/checkout',
 ]
 
 function isPublicRoute(pathname: string): boolean {
@@ -46,11 +47,14 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  // Rota raiz → redirecionar
+  // Rota raiz → only redirect if authenticated
   if (pathname === '/') {
-    const url = request.nextUrl.clone()
-    url.pathname = user ? '/dashboard' : '/login'
-    return NextResponse.redirect(url)
+    if (user) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/dashboard'
+      return NextResponse.redirect(url)
+    }
+    return supabaseResponse
   }
 
   // Usuário não autenticado tentando acessar rota protegida
