@@ -106,7 +106,18 @@ export default function LandingPage() {
   const [showDemo, setShowDemo] = useState(false)
 
   return (
-    <div className="min-h-screen bg-[#fafaf9] text-[#1c1917]" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="min-h-screen bg-[#fafaf9] text-[#1c1917] relative" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+      {/* Logo marca d'água de fundo */}
+      <div
+        className="fixed inset-0 pointer-events-none z-0"
+        style={{
+          backgroundImage: "url('/Logo integra solar - sem nome.png')",
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'center center',
+          backgroundSize: '50%',
+          opacity: 0.03,
+        }}
+      />
 
       {/* ── Header ──────────────────────────────────────────────── */}
       <header className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-b border-gray-100 z-50">
