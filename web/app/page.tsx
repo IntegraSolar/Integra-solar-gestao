@@ -71,7 +71,7 @@ const FAQ = [
   { q: 'Preciso de treinamento para usar?', a: 'O sistema é intuitivo e foi feito para quem não tem tempo de aprender ferramentas complexas. Mas oferecemos treinamento incluso nos planos semestrais e anuais.' },
 ]
 
-const DEMO_URL = 'https://calendly.com' // Placeholder — trocar pelo link real
+const WHATSAPP_URL = 'https://wa.me/5563992217642?text=' + encodeURIComponent('Gostaria de agendar uma apresentação da plataforma Integra Solar!')
 
 export default function LandingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null)
@@ -368,7 +368,7 @@ export default function LandingPage() {
             </button>
             <h3 className="font-[Sora] text-xl font-bold text-[#0d3019] mb-2">Agende uma apresentação</h3>
             <p className="text-sm text-[#57534e] mb-6">Preencha seus dados e entraremos em contato para agendar uma demonstração personalizada.</p>
-            <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); window.open(DEMO_URL, '_blank'); setShowDemo(false) }}>
+            <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); window.open(WHATSAPP_URL, '_blank'); setShowDemo(false) }}>
               <div>
                 <label className="block text-xs font-medium text-[#57534e] mb-1">Nome completo</label>
                 <input type="text" required className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#28944a]" placeholder="Seu nome" />
