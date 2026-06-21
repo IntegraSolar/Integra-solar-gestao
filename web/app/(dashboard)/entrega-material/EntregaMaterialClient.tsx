@@ -1,0 +1,79 @@
+'use client'
+
+import { useState } from 'react'
+import Link from 'next/link'
+import type { EntregaMaterialClient as EMClient } from '@/lib/entrega-material/queries'
+import { SearchBar, filterBySearch } from '@/components/ui/SearchBar'
+
+function StatusBadge({ status }: { status: string }) {
+  const map: Record<string, string> = {
+    pendente: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/40',
+    atrasada: 'bg-red-500/20 text-red-300 border-red-500/40',
+    entregue: 'bg-green-500/20 text-green-300 border-green-500/40',
+    concluida: 'bg-green-500/20 text-green-300 border-green-500/40',
+  }
+  const labels: Record<string, string> = { pendente: 'Pendente', atrasada: 'Atrasada', entregue: 'Entregue', concluida: 'Concluída' }
+  return (
+    <span className={`px-2 py-0.5 rounded-full text-xs border ${map[status] ?? 'bg-gray-500/20 text-gray-300 border-gray-500/40'}`}>
+      {labels[status] ?? status}
+    </span>
+  )
+}
+
+export default function EntregaMaterialClientComponent({ entregas }: { entregas: EMClient[] }) {
+  const [search, setSearch] = useState('')
+  const filtered = filterBySearch(entregas, search, ['client_name', 'client_city'])
+
+  return (
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Entrega do Material</h1>
+          <p className="text-white/50 text-sm mt-1">Confirmação de entrega dos materiais ao cliente</p>
+        </div>
+        <SearchBar value={search} onChange={setSearch} placeholder="Buscar cliente ou cidade..." />
+      </div>
+      <div className="rounded-2xl border border-white/10 overflow-hidden" style={{ background: 'var(--theme-surface)' }}>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-white/10 text-white/50">
+              <th className="text-left px-4 py-3 font-medium">Cliente</th>
+              <th className="text-left px-4 py-3 font-medium">Cidade</th>
+              <th className="text-left px-4 py-3 font-medium">Prazo</th>
+              <th className="text-left px-4 py-3 font-medium">Status</th>
+              <th className="px-4 py-3" />
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length === 0 && (
+              <tr>
+                <td colSpan={5} className="px-4 py-8 text-center text-white/40">
+                  {search ? 'Nenhum resultado encontrado.' : 'Nenhuma entrega pendente.'}
+                </td>
+              </tr>
+            )}
+            {filtered.map((e) => (
+              <tr key={e.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                <td className="px-4 py-3 text-white font-medium">{e.client_name}</td>
+                <td className="px-4 py-3 text-white/60">{e.client_city ?? '—'}</td>
+                <td className="px-4 py-3 text-white/60">
+                  {e.contract_max_days ? `${e.dias_usados} / ${e.contract_max_days} dias` : `${e.dias_usados} dias`}
+                </td>
+                <td className="px-4 py-3"><StatusBadge status={e.status} /></td>
+                <td className="px-4 py-3 text-right">
+                  <Link
+                    href={`/entrega-material/${e.client_id}`}
+                    className="text-xs px-3 py-1.5 rounded-lg border transition-colors"
+                    style={{ borderColor: 'rgba(255,208,128,0.4)', color: 'var(--theme-accent)' }}
+                  >
+                    Ver
+                  </Link>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}

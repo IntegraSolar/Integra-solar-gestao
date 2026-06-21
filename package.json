@@ -1,0 +1,11 @@
+{
+  "name": "integra-solar-crm",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix web run dev",
+    "build": "npm --prefix web run build",
+    "start": "npm --prefix web run start",
+    "pdf-backend": "npm --prefix backend start",
+    "type-check": "npm --prefix web exec tsc -- --noEmit"
+  }
+}

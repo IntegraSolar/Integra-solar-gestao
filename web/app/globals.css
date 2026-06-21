@@ -1,0 +1,550 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Sora:wght@400;500;600;700&display=swap');
+
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --accent: #FFD080;
+  --accent-hover: #FFC040;
+  --glass-bg: rgba(255, 255, 255, 0.07);
+  --glass-border: rgba(255, 255, 255, 0.10);
+  --text-primary: #E0E8F0;
+  --text-muted: rgba(255, 255, 255, 0.35);
+
+  /* Theme variables — Navy (default) */
+  --theme-bg: linear-gradient(160deg, #0A1628 0%, #0F2847 30%, #1A3A5C 60%, #0D2240 100%);
+  --theme-surface: rgba(255,255,255,0.04);
+  --theme-surface-hover: rgba(255,255,255,0.08);
+  --theme-border: rgba(255,255,255,0.06);
+  --theme-border-hover: rgba(255,255,255,0.12);
+  --theme-text: #E0E8F0;
+  --theme-text-muted: rgba(255,255,255,0.40);
+  --theme-text-subtle: rgba(255,255,255,0.25);
+  --theme-accent: #FFD080;
+  --theme-accent-hover: #FFC040;
+  --theme-accent-text: #0a0e1a;
+  --theme-sidebar-bg: rgba(255,255,255,0.05);
+  --theme-sidebar-border: rgba(255,255,255,0.06);
+  --theme-card-bg: rgba(255,255,255,0.04);
+  --theme-card-border: rgba(255,255,255,0.08);
+  --theme-input-bg: rgba(255,255,255,0.06);
+  --theme-input-border: rgba(255,255,255,0.10);
+  --theme-input-text: #E0E8F0;
+  --theme-overlay: rgba(0,0,0,0.40);
+  --theme-drawer-bg: rgba(15,30,55,0.97);
+  --theme-success: #10B981;
+  --theme-danger: #EF4444;
+  --theme-warning: #FBBF24;
+  --theme-highlight-bg: rgba(255,200,100,0.06);
+  --theme-highlight-border: rgba(255,200,100,0.15);
+}
+
+[data-theme="green"] {
+  --theme-bg: #f5f4f3;
+  --theme-surface: #ffffff;
+  --theme-surface-hover: #fafaf9;
+  --theme-border: #e7e5e4;
+  --theme-border-hover: #d6d3d1;
+  --theme-text: #1c1917;
+  --theme-text-muted: #57534e;
+  --theme-text-subtle: #78716c;
+  --theme-accent: #28944a;
+  --theme-accent-hover: #1d7035;
+  --theme-accent-text: #ffffff;
+  --theme-sidebar-bg: #0d3019;
+  --theme-sidebar-border: rgba(255,255,255,0.07);
+  --theme-card-bg: #ffffff;
+  --theme-card-border: #e7e5e4;
+  --theme-input-bg: #ffffff;
+  --theme-input-border: #d6d3d1;
+  --theme-input-text: #1c1917;
+  --theme-overlay: rgba(0,0,0,0.30);
+  --theme-drawer-bg: #ffffff;
+  --theme-success: #28944a;
+  --theme-danger: #dc2626;
+  --theme-warning: #d97706;
+  --theme-shadow: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+  --theme-shadow-md: 0 4px 14px rgba(0,0,0,0.06), 0 2px 6px rgba(0,0,0,0.04);
+  --theme-highlight-bg: #def2e5;
+  --theme-highlight-border: #b0e8c0;
+
+  --accent: #28944a;
+  --accent-hover: #1d7035;
+  --glass-bg: rgba(0, 0, 0, 0.03);
+  --glass-border: #e7e5e4;
+  --text-primary: #1c1917;
+  --text-muted: #57534e;
+}
+
+[data-theme="green"] body {
+  font-family: 'DM Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+[data-theme="green"] h1,
+[data-theme="green"] h2,
+[data-theme="green"] h3 {
+  font-family: 'Sora', 'DM Sans', sans-serif;
+}
+
+[data-theme="green"] .rounded-2xl,
+[data-theme="green"] .rounded-xl {
+  box-shadow: var(--theme-shadow);
+  border-color: var(--theme-border);
+}
+
+[data-theme="green"] .rounded-2xl:hover,
+[data-theme="green"] .rounded-xl:hover {
+  box-shadow: var(--theme-shadow-md);
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  font-family: 'Figtree', 'Helvetica Neue', sans-serif;
+  color: var(--theme-text);
+  background: var(--theme-bg);
+  background-attachment: fixed;
+  min-height: 100%;
+}
+
+/* Orbs decorativos de background */
+body::before,
+body::after {
+  content: '';
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+body::before {
+  top: 10%;
+  right: 15%;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(255, 180, 50, 0.06) 0%, transparent 70%);
+  animation: orb1 12s ease-in-out infinite;
+}
+
+body::after {
+  bottom: 20%;
+  left: 30%;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(100, 180, 255, 0.05) 0%, transparent 70%);
+  animation: orb2 15s ease-in-out infinite;
+}
+
+[data-theme="green"] body::before,
+[data-theme="green"] body::after {
+  display: none;
+}
+
+@keyframes orb1 {
+  0%, 100% { transform: translate(0, 0); }
+  50%       { transform: translate(40px, -30px); }
+}
+
+@keyframes orb2 {
+  0%, 100% { transform: translate(0, 0); }
+  50%       { transform: translate(-30px, 40px); }
+}
+
+/* Dropdowns: opções legíveis */
+select option {
+  background: #1a2744;
+  color: #E0E8F0;
+  padding: 8px 12px;
+}
+
+select option:checked {
+  background: #2a3a5c;
+  color: #FFD080;
+}
+
+select option:hover {
+  background: #253454;
+}
+
+[data-theme="green"] select option {
+  background: #ffffff;
+  color: #1c1917;
+}
+
+[data-theme="green"] select option:checked {
+  background: #dcfce7;
+  color: #28944a;
+}
+
+[data-theme="green"] select option:hover {
+  background: #f5f5f4;
+}
+
+/* Utilitário glass reutilizável */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* ===== Green theme: CSS-only overrides for Tailwind classes ===== */
+
+[data-theme="green"] .text-white {
+  color: var(--theme-text) !important;
+}
+[data-theme="green"] .text-white\/85 {
+  color: var(--theme-text) !important;
+}
+[data-theme="green"] .text-white\/80 {
+  color: var(--theme-text) !important;
+}
+[data-theme="green"] .text-white\/75 {
+  color: var(--theme-text) !important;
+}
+[data-theme="green"] .text-white\/70 {
+  color: var(--theme-text-muted) !important;
+}
+[data-theme="green"] .text-white\/50 {
+  color: var(--theme-text-muted) !important;
+}
+[data-theme="green"] .text-white\/40 {
+  color: var(--theme-text-muted) !important;
+}
+[data-theme="green"] .text-white\/35 {
+  color: var(--theme-text-subtle) !important;
+}
+[data-theme="green"] .text-white\/30 {
+  color: var(--theme-text-subtle) !important;
+}
+[data-theme="green"] .text-white\/25 {
+  color: var(--theme-text-subtle) !important;
+}
+[data-theme="green"] .text-white\/20 {
+  color: var(--theme-text-subtle) !important;
+}
+[data-theme="green"] .text-white\/60 {
+  color: var(--theme-text-muted) !important;
+}
+[data-theme="green"] .text-white\/15 {
+  color: var(--theme-text-subtle) !important;
+}
+[data-theme="green"] .border-white\/10 {
+  border-color: var(--theme-border) !important;
+}
+[data-theme="green"] .border-white\/\[0\.06\] {
+  border-color: var(--theme-border) !important;
+}
+[data-theme="green"] .border-white\/20 {
+  border-color: var(--theme-border-hover) !important;
+}
+[data-theme="green"] .border-white\/\[0\.08\] {
+  border-color: var(--theme-border) !important;
+}
+[data-theme="green"] .bg-white\/5 {
+  background: var(--theme-surface) !important;
+}
+[data-theme="green"] .bg-white\/10 {
+  background: var(--theme-surface-hover) !important;
+}
+[data-theme="green"] .hover\:bg-white\/10:hover {
+  background: var(--theme-surface-hover) !important;
+}
+[data-theme="green"] .hover\:border-white\/20:hover {
+  border-color: var(--theme-border-hover) !important;
+}
+
+/* Green theme sidebar logo area — light bg for logo visibility */
+[data-theme="green"] .sidebar-logo-area {
+  background: #f5f4f3 !important;
+  border-bottom-color: #e7e5e4 !important;
+}
+
+/* Green theme sidebar text overrides — sidebar has dark bg so keep light text */
+[data-theme="green"] aside .text-white {
+  color: #E0E8F0 !important;
+}
+[data-theme="green"] aside .text-white\/30 {
+  color: rgba(255,255,255,0.30) !important;
+}
+[data-theme="green"] aside .text-white\/25 {
+  color: rgba(255,255,255,0.25) !important;
+}
+[data-theme="green"] aside .text-white\/20 {
+  color: rgba(255,255,255,0.20) !important;
+}
+
+/* ===== Green theme: inline style overrides ===== */
+
+/* Force all inline-styled elements to use theme-aware colors.
+   This uses broad selectors to catch React inline styles. */
+
+/* Main content area — everything except sidebar (aside) */
+[data-theme="green"] main,
+[data-theme="green"] .flex-1,
+[data-theme="green"] [class*="overflow"] {
+  color: var(--theme-text);
+}
+
+/* Text colors: override inline rgba(255,255,255,...) */
+[data-theme="green"] *:not(aside *) > [style*="color: rgba(255,255,255,0.9"],
+[data-theme="green"] *:not(aside *) > [style*="color: rgba(255,255,255,0.85)"],
+[data-theme="green"] *:not(aside *) > [style*="color: rgba(255,255,255,0.8"] {
+  color: #1c1917 !important;
+}
+[data-theme="green"] *:not(aside *) > [style*="color: rgba(255,255,255,0.7"] {
+  color: #44403c !important;
+}
+[data-theme="green"] *:not(aside *) > [style*="color: rgba(255,255,255,0.6"] {
+  color: #57534e !important;
+}
+[data-theme="green"] *:not(aside *) > [style*="color: rgba(255,255,255,0.5"] {
+  color: #78716c !important;
+}
+[data-theme="green"] *:not(aside *) > [style*="color: rgba(255,255,255,0.4"] {
+  color: #78716c !important;
+}
+[data-theme="green"] *:not(aside *) > [style*="color: rgba(255,255,255,0.35)"] {
+  color: #a8a29e !important;
+}
+[data-theme="green"] *:not(aside *) > [style*="color: rgba(255,255,255,0.3"] {
+  color: #a8a29e !important;
+}
+[data-theme="green"] *:not(aside *) > [style*="color: rgba(255,255,255,0.25)"] {
+  color: #a8a29e !important;
+}
+[data-theme="green"] *:not(aside *) > [style*="color: rgba(255,255,255,0.2"] {
+  color: #d6d3d1 !important;
+}
+
+/* Named hex text colors */
+[data-theme="green"] *:not(aside *) > [style*="color: #E0E8F0"],
+[data-theme="green"] *:not(aside *) > [style*="color: #e0e8f0"] {
+  color: #1c1917 !important;
+}
+
+/* Accent color — gold to green */
+[data-theme="green"] *:not(aside *) [style*="color: #FFD080"],
+[data-theme="green"] *:not(aside *) [style*="color: #ffd080"] {
+  color: #28944a !important;
+}
+
+/* Background surfaces */
+[data-theme="green"] *:not(aside *) [style*="background: rgba(255,255,255,0.0"] {
+  background: #ffffff !important;
+  border-color: #e7e5e4 !important;
+}
+[data-theme="green"] *:not(aside *) [style*="background: rgba(255,255,255,0.06)"] {
+  background: #ffffff !important;
+  border-color: #e7e5e4 !important;
+}
+[data-theme="green"] *:not(aside *) [style*="background: rgba(255,200,100,0.0"] {
+  background: rgba(40,148,74,0.06) !important;
+  border-color: rgba(40,148,74,0.15) !important;
+}
+[data-theme="green"] *:not(aside *) [style*="background: rgba(255,200,100,0.1"] {
+  background: rgba(40,148,74,0.10) !important;
+  border-color: rgba(40,148,74,0.20) !important;
+}
+
+/* Borders inline */
+[data-theme="green"] *:not(aside *) [style*="border: 1px solid rgba(255,255,255,"] {
+  border-color: #e7e5e4 !important;
+}
+[data-theme="green"] *:not(aside *) [style*="border-bottom: 1px solid rgba(255,255,255,"] {
+  border-color: #e7e5e4 !important;
+}
+[data-theme="green"] *:not(aside *) [style*="borderBottom: 1px solid rgba(255,255,255,"],
+[data-theme="green"] *:not(aside *) [style*="border-top: 1px solid rgba(255,255,255,"],
+[data-theme="green"] *:not(aside *) [style*="borderTop: 1px solid rgba(255,255,255,"] {
+  border-color: #e7e5e4 !important;
+}
+
+/* Dark backgrounds — drawers, modals */
+[data-theme="green"] *:not(aside *) [style*="background: #0f1424"],
+[data-theme="green"] *:not(aside *) [style*="background: '#0f1424'"],
+[data-theme="green"] *:not(aside *) [style*="background: #0a0e1a"],
+[data-theme="green"] *:not(aside *) [style*="background: rgba(15,30,55,"] {
+  background: #ffffff !important;
+  color: #1c1917 !important;
+}
+
+/* Overlays */
+[data-theme="green"] [style*="background: rgba(0,0,0,0.5"],
+[data-theme="green"] [style*="background: rgba(0,0,0,0.65)"],
+[data-theme="green"] [style*="background: rgba(0,0,0,0.4"] {
+  background: rgba(0,0,0,0.25) !important;
+}
+
+/* Accent backgrounds — gold buttons to green */
+[data-theme="green"] *:not(aside *) [style*="background: #FFD080"],
+[data-theme="green"] *:not(aside *) [style*="background: '#FFD080'"] {
+  background: #28944a !important;
+  color: #ffffff !important;
+}
+
+/* Input fields */
+[data-theme="green"] input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+[data-theme="green"] textarea,
+[data-theme="green"] select {
+  background: #ffffff !important;
+  border-color: #e7e5e4 !important;
+  color: #1c1917 !important;
+}
+[data-theme="green"] input:focus,
+[data-theme="green"] textarea:focus,
+[data-theme="green"] select:focus {
+  border-color: #28944a !important;
+}
+[data-theme="green"] input::placeholder,
+[data-theme="green"] textarea::placeholder {
+  color: #a8a29e !important;
+}
+
+/* Tables — header and cell borders */
+[data-theme="green"] th {
+  color: #57534e !important;
+}
+[data-theme="green"] td {
+  border-color: #f5f4f3 !important;
+}
+
+/* Cards with box-shadow in green theme */
+[data-theme="green"] *:not(aside *) .rounded-2xl,
+[data-theme="green"] *:not(aside *) .rounded-xl {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
+}
+
+/* Status badges — keep their colors */
+[data-theme="green"] .text-green-400,
+[data-theme="green"] .text-green-300 {
+  color: #28944a !important;
+}
+
+/* SearchBar placeholder */
+[data-theme="green"] .rounded-xl input[type="text"]::placeholder {
+  color: #a8a29e !important;
+}
+
+/* Calendar in green theme */
+[data-theme="green"] [style*="background: '#0f1424'"] {
+  background: #ffffff !important;
+  border-color: #e7e5e4 !important;
+}
+
+/* Notification drawer */
+[data-theme="green"] [style*="boxShadow: '-8px 0 32px"] {
+  box-shadow: -4px 0 20px rgba(0,0,0,0.08) !important;
+}
+
+/* ===== Green theme: visual refinements ===== */
+
+/* Pipeline card labels — use consistent green tones instead of gold ramp */
+[data-theme="green"] .grid .rounded-2xl span[style*="color:"] {
+  color: var(--theme-text) !important;
+}
+
+/* Pipeline card numbers */
+[data-theme="green"] .text-3xl.font-bold {
+  color: var(--theme-text) !important;
+}
+
+/* Pipeline card accent stripe */
+[data-theme="green"] .rounded-2xl[style*="borderLeft: 3px"] {
+  border-left-color: var(--theme-accent) !important;
+}
+
+/* Badge overrides for green theme — pending badges */
+[data-theme="green"] .bg-red-500\/20 {
+  background: #fff1f1 !important;
+}
+[data-theme="green"] .text-red-300 {
+  color: #dc2626 !important;
+}
+[data-theme="green"] .border-red-500\/30 {
+  border-color: #fecaca !important;
+}
+[data-theme="green"] .bg-green-500\/20 {
+  background: #f0faf4 !important;
+}
+[data-theme="green"] .text-green-300 {
+  color: #28944a !important;
+}
+[data-theme="green"] .border-green-500\/30 {
+  border-color: #b0e8c0 !important;
+}
+
+/* Status badges */
+[data-theme="green"] .bg-yellow-500\/20 {
+  background: #fffbeb !important;
+}
+[data-theme="green"] .text-yellow-300 {
+  color: #d97706 !important;
+}
+[data-theme="green"] .border-yellow-500\/40 {
+  border-color: #fde68a !important;
+}
+[data-theme="green"] .bg-blue-500\/20 {
+  background: #eff6ff !important;
+}
+[data-theme="green"] .text-blue-300 {
+  color: #2563eb !important;
+}
+[data-theme="green"] .border-blue-500\/40 {
+  border-color: #bfdbfe !important;
+}
+
+/* KPI cards — left border accent */
+[data-theme="green"] [style*="borderLeft: 3px solid"] {
+  border-left-color: var(--theme-accent) !important;
+}
+
+/* Recharts — axis labels and grid */
+[data-theme="green"] .recharts-cartesian-axis-tick text {
+  fill: #78716c !important;
+}
+[data-theme="green"] .recharts-cartesian-grid line {
+  stroke: #f0eeed !important;
+}
+
+/* Progress bars */
+[data-theme="green"] [style*="background: rgba(255,255,255,0.08)"] {
+  background: #f0eeed !important;
+}
+
+/* Subtle text in green theme should still be readable */
+[data-theme="green"] .text-white\/30 {
+  color: #a8a29e !important;
+}
+
+/* Drawer/overlay shadows */
+[data-theme="green"] .fixed[style*="boxShadow"] {
+  box-shadow: -4px 0 24px rgba(0,0,0,0.08) !important;
+}
+
+/* Tab active state */
+[data-theme="green"] [style*="background: rgba(255,200,100,0.12)"] {
+  background: rgba(40,148,74,0.10) !important;
+}
+[data-theme="green"] [style*="background: rgba(255,200,100,0.08)"] {
+  background: rgba(40,148,74,0.08) !important;
+}
+[data-theme="green"] [style*="background: rgba(255,200,100,0.15)"] {
+  background: rgba(40,148,74,0.12) !important;
+}

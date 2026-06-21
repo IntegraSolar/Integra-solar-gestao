@@ -1,0 +1,16 @@
+@media print {
+  body * { visibility: hidden !important; }
+  #print-area, #print-area * { visibility: visible !important; }
+  #print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    color: black !important;
+    background: white !important;
+  }
+  #print-area table { width: 100%; border-collapse: collapse; }
+  #print-area th, #print-area td { border: 1px solid #ccc; padding: 6px 10px; font-size: 12px; }
+  #print-area th { background: #f0f0f0; }
+  .no-print { display: none !important; }
+}
