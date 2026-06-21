@@ -114,8 +114,8 @@ export default function LandingPage() {
           backgroundImage: "url('/Logo integra solar - sem nome.png')",
           backgroundRepeat: 'no-repeat',
           backgroundPosition: 'center center',
-          backgroundSize: '50%',
-          opacity: 0.03,
+          backgroundSize: '90%',
+          opacity: 0.04,
         }}
       />
 
@@ -125,7 +125,7 @@ export default function LandingPage() {
           <Image src="/Logo integra solar - Com nome.png" alt="Integra Solar" width={130} height={38} className="h-8 w-auto" />
           <div className="flex items-center gap-2">
             <Link href="/login" className="text-sm font-medium text-[#57534e] hover:text-[#1c1917] px-4 py-2 hidden sm:block">Entrar</Link>
-            <button onClick={() => setShowDemo(true)} className="text-sm font-semibold bg-[#0d3019] text-white px-5 py-2.5 rounded-lg hover:bg-[#145226] transition-colors">
+            <button onClick={() => setShowDemo(true)} className="text-sm font-semibold bg-[#28944a] text-white px-5 py-2.5 rounded-lg hover:bg-[#1d7035] transition-colors">
               Agendar demonstração
             </button>
           </div>
@@ -147,7 +147,7 @@ export default function LandingPage() {
           A plataforma que centraliza vendas, projetos, obras e financeiro — construída por integradores que já passaram pelos mesmos problemas que você.
         </motion.p>
         <motion.div variants={fadeUp} className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
-          <button onClick={() => setShowDemo(true)} className="inline-flex items-center gap-2 bg-[#0d3019] text-white font-semibold px-7 py-3.5 rounded-lg text-base hover:bg-[#145226] transition-colors">
+          <button onClick={() => setShowDemo(true)} className="inline-flex items-center gap-2 bg-[#28944a] text-white font-semibold px-7 py-3.5 rounded-lg text-base hover:bg-[#1d7035] transition-colors">
             Agendar demonstração <ArrowRight className="w-4 h-4" />
           </button>
           <a href="#planos" className="inline-flex items-center gap-2 text-[#28944a] font-semibold px-7 py-3.5 rounded-lg text-base hover:bg-[#28944a]/5 transition-colors">
@@ -212,7 +212,7 @@ export default function LandingPage() {
           {METRICS.map((m) => (
             <motion.div key={m.label} variants={fadeUp} className="text-center">
               <p style={{ fontFamily: "'Sora', sans-serif" }} className="text-3xl sm:text-4xl font-bold text-white">{m.value}</p>
-              <p className="text-sm text-white/80 mt-2 leading-snug">{m.label}</p>
+              <p className="text-sm text-white mt-2 leading-snug">{m.label}</p>
             </motion.div>
           ))}
         </motion.div>
@@ -277,7 +277,7 @@ export default function LandingPage() {
           <p className="text-[#57534e] mb-8 max-w-xl mx-auto">
             Agende uma demonstração de 20 minutos. Sem compromisso, sem pressão. Você decide se faz sentido para sua operação.
           </p>
-          <button onClick={() => setShowDemo(true)} className="inline-flex items-center gap-2 bg-[#0d3019] text-white font-semibold px-7 py-3.5 rounded-lg hover:bg-[#145226] transition-colors">
+          <button onClick={() => setShowDemo(true)} className="inline-flex items-center gap-2 bg-[#28944a] text-white font-semibold px-7 py-3.5 rounded-lg hover:bg-[#1d7035] transition-colors">
             <Calendar className="w-4 h-4" /> Agendar demonstração gratuita
           </button>
         </motion.div>
@@ -322,7 +322,7 @@ export default function LandingPage() {
               <Link
                 href={`/checkout?plan=${plan.id}`}
                 className={`mt-7 block text-center font-semibold py-3 rounded-lg transition-colors text-sm ${
-                  plan.highlight ? 'bg-[#28944a] text-white hover:bg-[#1d7035]' : 'bg-[#0d3019] text-white hover:bg-[#145226]'
+                  plan.highlight ? 'bg-[#28944a] text-white hover:bg-[#1d7035]' : 'bg-[#28944a] text-white hover:bg-[#1d7035]'
                 }`}
               >
                 {plan.cta}
@@ -361,7 +361,7 @@ export default function LandingPage() {
             Comece em minutos. 7 dias grátis. Sem compromisso. Se não fizer sentido, cancele sem burocracia.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <a href="#planos" className="inline-flex items-center gap-2 bg-[#0d3019] text-white font-semibold px-7 py-3.5 rounded-lg hover:bg-[#145226] transition-colors">
+            <a href="#planos" className="inline-flex items-center gap-2 bg-[#28944a] text-white font-semibold px-7 py-3.5 rounded-lg hover:bg-[#1d7035] transition-colors">
               Começar agora <ArrowRight className="w-4 h-4" />
             </a>
             <button onClick={() => setShowDemo(true)} className="inline-flex items-center gap-2 text-[#0d3019] font-semibold px-7 py-3.5 rounded-lg border border-gray-200 hover:border-[#28944a] transition-colors">
@@ -397,7 +397,7 @@ export default function LandingPage() {
               <input type="email" required className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#28944a]" placeholder="E-mail" />
               <input type="tel" required className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#28944a]" placeholder="WhatsApp" />
               <input type="text" className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#28944a]" placeholder="Empresa (opcional)" />
-              <button type="submit" className="w-full bg-[#0d3019] text-white font-semibold py-3 rounded-lg hover:bg-[#145226] transition-colors text-sm">
+              <button type="submit" className="w-full bg-[#28944a] text-white font-semibold py-3 rounded-lg hover:bg-[#1d7035] transition-colors text-sm">
                 Solicitar demonstração
               </button>
             </form>
