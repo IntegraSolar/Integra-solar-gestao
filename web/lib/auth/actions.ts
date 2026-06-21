@@ -123,7 +123,7 @@ export async function registerCompany(
   // 3. Criar organização
   const { data: org, error: orgError } = await (adminClient as any)
     .from('organizations')
-    .insert({ name: company_name, plan: 'free', status: 'active' })
+    .insert({ name: company_name, plan: 'professional', status: 'active' })
     .select('id')
     .single()
 
