@@ -12,7 +12,10 @@ const PUBLIC_ROUTES = [
   '/checkout',
   '/termos',
   '/privacidade',
+  '/subscription-expired',
 ]
+
+const API_ROUTES_PREFIX = '/api/'
 
 function isPublicRoute(pathname: string): boolean {
   return PUBLIC_ROUTES.some((route) => pathname.startsWith(route))
@@ -42,7 +45,6 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Atualiza sessão (IMPORTANTE: nunca use getSession aqui — use getUser)
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -72,6 +74,31 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
     return NextResponse.redirect(url)
+  }
+
+  // Verificar subscription para rotas protegidas do dashboard (não APIs)
+  if (user && !isPublicRoute(pathname) && !pathname.startsWith(API_ROUTES_PREFIX)) {
+    const { data: subscription } = await supabase
+      .from('subscriptions')
+      .select('status, expires_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (subscription) {
+      const isExpired = subscription.expires_at && new Date(subscription.expires_at) < new Date()
+      const blockedStatuses = ['expired', 'canceled', 'overdue', 'unpaid']
+
+      if (blockedStatuses.includes(subscription.status) || isExpired) {
+        if (pathname !== '/subscription-expired') {
+          const url = request.nextUrl.clone()
+          url.pathname = '/subscription-expired'
+          return NextResponse.redirect(url)
+        }
+      }
+    }
+    // Se não tem subscription (usuário antigo/owner original), permite acesso
   }
 
   return supabaseResponse
