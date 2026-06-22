@@ -60,11 +60,12 @@ export async function POST(
 
     const supabase = await createClient()
 
-    // 1. Buscar proposta
-    const { data: rawProposal } = await supabase
+    // 1. Buscar proposta (validando que pertence à organização)
+    const { data: rawProposal } = await (supabase as any)
       .from('proposals')
       .select('*')
       .eq('id', proposalId)
+      .eq('organization_id', orgId)
       .single()
 
     if (!rawProposal) return NextResponse.json({ error: 'Proposta não encontrada.' }, { status: 404 })
