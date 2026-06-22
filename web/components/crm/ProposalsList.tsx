@@ -8,6 +8,7 @@ import { deleteProposal } from '@/lib/crm/actions'
 import type { Lead, Proposal, Supplier, ProposalTemplate } from '@/lib/crm/types'
 import type { OrgConfig } from '@/lib/configuracoes/queries'
 import { formatCurrency } from '@/lib/format'
+import { secureStorageUrl } from '@/lib/storage/url'
 
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Rascunho',
@@ -153,7 +154,7 @@ export function ProposalsList({ lead }: { lead: Lead }) {
             <div className="flex items-center gap-2">
               {p.pdf_url && (
                 <a
-                  href={p.pdf_url}
+                  href={secureStorageUrl(p.pdf_url) ?? '#'}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-all hover:opacity-90"

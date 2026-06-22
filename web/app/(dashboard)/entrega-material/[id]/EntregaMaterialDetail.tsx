@@ -7,6 +7,7 @@ import type { EntregaMaterialClient } from '@/lib/entrega-material/queries'
 import { upsertDelivery, uploadDeliveryMedia } from '@/lib/entrega-material/actions'
 import { DatePicker } from '@/components/ui/inputs'
 import { Plus, ExternalLink, Trash2, Image as ImageIcon } from 'lucide-react'
+import { secureStorageUrl } from '@/lib/storage/url'
 
 export default function EntregaMaterialDetail({
   entrega,
@@ -147,7 +148,7 @@ export default function EntregaMaterialDetail({
               return (
                 <a
                   key={i}
-                  href={url}
+                  href={secureStorageUrl(url) ?? '#'}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="relative rounded-xl overflow-hidden group"
@@ -158,7 +159,7 @@ export default function EntregaMaterialDetail({
                       <span className="text-2xl">▶</span>
                     </div>
                   ) : (
-                    <img src={url} alt={`Entrega ${i + 1}`} className="w-full h-full object-cover" />
+                    <img src={secureStorageUrl(url) ?? ''} alt={`Entrega ${i + 1}`} className="w-full h-full object-cover" />
                   )}
                   <div
                     className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"

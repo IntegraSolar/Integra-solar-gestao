@@ -7,6 +7,7 @@ import type { CompraClient } from '@/lib/compras/queries'
 import { upsertPurchase, uploadPurchaseDoc } from '@/lib/compras/actions'
 import { CurrencyInput, DatePicker } from '@/components/ui/inputs'
 import { Paperclip, ExternalLink, FileText } from 'lucide-react'
+import { secureStorageUrl } from '@/lib/storage/url'
 
 const STATUS_OPTIONS = [
   { value: 'aguardando', label: 'Aguardando' },
@@ -66,7 +67,7 @@ function DocUploadRow({
         {url ? (
           <>
             <a
-              href={url}
+              href={secureStorageUrl(url) ?? '#'}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg transition-colors hover:bg-white/10"

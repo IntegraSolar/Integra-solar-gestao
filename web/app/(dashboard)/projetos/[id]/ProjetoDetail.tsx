@@ -7,6 +7,7 @@ import type { ProjetoClient, ProjetoMember } from '@/lib/projetos/queries'
 import { upsertProject, uploadProjectDoc } from '@/lib/projetos/actions'
 import { DatePicker } from '@/components/ui/inputs'
 import { Paperclip, ExternalLink, FileText } from 'lucide-react'
+import { secureStorageUrl } from '@/lib/storage/url'
 
 const STATUS_OPTIONS = [
   { value: 'pendente', label: 'Pendente' },
@@ -70,7 +71,7 @@ function DocUploadRow({
         {url ? (
           <>
             <a
-              href={url}
+              href={secureStorageUrl(url) ?? '#'}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg transition-colors hover:bg-white/10"

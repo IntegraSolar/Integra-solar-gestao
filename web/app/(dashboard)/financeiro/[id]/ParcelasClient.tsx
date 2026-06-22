@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { confirmInstallment, advanceToProjects, uploadReceipt } from '@/lib/financeiro/actions'
 import type { FinanceiroInstallment } from '@/lib/financeiro/queries'
 import { Paperclip, ExternalLink } from 'lucide-react'
+import { secureStorageUrl } from '@/lib/storage/url'
 
 function formatBRL(value: number) {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -68,7 +69,7 @@ function ParcelaRow({
       <div className="flex items-center gap-1.5 flex-shrink-0">
         {localReceiptUrl ? (
           <a
-            href={localReceiptUrl}
+            href={secureStorageUrl(localReceiptUrl) ?? '#'}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg transition-colors hover:bg-white/10"

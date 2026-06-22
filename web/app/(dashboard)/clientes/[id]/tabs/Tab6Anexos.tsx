@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { uploadAttachment, confirmTab6 } from '@/lib/clients/actions'
 import { ATTACHMENT_TYPE_LABELS, ATTACHMENT_TYPES } from '@/lib/clients/types'
 import type { Client } from '@/lib/clients/types'
+import { secureStorageUrl } from '@/lib/storage/url'
 
 function AttachmentRow({ client, type, label }: { client: Client; type: string; label: string }) {
   const existing = client.attachments.find((a) => a.type === type)
@@ -28,7 +29,7 @@ function AttachmentRow({ client, type, label }: { client: Client; type: string; 
         <p className="text-sm font-medium" style={{ color: 'var(--theme-text)' }}>{label}</p>
         {existing ? (
           <a
-            href={existing.file_url}
+            href={secureStorageUrl(existing.file_url) ?? '#'}
             target="_blank"
             rel="noopener noreferrer"
             className="text-xs truncate block"

@@ -6,6 +6,7 @@ import type { Client } from '@/lib/clients/types'
 import { ATTACHMENT_TYPE_LABELS } from '@/lib/clients/types'
 import { formatCurrency, formatDate, formatPhone, formatCpfCnpj } from '@/lib/format'
 import { ExternalLink } from 'lucide-react'
+import { secureStorageUrl } from '@/lib/storage/url'
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -34,7 +35,7 @@ function DocLink({ label, url }: { label: string; url: string | null }) {
   return (
     <div className="flex items-center justify-between py-1">
       <span className="text-sm" style={{ color: 'var(--theme-text-muted)' }}>{label}</span>
-      <a href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs" style={{ color: 'var(--theme-accent)' }}>
+      <a href={secureStorageUrl(url) ?? '#'} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs" style={{ color: 'var(--theme-accent)' }}>
         <ExternalLink size={11} /> ver
       </a>
     </div>
@@ -137,7 +138,7 @@ export function Tab8PastaCompleta({ client }: { client: Client }) {
                     <StatusBadge status={inst.status} />
                     {(inst as any).confirmed_at && <span className="text-xs text-white/30">Pago: {fmtDate((inst as any).confirmed_at)}</span>}
                     {(inst as any).receipt_url && (
-                      <a href={(inst as any).receipt_url} target="_blank" rel="noopener noreferrer" className="text-xs ml-auto" style={{ color: 'var(--theme-accent)' }}>Comprovante</a>
+                      <a href={secureStorageUrl((inst as any).receipt_url) ?? '#'} target="_blank" rel="noopener noreferrer" className="text-xs ml-auto" style={{ color: 'var(--theme-accent)' }}>Comprovante</a>
                     )}
                   </div>
                 ))}
@@ -227,11 +228,11 @@ export function Tab8PastaCompleta({ client }: { client: Client }) {
                       <span className="text-xs" style={{ color: 'var(--theme-text-subtle)' }}>Fotos / Vídeos</span>
                       <div className="grid grid-cols-4 gap-2 mt-1.5">
                         {urls.map((url, i) => (
-                          <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="rounded-lg overflow-hidden" style={{ aspectRatio: '1', background: 'var(--theme-surface)', border: '1px solid var(--theme-card-border)' }}>
+                          <a key={i} href={secureStorageUrl(url) ?? '#'} target="_blank" rel="noopener noreferrer" className="rounded-lg overflow-hidden" style={{ aspectRatio: '1', background: 'var(--theme-surface)', border: '1px solid var(--theme-card-border)' }}>
                             {/\.(mp4|mov|webm)$/i.test(url) ? (
                               <div className="w-full h-full flex items-center justify-center text-white/30">▶</div>
                             ) : (
-                              <img src={url} alt={`Entrega ${i + 1}`} className="w-full h-full object-cover" />
+                              <img src={secureStorageUrl(url) ?? ''} alt={`Entrega ${i + 1}`} className="w-full h-full object-cover" />
                             )}
                           </a>
                         ))}
