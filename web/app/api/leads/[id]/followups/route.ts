@@ -1,8 +1,18 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { getCurrentUserData } from '@/lib/org/queries'
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
+  const user = await getCurrentUserData()
+  const orgId = user?.membership?.organization.id
+  if (!orgId) return NextResponse.json({ followups: [] })
+
   const supabase = await createClient()
+
+  // Verificar que o lead pertence à organização
+  const { data: lead } = await (supabase as any)
+    .from('leads').select('id').eq('id', params.id).eq('organization_id', orgId).maybeSingle()
+  if (!lead) return NextResponse.json({ followups: [] })
 
   const { data } = await supabase
     .from('tasks')
