@@ -143,10 +143,17 @@ export default function CheckoutForm() {
                 </div>
               </div>
 
+              <label className="mt-6 flex items-start gap-2 cursor-pointer">
+                <input type="checkbox" required className="mt-0.5 w-4 h-4 accent-[#28944a]" />
+                <span className="text-xs text-[#57534e]">
+                  Li e aceito os <Link href="/termos" target="_blank" className="text-[#28944a] underline">Termos de Uso</Link> e a <Link href="/privacidade" target="_blank" className="text-[#28944a] underline">Política de Privacidade</Link>.
+                </span>
+              </label>
+
               <button
                 type="submit"
                 disabled={pending}
-                className="mt-8 w-full bg-[#28944a] text-white font-semibold py-3.5 rounded-xl hover:bg-[#1d7035] transition-colors disabled:opacity-50"
+                className="mt-4 w-full bg-[#28944a] text-white font-semibold py-3.5 rounded-xl hover:bg-[#1d7035] transition-colors disabled:opacity-50"
               >
                 {pending ? 'Processando...' : 'Finalizar Assinatura'}
               </button>

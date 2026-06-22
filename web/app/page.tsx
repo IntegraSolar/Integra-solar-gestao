@@ -378,6 +378,8 @@ export default function LandingPage() {
           <div className="flex gap-6 text-sm text-[#57534e]">
             <Link href="/login" className="hover:text-[#1c1917]">Entrar</Link>
             <a href="#planos" className="hover:text-[#1c1917]">Planos</a>
+            <Link href="/termos" className="hover:text-[#1c1917]">Termos de Uso</Link>
+            <Link href="/privacidade" className="hover:text-[#1c1917]">Privacidade</Link>
           </div>
           <p className="text-xs text-[#57534e]">&copy; {new Date().getFullYear()} Integra Solar</p>
         </div>

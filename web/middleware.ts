@@ -10,6 +10,8 @@ const PUBLIC_ROUTES = [
   '/auth/callback',
   '/api/webhooks',
   '/checkout',
+  '/termos',
+  '/privacidade',
 ]
 
 function isPublicRoute(pathname: string): boolean {
