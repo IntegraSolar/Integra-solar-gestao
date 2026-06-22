@@ -1,7 +1,8 @@
 'use client'
 
 import { useSearchParams } from 'next/navigation'
-import { useActionState } from 'react'
+import { useFormState } from 'react-dom'
+import { useTransition } from 'react'
 import { processCheckout } from '@/lib/subscription/actions'
 import { Check } from 'lucide-react'
 import Image from 'next/image'
@@ -35,7 +36,8 @@ export default function CheckoutForm() {
   const planId = searchParams.get('plan') || 'mensal'
   const plan = PLANS_INFO[planId] || PLANS_INFO.mensal
 
-  const [state, formAction, pending] = useActionState(processCheckout, {})
+  const [state, formAction] = useFormState(processCheckout, {})
+  const [pending, startTransition] = useTransition()
 
   const showPixRecorrente = planId === 'mensal'
 

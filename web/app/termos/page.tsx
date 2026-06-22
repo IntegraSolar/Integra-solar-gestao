@@ -10,7 +10,7 @@ export default function TermosPage() {
           <p>Última atualização: {new Date().toLocaleDateString('pt-BR')}</p>
 
           <h2 className="text-lg font-semibold text-[#0d3019]">1. Aceitação dos Termos</h2>
-          <p>Ao acessar e utilizar a plataforma Integra Solar ("Plataforma"), você concorda com estes Termos de Uso. Se não concordar com algum termo, não utilize a Plataforma.</p>
+          <p>Ao acessar e utilizar a plataforma Integra Solar (&ldquo;Plataforma&rdquo;), você concorda com estes Termos de Uso. Se não concordar com algum termo, não utilize a Plataforma.</p>
 
           <h2 className="text-lg font-semibold text-[#0d3019]">2. Descrição do Serviço</h2>
           <p>O Integra Solar é uma plataforma SaaS de gestão para empresas de energia solar, oferecendo funcionalidades de CRM, gestão financeira, controle de obras, documentação e relatórios.</p>
