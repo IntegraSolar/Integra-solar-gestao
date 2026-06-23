@@ -71,10 +71,14 @@ export default function TemplatesTab({ initialTemplates }: { initialTemplates: P
 
   function handleDelete(id: string) {
     startTransition(async () => {
-      const result = await deleteProposalTemplate(id)
-      if (result.error) { setError(result.error); return }
-      setTemplates((prev) => prev.filter((x) => x.id !== id))
-      setConfirmDelete(null)
+      try {
+        const result = await deleteProposalTemplate(id)
+        if (result.error) { setError(result.error); return }
+        setTemplates((prev) => prev.filter((x) => x.id !== id))
+        setConfirmDelete(null)
+      } catch (e: any) {
+        setError(e?.message ?? 'Erro ao excluir template.')
+      }
     })
   }
 
