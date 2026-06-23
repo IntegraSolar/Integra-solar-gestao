@@ -38,6 +38,7 @@ export function ProposalPricingReview({
   const [extraCosts, setExtraCosts] = useState<ExtraCost[]>([])
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+  const [progressMsg, setProgressMsg] = useState('')
 
   // Variáveis editáveis — inicializadas com valores das configurações
   const [vInstalacao, setVInstalacao] = useState(orgConfig.valor_instalacao_por_placa ?? 0)
@@ -120,41 +121,58 @@ export function ProposalPricingReview({
     setError(null)
 
     startTransition(async () => {
-      const res = await fetch(`/api/proposals/${proposal.id}/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          proposalId: proposal.id,
-          templateId: selectedTemplateId,
-          valor_entrada: 0,
-          valor_parcelas: 0,
-          num_parcelas: 0,
-          overrides: {
-            valor_instalacao_por_placa: vInstalacao,
-            valor_projeto_por_kwp: vProjeto,
-            pct_material_ca: vMaterialCa,
-            quilometragem: vKm,
-            pct_comissao: vComissao,
-            pct_imposto: vImposto,
-            pct_margem: vMargem,
-          },
-          extras: extraCosts.map((ec) => ({
-            categoria: ec.categoria,
-            item: ec.item,
-            qtd: ec.qtd,
-            custo_unit: ec.custo_unit,
-          })),
-        }),
-      })
+      setProgressMsg('Preparando dados e calculando preços...')
 
-      const data = await res.json()
-      if (!res.ok || data.error) {
-        setError(data.error ?? 'Erro ao gerar orçamento.')
-        return
+      const timeoutId = setTimeout(() => {
+        setProgressMsg('Processando template e convertendo para PDF...')
+      }, 3000)
+
+      try {
+        const res = await fetch(`/api/proposals/${proposal.id}/generate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            proposalId: proposal.id,
+            templateId: selectedTemplateId,
+            valor_entrada: 0,
+            valor_parcelas: 0,
+            num_parcelas: 0,
+            overrides: {
+              valor_instalacao_por_placa: vInstalacao,
+              valor_projeto_por_kwp: vProjeto,
+              pct_material_ca: vMaterialCa,
+              quilometragem: vKm,
+              pct_comissao: vComissao,
+              pct_imposto: vImposto,
+              pct_margem: vMargem,
+            },
+            extras: extraCosts.map((ec) => ({
+              categoria: ec.categoria,
+              item: ec.item,
+              qtd: ec.qtd,
+              custo_unit: ec.custo_unit,
+            })),
+          }),
+        })
+
+        clearTimeout(timeoutId)
+        const data = await res.json()
+        if (!res.ok || data.error) {
+          setError(data.error ?? 'Erro ao gerar orçamento.')
+          setProgressMsg('')
+          return
+        }
+
+        setProgressMsg('')
+        window.open(data.pdf_url, '_blank')
+        onGenerated(data.pdf_url)
+      } catch (fetchErr: any) {
+        clearTimeout(timeoutId)
+        setProgressMsg('')
+        setError(fetchErr?.message === 'Failed to fetch'
+          ? 'Erro de conexão. Verifique sua internet e tente novamente.'
+          : fetchErr?.message ?? 'Erro inesperado.')
       }
-
-      window.open(data.pdf_url, '_blank')
-      onGenerated(data.pdf_url)
     })
   }
 
@@ -369,7 +387,7 @@ export function ProposalPricingReview({
             className="flex-1 py-3 rounded-xl text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-50"
             style={{ background: 'var(--theme-accent)', color: 'var(--theme-accent-text)' }}
           >
-            {isPending ? 'Gerando...' : 'Gerar Orçamento'}
+            {isPending ? (progressMsg || 'Gerando...') : 'Gerar Orçamento'}
           </button>
         </div>
       </div>

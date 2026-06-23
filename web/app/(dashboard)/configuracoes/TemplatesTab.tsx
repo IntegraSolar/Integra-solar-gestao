@@ -17,6 +17,8 @@ export default function TemplatesTab({ initialTemplates }: { initialTemplates: P
   const [error, setError] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+  const [diagResult, setDiagResult] = useState<any>(null)
+  const [diagLoading, setDiagLoading] = useState<string | null>(null)
 
   const inputCls = 'w-full px-3 py-2.5 rounded-xl text-sm text-white outline-none border border-white/10 focus:border-white/30 bg-white/5'
 
@@ -51,6 +53,20 @@ export default function TemplatesTab({ initialTemplates }: { initialTemplates: P
       if (result.error) { setError(result.error); return }
       setTemplates((prev) => prev.map((x) => ({ ...x, is_default: x.id === t.id })))
     })
+  }
+
+  async function handleDiagnose(id: string) {
+    setDiagLoading(id)
+    setDiagResult(null)
+    try {
+      const res = await fetch(`/api/templates/${id}/diagnose`)
+      const data = await res.json()
+      setDiagResult(data)
+    } catch {
+      setDiagResult({ error: 'Erro ao diagnosticar template.' })
+    } finally {
+      setDiagLoading(null)
+    }
   }
 
   function handleDelete(id: string) {
@@ -229,6 +245,14 @@ export default function TemplatesTab({ initialTemplates }: { initialTemplates: P
               )}
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
+              <button
+                onClick={() => handleDiagnose(t.id)}
+                disabled={diagLoading === t.id}
+                className="text-xs px-3 py-1.5 rounded-lg text-white/50 hover:text-white transition-colors"
+                style={{ background: 'var(--theme-input-bg)' }}
+              >
+                {diagLoading === t.id ? 'Analisando...' : '🔍 Diagnóstico'}
+              </button>
               <a
                 href={`/api/templates/${t.id}/download`}
                 target="_blank"
@@ -286,6 +310,51 @@ export default function TemplatesTab({ initialTemplates }: { initialTemplates: P
           </div>
         ))}
       </div>
+
+      {/* Resultado do Diagnóstico */}
+      {diagResult && !diagResult.error && (
+        <div
+          className="rounded-2xl p-5 border border-white/10 space-y-4"
+          style={{ background: 'var(--theme-surface)' }}
+        >
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-white">
+              Diagnóstico: {diagResult.templateName}
+            </h3>
+            <div className="flex items-center gap-2">
+              <span
+                className="text-xs px-3 py-1 rounded-full font-semibold"
+                style={{
+                  background: diagResult.status === 'aprovado' ? 'rgba(16,185,129,0.15)' : diagResult.status === 'aprovado_com_alertas' ? 'rgba(251,191,36,0.15)' : 'rgba(239,68,68,0.15)',
+                  color: diagResult.status === 'aprovado' ? '#10B981' : diagResult.status === 'aprovado_com_alertas' ? '#FBBF24' : '#EF4444',
+                  border: `1px solid ${diagResult.status === 'aprovado' ? 'rgba(16,185,129,0.3)' : diagResult.status === 'aprovado_com_alertas' ? 'rgba(251,191,36,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                }}
+              >
+                {diagResult.status === 'aprovado' ? '✓ Aprovado' : diagResult.status === 'aprovado_com_alertas' ? '⚠ Aprovado com alertas' : '✖ Reprovado'}
+              </span>
+              <button onClick={() => setDiagResult(null)} className="text-xs text-white/30 hover:text-white/60">✕</button>
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            {diagResult.findings?.map((f: any, i: number) => (
+              <div key={i} className="flex items-start gap-2 text-xs">
+                <span className="flex-shrink-0 mt-0.5">
+                  {f.type === 'ok' ? '✓' : f.type === 'warn' ? '⚠' : '✖'}
+                </span>
+                <span style={{ color: f.type === 'ok' ? '#10B981' : f.type === 'warn' ? '#FBBF24' : '#EF4444' }}>
+                  {f.message}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {diagResult?.error && (
+        <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2">
+          {diagResult.error}
+        </p>
+      )}
     </div>
   )
 }

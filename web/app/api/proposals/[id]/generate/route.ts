@@ -1,40 +1,13 @@
 import { NextResponse } from 'next/server'
 import PizZip from 'pizzip'
+import Docxtemplater from 'docxtemplater'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
 import { getOrgConfig } from '@/lib/configuracoes/queries'
 import { calcularPreco } from '@/lib/proposals/pricing'
 import { buildPlaceholders } from '@/lib/proposals/placeholders'
 
-function replaceInDocx(zip: PizZip, data: Record<string, string>): void {
-  for (const fileName of Object.keys(zip.files)) {
-    if (!fileName.endsWith('.xml')) continue
-    let content = zip.files[fileName].asText()
-
-    // 1. Juntar tags fragmentadas pelo Word: {{tag}} pode virar
-    //    <w:t>{{</w:t></w:r><w:r><w:t>tag}}</w:t> etc.
-    //    Removemos runs XML entre chaves para reconstruir a tag inteira.
-    content = content.replace(
-      /\{\{([^}]*(?:<[^>]+>[^}]*)*)\}\}/g,
-      (match) => {
-        const clean = match.replace(/<[^>]+>/g, '')
-        return clean
-      }
-    )
-
-    // 2. Substituir cada {{placeholder}} pelo valor correspondente
-    for (const [key, value] of Object.entries(data)) {
-      const escaped = value
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-      content = content.split(`{{${key}}}`).join(escaped)
-    }
-
-    zip.file(fileName, content)
-  }
-}
+const CONVERT_TIMEOUT_MS = 90_000
 
 export async function POST(
   req: Request,
@@ -60,7 +33,7 @@ export async function POST(
 
     const supabase = await createClient()
 
-    // 1. Buscar proposta (validando que pertence à organização)
+    // 1. Buscar proposta
     const { data: rawProposal } = await (supabase as any)
       .from('proposals')
       .select('*')
@@ -69,7 +42,6 @@ export async function POST(
       .single()
 
     if (!rawProposal) return NextResponse.json({ error: 'Proposta não encontrada.' }, { status: 404 })
-
     const p = rawProposal as any
 
     // 2. Buscar lead
@@ -113,50 +85,73 @@ export async function POST(
       return NextResponse.json({ error: 'Erro ao baixar template: ' + downloadError?.message }, { status: 500 })
     }
 
-    // 6. Substituir placeholders diretamente no XML (sem docxtemplater)
+    // 6. Substituir placeholders com docxtemplater
     const templateBuffer = Buffer.from(await templateBlob.arrayBuffer())
-    const zip = new PizZip(templateBuffer)
 
-    const placeholders = buildPlaceholders(
-      lead as any,
-      {
-        razao_social: orgConfig.razao_social,
-        nome_fantasia: orgConfig.nome_fantasia,
-        cnpj: orgConfig.cnpj,
-        telefone: orgConfig.telefone,
-      },
-      {
-        panel_qty: p.total_modules ?? 0,
-        panel_power_w: p.module_power_wp ?? 0,
-        panel_brand_model: p.panel_brand_model ?? null,
-        inverter_qty: p.total_inverters ?? 0,
-        inverter_power_w: p.inverter_power_w ?? 0,
-        inverter_brand_model: p.inverter_brand_model ?? null,
-        total_power_kwp: p.total_power_kwp ?? 0,
-        monthly_generation_kwh: p.monthly_generation_kwh ?? 0,
-        preco_total: pricing.preco_total,
-        valor_entrada: valor_entrada ?? 0,
-        num_parcelas: num_parcelas ?? 0,
-        valor_parcelas: valor_parcelas ?? 0,
-      }
-    )
+    let docxBuffer: Buffer
+    try {
+      const zip = new PizZip(templateBuffer)
+      const doc = new Docxtemplater(zip, {
+        paragraphLoop: true,
+        linebreaks: true,
+        delimiters: { start: '{{', end: '}}' },
+      })
 
-    replaceInDocx(zip, placeholders)
-    const docxBuffer = zip.generate({ type: 'nodebuffer' })
+      const placeholders = buildPlaceholders(
+        lead as any,
+        {
+          razao_social: orgConfig.razao_social,
+          nome_fantasia: orgConfig.nome_fantasia,
+          cnpj: orgConfig.cnpj,
+          telefone: orgConfig.telefone,
+        },
+        {
+          panel_qty: p.total_modules ?? 0,
+          panel_power_w: p.module_power_wp ?? 0,
+          panel_brand_model: p.panel_brand_model ?? null,
+          inverter_qty: p.total_inverters ?? 0,
+          inverter_power_w: p.inverter_power_w ?? 0,
+          inverter_brand_model: p.inverter_brand_model ?? null,
+          total_power_kwp: p.total_power_kwp ?? 0,
+          monthly_generation_kwh: p.monthly_generation_kwh ?? 0,
+          preco_total: pricing.preco_total,
+          valor_entrada: valor_entrada ?? 0,
+          num_parcelas: num_parcelas ?? 0,
+          valor_parcelas: valor_parcelas ?? 0,
+        }
+      )
+
+      doc.render(placeholders)
+      const buf = doc.getZip().generate({ type: 'nodebuffer' })
+      docxBuffer = Buffer.from(buf)
+    } catch (templateErr: any) {
+      console.error('[generate-proposal] Template error:', templateErr)
+      const msg = templateErr?.properties?.errors
+        ? templateErr.properties.errors.map((e: any) => `${e.id}: ${e.explanation}`).join('; ')
+        : templateErr?.message ?? 'Erro desconhecido ao processar template.'
+      return NextResponse.json({
+        error: `Erro no template: ${msg}`,
+        step: 'template_processing',
+      }, { status: 422 })
+    }
 
     // 7. Salvar DOCX no Storage
     const docxPath = `${orgId}/${proposalId}.docx`
-    await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from('proposals')
       .upload(docxPath, docxBuffer, {
         contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         upsert: true,
       })
 
-    // 8. Converter DOCX → PDF via ConvertAPI
+    if (uploadError) {
+      return NextResponse.json({ error: 'Erro ao salvar DOCX: ' + uploadError.message, step: 'docx_upload' }, { status: 500 })
+    }
+
+    // 8. Converter DOCX → PDF via ConvertAPI (com timeout)
     const convertSecret = process.env.CONVERTAPI_SECRET
     if (!convertSecret) {
-      return NextResponse.json({ error: 'CONVERTAPI_SECRET não configurado.' }, { status: 500 })
+      return NextResponse.json({ error: 'CONVERTAPI_SECRET não configurado.', step: 'config' }, { status: 500 })
     }
 
     const formData = new FormData()
@@ -168,21 +163,38 @@ export async function POST(
       'proposta.docx'
     )
 
-    const convertResponse = await fetch(
-      `https://v2.convertapi.com/convert/docx/to/pdf?Secret=${convertSecret}&StoreFile=true`,
-      { method: 'POST', body: formData }
-    )
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), CONVERT_TIMEOUT_MS)
 
-    if (!convertResponse.ok) {
-      const errText = await convertResponse.text()
-      return NextResponse.json({ error: 'Erro na conversão PDF: ' + errText }, { status: 502 })
+    let convertResult: any
+    try {
+      const convertResponse = await fetch(
+        `https://v2.convertapi.com/convert/docx/to/pdf?Secret=${convertSecret}&StoreFile=true`,
+        { method: 'POST', body: formData, signal: controller.signal }
+      )
+      clearTimeout(timeout)
+
+      if (!convertResponse.ok) {
+        const errText = await convertResponse.text()
+        console.error('[generate-proposal] ConvertAPI error:', errText)
+        return NextResponse.json({ error: 'Erro na conversão para PDF. Tente novamente.', step: 'pdf_conversion' }, { status: 502 })
+      }
+
+      convertResult = await convertResponse.json()
+    } catch (fetchErr: any) {
+      clearTimeout(timeout)
+      if (fetchErr.name === 'AbortError') {
+        return NextResponse.json({
+          error: 'A conversão para PDF excedeu o tempo limite. O template pode ser muito grande ou complexo.',
+          step: 'pdf_timeout',
+        }, { status: 504 })
+      }
+      throw fetchErr
     }
 
-    const convertResult = await convertResponse.json()
     const pdfUrl: string = convertResult?.Files?.[0]?.Url ?? ''
-
     if (!pdfUrl) {
-      return NextResponse.json({ error: 'ConvertAPI não retornou URL do PDF.' }, { status: 502 })
+      return NextResponse.json({ error: 'ConvertAPI não retornou URL do PDF.', step: 'pdf_result' }, { status: 502 })
     }
 
     // 9. Salvar campos na proposta
@@ -207,6 +219,6 @@ export async function POST(
 
   } catch (err: any) {
     console.error('[generate-proposal]', err)
-    return NextResponse.json({ error: err?.message ?? 'Erro interno.' }, { status: 500 })
+    return NextResponse.json({ error: err?.message ?? 'Erro interno.', step: 'unknown' }, { status: 500 })
   }
 }
