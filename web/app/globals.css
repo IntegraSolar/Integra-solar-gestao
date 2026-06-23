@@ -548,3 +548,30 @@ select option:hover {
 [data-theme="green"] [style*="background: rgba(255,200,100,0.15)"] {
   background: rgba(40,148,74,0.12) !important;
 }
+
+/* ===== Sidebar scrollbar — minimal, estilo Notion/Linear ===== */
+
+/* Chrome, Edge, Safari */
+.sidebar-nav::-webkit-scrollbar {
+  width: 5px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  transition: background 0.2s;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Firefox */
+.sidebar-nav {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}

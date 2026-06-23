@@ -125,7 +125,7 @@ export function Sidebar({ user, notificationCount = 0, onNotificationClick }: Si
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-2 px-2">
+      <nav className="sidebar-nav flex-1 overflow-y-auto py-2 px-2">
         {pipelineVisible.map(renderItem)}
 
         {/* Separador */}

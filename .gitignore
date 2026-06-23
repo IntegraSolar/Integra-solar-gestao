@@ -1,0 +1,35 @@
+# Dependencias
+node_modules/
+backend/node_modules/
+backend/.npm-cache/
+
+# Ambiente
+.env
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
+!backend/.env.example
+
+# Logs
+*.log
+*.out.log
+*.err.log
+npm-debug.log*
+
+# Saidas geradas
+output/
+backend/output/
+
+# Navegador e automacao
+.chrome-profile/
+.chrome-profile-compat/
+.edge-profile/
+.playwright/
+.playwright-*/
+
+# Editor / sistema
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
