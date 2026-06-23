@@ -212,6 +212,7 @@ export async function POST(
       }, { status: 422 })
     }
 
+    const proposalName = (p.name ?? 'Proposta').replace(/[<>:"/\\|?*]/g, '_')
     const docxPath = `${orgId}/${proposalId}.docx`
     const { error: uploadError } = await supabase.storage
       .from('proposals')
@@ -235,7 +236,7 @@ export async function POST(
       new Blob([new Uint8Array(docxBuffer)], {
         type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       }),
-      'proposta.docx'
+      `${proposalName}.docx`
     )
 
     const controller = new AbortController()
@@ -289,7 +290,7 @@ export async function POST(
       gerado_em: new Date().toISOString(),
     } as any).eq('id', proposalId)
 
-    return NextResponse.json({ pdf_url: pdfUrl })
+    return NextResponse.json({ pdf_url: pdfUrl, pdf_filename: `${proposalName}.pdf` })
 
   } catch (err: any) {
     console.error('[generate-proposal]', err)

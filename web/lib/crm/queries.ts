@@ -158,12 +158,11 @@ export async function ensureDefaultStages(orgId: string): Promise<void> {
     .eq('organization_id', orgId)
   if (count && count > 0) return
   const defaults = [
-    { name: 'Novo', order: 1, color: '#6B7A90' },
-    { name: 'Em contato', order: 2, color: '#3B82F6' },
-    { name: 'Visita agendada', order: 3, color: '#8B5CF6' },
-    { name: 'Proposta enviada', order: 4, color: '#F59E0B' },
-    { name: 'Fechado', order: 5, color: '#10B981', is_terminal_won: true },
-    { name: 'Perdido', order: 6, color: '#EF4444', is_terminal_lost: true },
+    { name: 'Chegada de Leads', order: 1, color: '#6B7A90' },
+    { name: 'Proposta Enviada', order: 2, color: '#F59E0B' },
+    { name: 'Follow-up', order: 3, color: '#3B82F6' },
+    { name: 'Próximos de Fechamento', order: 4, color: '#8B5CF6' },
+    { name: 'Contrato Assinado', order: 5, color: '#10B981', is_terminal_won: true },
   ]
   await supabase.from('pipeline_stages').insert(
     defaults.map((d) => ({ ...d, organization_id: orgId })) as any

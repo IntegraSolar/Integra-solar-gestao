@@ -154,6 +154,39 @@ export async function registerCompany(
     telefone: phone ?? null,
   })
 
+  // 5b. Criar etapas padrão do funil
+  const defaultStages = [
+    { name: 'Chegada de Leads', order: 1, color: '#6B7A90' },
+    { name: 'Proposta Enviada', order: 2, color: '#F59E0B' },
+    { name: 'Follow-up', order: 3, color: '#3B82F6' },
+    { name: 'Próximos de Fechamento', order: 4, color: '#8B5CF6' },
+    { name: 'Contrato Assinado', order: 5, color: '#10B981', is_terminal_won: true },
+  ]
+  await (adminClient as any).from('pipeline_stages').insert(
+    defaultStages.map((d) => ({ ...d, organization_id: org.id }))
+  )
+
+  // 5c. Criar template padrão de proposta (se existir o arquivo global)
+  const { data: globalTemplate } = await (adminClient as any).storage
+    .from('proposal-templates')
+    .download('global/template-padrao.docx')
+  if (globalTemplate) {
+    const filePath = `${org.id}/template-padrao.docx`
+    await (adminClient as any).storage
+      .from('proposal-templates')
+      .upload(filePath, globalTemplate, {
+        contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      })
+    await (adminClient as any).from('proposal_templates').insert({
+      org_id: org.id,
+      name: 'Template Padrão',
+      category: 'Residencial e comercial',
+      file_path: filePath,
+      is_default: true,
+      is_active: true,
+    })
+  }
+
   // 6. Fazer login automático
   const supabase = await createClient()
   await supabase.auth.signInWithPassword({ email, password })

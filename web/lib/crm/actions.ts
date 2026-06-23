@@ -296,10 +296,16 @@ export async function deleteFunnelStage(stageId: string, moveTo: string): Promis
 
 export async function reorderFunnelStages(stages: { id: string; order: number }[]): Promise<ActionResult> {
   const supabase = await createClient()
+  // Usar offset alto temporário para evitar conflito de unique constraint
+  const offset = 10000
+  for (const s of stages) {
+    await supabase.from('pipeline_stages').update({ order: s.order + offset }).eq('id', s.id)
+  }
   for (const s of stages) {
     await supabase.from('pipeline_stages').update({ order: s.order }).eq('id', s.id)
   }
   revalidatePath('/leads')
+  revalidatePath('/leads/configurar-funil')
   return { success: 'Ordem salva.' }
 }
 
