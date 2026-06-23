@@ -84,17 +84,17 @@ const FAQ = [
 
 const PLANS = [
   {
-    id: 'mensal', name: 'Mensal', price: 'R$ 199,90', period: '/mês', tag: 'Sem fidelidade', highlight: false,
+    id: 'mensal', name: 'Mensal', price: 'R$ 99,90', period: '/mês', tag: 'Sem fidelidade', highlight: false,
     features: ['CRM completo', 'Propostas ilimitadas', 'Gestão financeira', 'Controle de obras', 'Gestão documental', 'Relatórios', 'Suporte por chat'],
     cta: 'Começar agora',
   },
   {
-    id: 'semestral', name: 'Semestral', price: 'R$ 1.079', period: '/semestre', tag: 'Mais vendido', saving: 'Economia de R$ 120', highlight: false,
+    id: 'semestral', name: 'Semestral', price: 'R$ 539', period: '/semestre', tag: 'Mais vendido', saving: 'Economia de R$ 60', highlight: false,
     features: ['Tudo do mensal', 'Economia de ~10%', 'Suporte prioritário', 'Treinamento incluso', 'Integrações avançadas'],
     cta: 'Escolher semestral',
   },
   {
-    id: 'anual', name: 'Anual', price: 'R$ 1.998', period: '/ano', tag: 'Melhor custo-benefício', saving: 'Economia de R$ 400', highlight: true,
+    id: 'anual', name: 'Anual', price: 'R$ 998', period: '/ano', tag: 'Melhor custo-benefício', saving: 'Economia de R$ 200', highlight: true,
     features: ['Tudo do semestral', 'Economia de ~17%', 'Suporte dedicado', 'Consultoria de setup', 'Onboarding guiado'],
     cta: 'Escolher anual',
   },

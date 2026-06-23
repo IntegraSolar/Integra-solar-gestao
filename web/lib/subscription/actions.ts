@@ -8,9 +8,9 @@ import { createClient } from '@/lib/supabase/server'
 type ActionResult = { error?: string; success?: string }
 
 const PLANS = {
-  mensal: { name: 'Mensal', price: 19990, cycle: 'monthly' },
-  semestral: { name: 'Semestral', price: 107900, cycle: 'semiannual' },
-  anual: { name: 'Anual', price: 199800, cycle: 'annual' },
+  mensal: { name: 'Mensal', price: 9990, cycle: 'monthly' },
+  semestral: { name: 'Semestral', price: 53900, cycle: 'semiannual' },
+  anual: { name: 'Anual', price: 99800, cycle: 'annual' },
 } as const
 
 const checkoutSchema = z.object({

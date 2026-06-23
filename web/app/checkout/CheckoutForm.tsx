@@ -11,19 +11,19 @@ import Link from 'next/link'
 const PLANS_INFO: Record<string, { name: string; price: string; period: string; features: string[] }> = {
   mensal: {
     name: 'Mensal',
-    price: 'R$ 199,90',
+    price: 'R$ 99,90',
     period: '/mês',
     features: ['CRM completo', 'Propostas ilimitadas', 'Gestão financeira', 'Controle de obras', 'Suporte por chat'],
   },
   semestral: {
     name: 'Semestral',
-    price: 'R$ 1.079,00',
+    price: 'R$ 539,00',
     period: '/semestre',
     features: ['Tudo do Mensal', 'Relatórios avançados', 'Integrações', 'Suporte prioritário', 'Treinamento incluso'],
   },
   anual: {
     name: 'Anual',
-    price: 'R$ 1.998,00',
+    price: 'R$ 998,00',
     period: '/ano',
     features: ['Tudo do Semestral', 'API exclusiva', 'Multi-usuários', 'Suporte dedicado', 'Consultoria de setup'],
   },
