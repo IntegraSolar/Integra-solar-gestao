@@ -26,7 +26,10 @@ export async function uploadProposalTemplate(formData: FormData): Promise<Action
   if (!file.name.endsWith('.docx')) return { error: 'Apenas arquivos .docx são aceitos.' }
 
   const supabase = await createClient()
-  const filePath = `${orgId}/${Date.now()}_${file.name}`
+  const safeName = file.name
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-zA-Z0-9._-]/g, '_')
+  const filePath = `${orgId}/${Date.now()}_${safeName}`
 
   const { error: uploadError } = await supabase.storage
     .from('proposal-templates')
