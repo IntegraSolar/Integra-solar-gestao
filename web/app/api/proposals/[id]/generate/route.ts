@@ -9,12 +9,14 @@ import { buildPlaceholders } from '@/lib/proposals/placeholders'
 const CONVERT_TIMEOUT_MS = 90_000
 
 /**
- * Sanitize DOCX XML: reconstruct placeholders fragmented by Word's formatting.
- * Word splits {{tag}} across multiple <w:r> runs. This function finds those
- * fragments and collapses them, preserving XML structure.
- * Also fixes templates where }} was typed as } (single brace).
+ * Sanitize and replace placeholders in DOCX XML in one pass.
+ * Word fragments {{tag}} across multiple <w:r> runs. This function:
+ * 1. Finds each {{ in text content
+ * 2. Scans forward collecting text (skipping XML tags) until }} or }
+ * 3. If the collected text is a known placeholder, replaces inline
+ * 4. Clears the original {{ }} characters from their text nodes
  */
-function sanitizeDocxXml(zip: PizZip): void {
+function processDocxPlaceholders(zip: PizZip, data: Record<string, string>): void {
   for (const fileName of Object.keys(zip.files)) {
     if (!fileName.endsWith('.xml') || zip.files[fileName].dir) continue
     let content = zip.files[fileName].asText()
@@ -31,7 +33,9 @@ function sanitizeDocxXml(zip: PizZip): void {
       const prevOpen = content.lastIndexOf('<', openIdx)
       if (prevOpen > prevClose) { i = openIdx + 2; continue }
 
-      // Scan forward collecting text (skipping XML tags) until we find }}
+      // Collect text positions: each entry is [startInContent, endInContent, textContent]
+      type TextSpan = { start: number; end: number; text: string }
+      const textSpans: TextSpan[] = []
       let j = openIdx
       let textBuf = ''
       let found = false
@@ -44,15 +48,21 @@ function sanitizeDocxXml(zip: PizZip): void {
           j = closeAngle + 1
           continue
         }
-        textBuf += content[j]
-        j++
-        if (textBuf.endsWith('}}')) { found = true; break }
+        // Start of a text segment
+        const textStart = j
+        while (j < limit && content[j] !== '<') {
+          textBuf += content[j]
+          j++
+          if (textBuf.endsWith('}}')) { found = true; break }
+        }
+        textSpans.push({ start: textStart, end: j, text: content.substring(textStart, j) })
+        if (found) break
       }
 
-      // Handle single-brace closing: {{tag}
+      // Handle single-brace closing
       if (!found) {
-        const singleMatch = textBuf.match(/^\{\{([a-z_][a-z0-9_]*)\}$/i)
-        if (singleMatch) { found = true; textBuf += '}' }
+        const sm = textBuf.match(/^\{\{([a-z_][a-z0-9_]*)\}$/i)
+        if (sm) { found = true; textBuf += '}' }
       }
 
       if (!found) { i = openIdx + 2; continue }
@@ -60,50 +70,31 @@ function sanitizeDocxXml(zip: PizZip): void {
       const match = textBuf.match(/^\{\{([a-z_][a-z0-9_]*)\}\}$/i)
       if (!match) { i = openIdx + 2; continue }
 
-      const rawSpan = content.substring(openIdx, j)
-      if (!rawSpan.includes('<')) { i = j; continue }
+      const tag = match[1]
+      const value = data[tag]
+      if (value === undefined) { i = openIdx + 2; continue }
 
-      // Put full placeholder in first text node, empty intermediate ones
-      const span = content.substring(openIdx, j)
-      let first = true
-      const newSpan = span.replace(/>([^<]*)</g, (m, text) => {
-        if (text.trim().length === 0 && !text.includes('{') && !text.includes('}')) return m
-        if (first) { first = false; return `>{{${match[1]}}}<` }
-        return `><`
-      })
-
-      if (newSpan !== span) {
-        content = content.substring(0, openIdx) + newSpan + content.substring(j)
-        changed = true
-        i = openIdx + newSpan.length
-      } else {
-        i = j
-      }
-    }
-
-    if (changed) zip.file(fileName, content)
-  }
-}
-
-/**
- * Replace all {{placeholder}} occurrences in all XML files of the DOCX.
- */
-function replaceInDocx(zip: PizZip, data: Record<string, string>): void {
-  for (const fileName of Object.keys(zip.files)) {
-    if (!fileName.endsWith('.xml') || zip.files[fileName].dir) continue
-    let content = zip.files[fileName].asText()
-    let changed = false
-
-    for (const [key, value] of Object.entries(data)) {
-      const tag = `{{${key}}}`
-      if (!content.includes(tag)) continue
       const escaped = value
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
-      content = content.split(tag).join(escaped)
+
+      // Replace: put the value in the first text span, clear the rest
+      // Work backwards to preserve indices
+      for (let k = textSpans.length - 1; k >= 0; k--) {
+        const span = textSpans[k]
+        if (k === 0) {
+          // First span: replace with the value
+          content = content.substring(0, span.start) + escaped + content.substring(span.end)
+        } else {
+          // Other spans: clear them
+          content = content.substring(0, span.start) + content.substring(span.end)
+        }
+      }
+
       changed = true
+      i = textSpans[0].start + escaped.length
     }
 
     if (changed) zip.file(fileName, content)
@@ -134,7 +125,6 @@ export async function POST(
 
     const supabase = await createClient()
 
-    // 1. Buscar proposta
     const { data: rawProposal } = await (supabase as any)
       .from('proposals')
       .select('*')
@@ -145,7 +135,6 @@ export async function POST(
     if (!rawProposal) return NextResponse.json({ error: 'Proposta não encontrada.' }, { status: 404 })
     const p = rawProposal as any
 
-    // 2. Buscar lead
     const { data: lead } = await supabase
       .from('leads')
       .select('name, city, phone')
@@ -154,10 +143,8 @@ export async function POST(
 
     if (!lead) return NextResponse.json({ error: 'Lead não encontrado.' }, { status: 404 })
 
-    // 3. Buscar org_config
     const orgConfig = await getOrgConfig()
 
-    // 4. Calcular preços
     const pricing = calcularPreco(
       {
         kit_value: p.kit_value ?? 0,
@@ -168,7 +155,6 @@ export async function POST(
       orgConfig
     )
 
-    // 5. Buscar template do Storage
     const { data: templateMeta } = await (supabase as any)
       .from('proposal_templates')
       .select('file_path')
@@ -186,13 +172,11 @@ export async function POST(
       return NextResponse.json({ error: 'Erro ao baixar template: ' + downloadError?.message }, { status: 500 })
     }
 
-    // 6. Processar template: sanitizar XML + substituir placeholders
     const templateBuffer = Buffer.from(await templateBlob.arrayBuffer())
 
     let docxBuffer: Buffer
     try {
       const zip = new PizZip(templateBuffer)
-      sanitizeDocxXml(zip)
 
       const placeholders = buildPlaceholders(
         lead as any,
@@ -218,7 +202,7 @@ export async function POST(
         }
       )
 
-      replaceInDocx(zip, placeholders)
+      processDocxPlaceholders(zip, placeholders)
       docxBuffer = Buffer.from(zip.generate({ type: 'nodebuffer' }))
     } catch (templateErr: any) {
       console.error('[generate-proposal] Template error:', templateErr)
@@ -228,7 +212,6 @@ export async function POST(
       }, { status: 422 })
     }
 
-    // 7. Salvar DOCX no Storage
     const docxPath = `${orgId}/${proposalId}.docx`
     const { error: uploadError } = await supabase.storage
       .from('proposals')
@@ -241,7 +224,6 @@ export async function POST(
       return NextResponse.json({ error: 'Erro ao salvar DOCX: ' + uploadError.message, step: 'docx_upload' }, { status: 500 })
     }
 
-    // 8. Converter DOCX → PDF via ConvertAPI (com timeout)
     const convertSecret = process.env.CONVERTAPI_SECRET
     if (!convertSecret) {
       return NextResponse.json({ error: 'CONVERTAPI_SECRET não configurado.', step: 'config' }, { status: 500 })
@@ -278,7 +260,7 @@ export async function POST(
       clearTimeout(timeout)
       if (fetchErr.name === 'AbortError') {
         return NextResponse.json({
-          error: 'A conversão para PDF excedeu o tempo limite. O template pode ser muito grande ou complexo.',
+          error: 'A conversão para PDF excedeu o tempo limite.',
           step: 'pdf_timeout',
         }, { status: 504 })
       }
@@ -290,7 +272,6 @@ export async function POST(
       return NextResponse.json({ error: 'ConvertAPI não retornou URL do PDF.', step: 'pdf_result' }, { status: 502 })
     }
 
-    // 9. Salvar campos na proposta
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
     await supabase.from('proposals').update({
       template_id: templateId,
