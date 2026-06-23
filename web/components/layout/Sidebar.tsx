@@ -40,7 +40,7 @@ const SUPPORT_ITEMS: NavItem[] = [
   { label: 'Relatórios',    href: '/relatorios',    icon: BarChart2,     moduleKey: 'relatorios' },
   { label: 'Treinamento',   href: '/treinamento',   icon: GraduationCap, moduleKey: 'treinamento' },
   { label: 'Configurações', href: '/configuracoes', icon: Settings,      moduleKey: 'configuracoes' },
-  { label: 'Contato',       href: '/contato',       icon: MessageCircle },
+  { label: 'Suporte',       href: '/contato',       icon: MessageCircle },
 ]
 
 interface SidebarProps {
