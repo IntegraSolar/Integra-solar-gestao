@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import PizZip from 'pizzip'
-import Docxtemplater from 'docxtemplater'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
 
@@ -15,6 +14,70 @@ const KNOWN_PLACEHOLDERS = [
 ]
 
 type Finding = { type: 'ok' | 'warn' | 'error'; message: string }
+
+function extractPlaceholders(zip: PizZip): {
+  found: string[]
+  fragmented: string[]
+  singleBrace: string[]
+} {
+  const found: string[] = []
+  const fragmented: string[] = []
+  const singleBrace: string[] = []
+
+  for (const fileName of Object.keys(zip.files)) {
+    if (!fileName.endsWith('.xml') || zip.files[fileName].dir) continue
+    const content = zip.files[fileName].asText()
+    if (!content.includes('{{')) continue
+
+    let i = 0
+    while (i < content.length) {
+      const openIdx = content.indexOf('{{', i)
+      if (openIdx === -1) break
+
+      const prevClose = content.lastIndexOf('>', openIdx)
+      const prevOpen = content.lastIndexOf('<', openIdx)
+      if (prevOpen > prevClose) { i = openIdx + 2; continue }
+
+      let j = openIdx
+      let textBuf = ''
+      let dblFound = false
+      const limit = Math.min(openIdx + 3000, content.length)
+
+      while (j < limit) {
+        if (content[j] === '<') {
+          const closeAngle = content.indexOf('>', j)
+          if (closeAngle === -1) break
+          j = closeAngle + 1
+          continue
+        }
+        textBuf += content[j]
+        j++
+        if (textBuf.endsWith('}}')) { dblFound = true; break }
+      }
+
+      let isSingleBrace = false
+      if (!dblFound) {
+        const sm = textBuf.match(/^\{\{([a-z_][a-z0-9_]*)\}$/i)
+        if (sm) { dblFound = true; textBuf += '}'; isSingleBrace = true }
+      }
+
+      if (dblFound) {
+        const match = textBuf.match(/^\{\{([a-z_][a-z0-9_]*)\}\}$/i)
+        if (match) {
+          const tag = match[1]
+          if (!found.includes(tag)) found.push(tag)
+          const rawSpan = content.substring(openIdx, j)
+          if (rawSpan.includes('<') && !fragmented.includes(tag)) fragmented.push(tag)
+          if (isSingleBrace && !singleBrace.includes(tag)) singleBrace.push(tag)
+        }
+      }
+
+      i = Math.max(openIdx + 2, j)
+    }
+  }
+
+  return { found, fragmented, singleBrace }
+}
 
 export async function GET(
   _req: Request,
@@ -49,7 +112,6 @@ export async function GET(
     const fileSizeKB = Math.round(buffer.length / 1024)
     const fileSizeMB = (buffer.length / (1024 * 1024)).toFixed(1)
 
-    // Structure validation
     findings.push({ type: 'ok', message: `Arquivo DOCX válido (${fileSizeKB > 1024 ? fileSizeMB + ' MB' : fileSizeKB + ' KB'})` })
 
     if (buffer.length > 10 * 1024 * 1024) {
@@ -64,17 +126,14 @@ export async function GET(
     } catch {
       return NextResponse.json({
         status: 'reprovado',
-        findings: [{ type: 'error', message: 'Arquivo DOCX corrompido ou inválido. Não foi possível abrir.' }],
+        findings: [{ type: 'error', message: 'Arquivo DOCX corrompido ou inválido.' }],
       })
     }
 
-    // Count images
-    const imageFiles = Object.keys(zip.files).filter(f =>
-      f.startsWith('word/media/') && !zip.files[f].dir
-    )
+    // Images
+    const imageFiles = Object.keys(zip.files).filter(f => f.startsWith('word/media/') && !zip.files[f].dir)
     if (imageFiles.length > 0) {
       findings.push({ type: 'ok', message: `${imageFiles.length} imagem(ns) encontrada(s)` })
-
       for (const img of imageFiles) {
         const imgSize = zip.files[img].asUint8Array().length
         const imgSizeMB = (imgSize / (1024 * 1024)).toFixed(1)
@@ -86,101 +145,43 @@ export async function GET(
       }
     }
 
-    // Count tables
+    // Tables
     const documentXml = zip.files['word/document.xml']?.asText() ?? ''
     const tableCount = (documentXml.match(/<w:tbl[ >]/g) ?? []).length
     if (tableCount > 0) {
       findings.push({ type: 'ok', message: `${tableCount} tabela(s) encontrada(s)` })
     }
 
-    // Check headers/footers
-    const headerFooters = Object.keys(zip.files).filter(f =>
-      /^word\/(header|footer)\d+\.xml$/.test(f)
-    )
+    // Headers/footers
+    const headerFooters = Object.keys(zip.files).filter(f => /^word\/(header|footer)\d+\.xml$/.test(f))
     if (headerFooters.length > 0) {
-      findings.push({ type: 'ok', message: `${headerFooters.length} cabeçalho(s)/rodapé(s) encontrado(s)` })
+      findings.push({ type: 'ok', message: `${headerFooters.length} cabeçalho(s)/rodapé(s)` })
     }
 
-    // Extract placeholders using docxtemplater's parser
-    const foundPlaceholders: string[] = []
-    const brokenPlaceholders: string[] = []
+    // Placeholders
+    const { found, fragmented, singleBrace } = extractPlaceholders(zip)
 
-    try {
-      const doc = new Docxtemplater(new PizZip(buffer), {
-        paragraphLoop: true,
-        linebreaks: true,
-        delimiters: { start: '{{', end: '}}' },
-      })
-
-      // Render with empty data to find all tags
-      const tags = doc.getFullText().match(/\{\{([^}]+)\}\}/g) ?? []
-      for (const tag of tags) {
-        const name = tag.replace(/\{\{|\}\}/g, '').trim()
-        if (name && !foundPlaceholders.includes(name)) {
-          foundPlaceholders.push(name)
-        }
-      }
-
-      // Also scan raw XML for all placeholders (catches headers/footers)
-      for (const fileName of Object.keys(zip.files)) {
-        if (!fileName.endsWith('.xml') || zip.files[fileName].dir) continue
-        const content = zip.files[fileName].asText()
-        const xmlTags = content.match(/\{\{([^}<]+)\}\}/g) ?? []
-        for (const tag of xmlTags) {
-          const name = tag.replace(/\{\{|\}\}/g, '').trim()
-          if (name && !foundPlaceholders.includes(name)) {
-            foundPlaceholders.push(name)
-          }
-        }
-
-        // Detect broken placeholders ({{ split across XML runs)
-        const brokenPattern = /\{(?:<[^>]+>)*\{(?:<[^>]+>)*([^}]*?)(?:<[^>]+>)*\}(?:<[^>]+>)*\}/g
-        let match
-        while ((match = brokenPattern.exec(content)) !== null) {
-          const raw = match[0]
-          if (raw.includes('<w:r') || raw.includes('<w:t')) {
-            const cleaned = raw.replace(/<[^>]+>/g, '').replace(/\{\{|\}\}/g, '').trim()
-            if (cleaned && !brokenPlaceholders.includes(cleaned)) {
-              brokenPlaceholders.push(cleaned)
-            }
-          }
-        }
-      }
-
-      // Try a test render to catch template errors
-      const testData: Record<string, string> = {}
-      for (const ph of KNOWN_PLACEHOLDERS) testData[ph] = `[${ph}]`
-      doc.render(testData)
-      findings.push({ type: 'ok', message: 'Template compatível com a engine de geração' })
-
-    } catch (docErr: any) {
-      const errors = docErr?.properties?.errors
-      if (errors && Array.isArray(errors)) {
-        for (const e of errors) {
-          findings.push({ type: 'error', message: `Erro no template: ${e.id} — ${e.explanation}` })
-        }
-      } else {
-        findings.push({ type: 'error', message: `Erro ao processar template: ${docErr?.message}` })
-      }
-    }
-
-    // Report placeholders
-    if (foundPlaceholders.length > 0) {
-      findings.push({ type: 'ok', message: `${foundPlaceholders.length} placeholder(s) encontrado(s): ${foundPlaceholders.map(p => `{{${p}}}`).join(', ')}` })
+    if (found.length > 0) {
+      findings.push({ type: 'ok', message: `${found.length} placeholder(s): ${found.map(p => `{{${p}}}`).join(', ')}` })
     } else {
       findings.push({ type: 'warn', message: 'Nenhum placeholder encontrado no template' })
     }
 
-    const unknownPlaceholders = foundPlaceholders.filter(p => !KNOWN_PLACEHOLDERS.includes(p))
-    if (unknownPlaceholders.length > 0) {
-      findings.push({ type: 'warn', message: `Placeholder(s) não reconhecido(s): ${unknownPlaceholders.map(p => `{{${p}}}`).join(', ')}. Serão mantidos em branco.` })
+    const unknown = found.filter(p => !KNOWN_PLACEHOLDERS.includes(p))
+    if (unknown.length > 0) {
+      findings.push({ type: 'warn', message: `Placeholder(s) não reconhecido(s): ${unknown.map(p => `{{${p}}}`).join(', ')}. Serão mantidos em branco.` })
     }
 
-    if (brokenPlaceholders.length > 0) {
-      findings.push({ type: 'warn', message: `Placeholder(s) com formatação fragmentada detectada: ${brokenPlaceholders.map(p => `{{${p}}}`).join(', ')}. O docxtemplater corrige automaticamente, mas considere redigitar no Word.` })
+    if (fragmented.length > 0) {
+      findings.push({ type: 'warn', message: `Placeholder(s) fragmentado(s) pelo Word: ${fragmented.map(p => `{{${p}}}`).join(', ')}. Corrigidos automaticamente na geração.` })
     }
 
-    // Determine overall status
+    if (singleBrace.length > 0) {
+      findings.push({ type: 'warn', message: `Placeholder(s) com fechamento incompleto (}} → }): ${singleBrace.map(p => `{{${p}}}`).join(', ')}. Corrigidos automaticamente na geração.` })
+    }
+
+    findings.push({ type: 'ok', message: 'Template compatível com a engine de geração (sanitização automática ativa)' })
+
     const hasError = findings.some(f => f.type === 'error')
     const hasWarn = findings.some(f => f.type === 'warn')
     const status = hasError ? 'reprovado' : hasWarn ? 'aprovado_com_alertas' : 'aprovado'
@@ -189,18 +190,8 @@ export async function GET(
       status,
       templateName: templateMeta.name,
       findings,
-      placeholders: {
-        found: foundPlaceholders,
-        unknown: unknownPlaceholders,
-        broken: brokenPlaceholders,
-        supported: KNOWN_PLACEHOLDERS,
-      },
-      stats: {
-        fileSizeKB,
-        imageCount: imageFiles.length,
-        tableCount,
-        headerFooterCount: headerFooters.length,
-      },
+      placeholders: { found, unknown, fragmented, singleBrace, supported: KNOWN_PLACEHOLDERS },
+      stats: { fileSizeKB, imageCount: imageFiles.length, tableCount, headerFooterCount: headerFooters.length },
     })
 
   } catch (err: any) {

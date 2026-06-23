@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import PizZip from 'pizzip'
-import Docxtemplater from 'docxtemplater'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
 import { getOrgConfig } from '@/lib/configuracoes/queries'
@@ -8,6 +7,108 @@ import { calcularPreco } from '@/lib/proposals/pricing'
 import { buildPlaceholders } from '@/lib/proposals/placeholders'
 
 const CONVERT_TIMEOUT_MS = 90_000
+
+/**
+ * Sanitize DOCX XML: reconstruct placeholders fragmented by Word's formatting.
+ * Word splits {{tag}} across multiple <w:r> runs. This function finds those
+ * fragments and collapses them, preserving XML structure.
+ * Also fixes templates where }} was typed as } (single brace).
+ */
+function sanitizeDocxXml(zip: PizZip): void {
+  for (const fileName of Object.keys(zip.files)) {
+    if (!fileName.endsWith('.xml') || zip.files[fileName].dir) continue
+    let content = zip.files[fileName].asText()
+    if (!content.includes('{{')) continue
+    let changed = false
+    let i = 0
+
+    while (i < content.length) {
+      const openIdx = content.indexOf('{{', i)
+      if (openIdx === -1) break
+
+      // Skip if inside an XML tag attribute
+      const prevClose = content.lastIndexOf('>', openIdx)
+      const prevOpen = content.lastIndexOf('<', openIdx)
+      if (prevOpen > prevClose) { i = openIdx + 2; continue }
+
+      // Scan forward collecting text (skipping XML tags) until we find }}
+      let j = openIdx
+      let textBuf = ''
+      let found = false
+      const limit = Math.min(openIdx + 3000, content.length)
+
+      while (j < limit) {
+        if (content[j] === '<') {
+          const closeAngle = content.indexOf('>', j)
+          if (closeAngle === -1) break
+          j = closeAngle + 1
+          continue
+        }
+        textBuf += content[j]
+        j++
+        if (textBuf.endsWith('}}')) { found = true; break }
+      }
+
+      // Handle single-brace closing: {{tag}
+      if (!found) {
+        const singleMatch = textBuf.match(/^\{\{([a-z_][a-z0-9_]*)\}$/i)
+        if (singleMatch) { found = true; textBuf += '}' }
+      }
+
+      if (!found) { i = openIdx + 2; continue }
+
+      const match = textBuf.match(/^\{\{([a-z_][a-z0-9_]*)\}\}$/i)
+      if (!match) { i = openIdx + 2; continue }
+
+      const rawSpan = content.substring(openIdx, j)
+      if (!rawSpan.includes('<')) { i = j; continue }
+
+      // Put full placeholder in first text node, empty intermediate ones
+      const span = content.substring(openIdx, j)
+      let first = true
+      const newSpan = span.replace(/>([^<]*)</g, (m, text) => {
+        if (text.trim().length === 0 && !text.includes('{') && !text.includes('}')) return m
+        if (first) { first = false; return `>{{${match[1]}}}<` }
+        return `><`
+      })
+
+      if (newSpan !== span) {
+        content = content.substring(0, openIdx) + newSpan + content.substring(j)
+        changed = true
+        i = openIdx + newSpan.length
+      } else {
+        i = j
+      }
+    }
+
+    if (changed) zip.file(fileName, content)
+  }
+}
+
+/**
+ * Replace all {{placeholder}} occurrences in all XML files of the DOCX.
+ */
+function replaceInDocx(zip: PizZip, data: Record<string, string>): void {
+  for (const fileName of Object.keys(zip.files)) {
+    if (!fileName.endsWith('.xml') || zip.files[fileName].dir) continue
+    let content = zip.files[fileName].asText()
+    let changed = false
+
+    for (const [key, value] of Object.entries(data)) {
+      const tag = `{{${key}}}`
+      if (!content.includes(tag)) continue
+      const escaped = value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+      content = content.split(tag).join(escaped)
+      changed = true
+    }
+
+    if (changed) zip.file(fileName, content)
+  }
+}
 
 export async function POST(
   req: Request,
@@ -85,17 +186,13 @@ export async function POST(
       return NextResponse.json({ error: 'Erro ao baixar template: ' + downloadError?.message }, { status: 500 })
     }
 
-    // 6. Substituir placeholders com docxtemplater
+    // 6. Processar template: sanitizar XML + substituir placeholders
     const templateBuffer = Buffer.from(await templateBlob.arrayBuffer())
 
     let docxBuffer: Buffer
     try {
       const zip = new PizZip(templateBuffer)
-      const doc = new Docxtemplater(zip, {
-        paragraphLoop: true,
-        linebreaks: true,
-        delimiters: { start: '{{', end: '}}' },
-      })
+      sanitizeDocxXml(zip)
 
       const placeholders = buildPlaceholders(
         lead as any,
@@ -121,16 +218,12 @@ export async function POST(
         }
       )
 
-      doc.render(placeholders)
-      const buf = doc.getZip().generate({ type: 'nodebuffer' })
-      docxBuffer = Buffer.from(buf)
+      replaceInDocx(zip, placeholders)
+      docxBuffer = Buffer.from(zip.generate({ type: 'nodebuffer' }))
     } catch (templateErr: any) {
       console.error('[generate-proposal] Template error:', templateErr)
-      const msg = templateErr?.properties?.errors
-        ? templateErr.properties.errors.map((e: any) => `${e.id}: ${e.explanation}`).join('; ')
-        : templateErr?.message ?? 'Erro desconhecido ao processar template.'
       return NextResponse.json({
-        error: `Erro no template: ${msg}`,
+        error: `Erro ao processar template: ${templateErr?.message ?? 'Erro desconhecido'}`,
         step: 'template_processing',
       }, { status: 422 })
     }
