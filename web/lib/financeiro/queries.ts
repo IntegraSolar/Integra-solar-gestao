@@ -58,7 +58,7 @@ export async function getFinanceiroPainel(params: {
   const { data } = await supabase
     .from('client_installments')
     .select(`
-      id, client_id, position, due_date, amount, notes, status, confirmed_at,
+      id, client_id, position, due_date, amount, notes, status, confirmed_at, receipt_url,
       client:clients!client_id(id, name)
     `)
     .eq('organization_id', orgId)
@@ -122,7 +122,7 @@ export async function getParcelasByClient(clientId: string): Promise<FinanceiroI
   const supabase = await createClient()
   const { data } = await supabase
     .from('client_installments')
-    .select('id, client_id, position, due_date, amount, notes, status, confirmed_at')
+    .select('id, client_id, position, due_date, amount, notes, status, confirmed_at, receipt_url')
     .eq('client_id', clientId)
     .eq('organization_id', user.membership.organization.id)
     .order('position', { ascending: true })

@@ -137,12 +137,18 @@ export async function uploadReceipt(installmentId: string, formData: FormData): 
   // O route /api/storage/download valida autenticação e org antes de redirecionar
   const secureUrl = `/api/storage/download?bucket=receipts&path=${encodeURIComponent(filePath)}`
 
-  await supabase
+  // Atualiza APENAS o URL do comprovante — nunca altera status.
+  // O status só pode mudar via confirmInstallment(), que também dispara o pipeline.
+  // Nota: o trigger auto_confirm_on_receipt no banco deve estar dropado (migration 20260706000002).
+  const { error: updateError } = await supabase
     .from('client_installments')
     .update({ receipt_url: secureUrl } as any)
     .eq('id', installmentId)
 
+  if (updateError) return { error: 'Erro ao salvar comprovante: ' + updateError.message }
+
   revalidatePath('/financeiro')
+  revalidatePath(`/financeiro/${inst.client_id}`)
   return { success: 'Comprovante anexado.', receipt_url: secureUrl }
 }
 
