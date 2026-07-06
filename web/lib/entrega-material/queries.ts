@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { getCurrentUserData } from '@/lib/org/queries'
 
 export type EntregaMaterialChecklist = {
   limpeza: boolean
@@ -20,6 +21,10 @@ export type EntregaMaterialClient = {
 }
 
 export async function getEntregasMaterial(): Promise<EntregaMaterialClient[]> {
+  const user = await getCurrentUserData()
+  const orgId = user?.membership?.organization.id ?? null
+  if (!orgId) return []
+
   const supabase = await createClient()
 
   const { data, error } = await (supabase as any)
@@ -34,11 +39,10 @@ export async function getEntregasMaterial(): Promise<EntregaMaterialClient[]> {
       clients!inner (
         name,
         city,
-        contract_max_days,
-        pipeline_flags
+        contract_max_days
       )
     `)
-    .not('clients.pipeline_flags->>entrega_material', 'is', null)
+    .eq('organization_id', orgId)
     .neq('status', 'concluida')
 
   if (error || !data) return []
@@ -77,6 +81,10 @@ export async function getEntregasMaterial(): Promise<EntregaMaterialClient[]> {
 }
 
 export async function getEntregaMaterialById(clientId: string): Promise<EntregaMaterialClient | null> {
+  const user = await getCurrentUserData()
+  const orgId = user?.membership?.organization.id ?? null
+  if (!orgId) return null
+
   const supabase = await createClient()
 
   const { data, error } = await (supabase as any)
@@ -94,6 +102,7 @@ export async function getEntregaMaterialById(clientId: string): Promise<EntregaM
         contract_max_days
       )
     `)
+    .eq('organization_id', orgId)
     .eq('client_id', clientId)
     .single()
 

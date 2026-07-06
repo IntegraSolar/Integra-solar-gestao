@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { getCurrentUserData } from '@/lib/org/queries'
 
 export type EntregaObraChecklist = {
   vistoria: boolean
@@ -21,6 +22,10 @@ export type EntregaObraClient = {
 }
 
 export async function getEntregasObra(): Promise<EntregaObraClient[]> {
+  const user = await getCurrentUserData()
+  const orgId = user?.membership?.organization.id ?? null
+  if (!orgId) return []
+
   const supabase = await createClient()
 
   const { data, error } = await (supabase as any)
@@ -37,11 +42,10 @@ export async function getEntregasObra(): Promise<EntregaObraClient[]> {
         name,
         city,
         contract_max_days,
-        delivery_start_date,
-        pipeline_flags
+        delivery_start_date
       )
     `)
-    .not('clients.pipeline_flags->>entrega_obra', 'is', null)
+    .eq('organization_id', orgId)
     .neq('status', 'concluida')
 
   if (error || !data) return []
@@ -68,6 +72,10 @@ export async function getEntregasObra(): Promise<EntregaObraClient[]> {
 }
 
 export async function getEntregaObraById(clientId: string): Promise<EntregaObraClient | null> {
+  const user = await getCurrentUserData()
+  const orgId = user?.membership?.organization.id ?? null
+  if (!orgId) return null
+
   const supabase = await createClient()
 
   const { data, error } = await (supabase as any)
@@ -87,6 +95,7 @@ export async function getEntregaObraById(clientId: string): Promise<EntregaObraC
         delivery_start_date
       )
     `)
+    .eq('organization_id', orgId)
     .eq('client_id', clientId)
     .single()
 

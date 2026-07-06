@@ -1,5 +1,6 @@
 // web/lib/compras/queries.ts
 import { createClient } from '@/lib/supabase/server'
+import { getCurrentUserData } from '@/lib/org/queries'
 
 export type CompraClient = {
   id: string
@@ -19,6 +20,10 @@ export type CompraClient = {
 }
 
 export async function getCompras(): Promise<CompraClient[]> {
+  const user = await getCurrentUserData()
+  const orgId = user?.membership?.organization.id ?? null
+  if (!orgId) return []
+
   const supabase = await createClient()
 
   const { data, error } = await (supabase as any)
@@ -36,11 +41,10 @@ export async function getCompras(): Promise<CompraClient[]> {
       clients!inner (
         name,
         contract_max_days,
-        delivery_start_date,
-        pipeline_flags
+        delivery_start_date
       )
     `)
-    .not('clients.pipeline_flags->>compras', 'is', null)
+    .eq('organization_id', orgId)
     .eq('status', 'aguardando')
 
   if (error || !data) return []
@@ -87,6 +91,10 @@ export async function getCompras(): Promise<CompraClient[]> {
 }
 
 export async function getCompraById(clientId: string): Promise<CompraClient | null> {
+  const user = await getCurrentUserData()
+  const orgId = user?.membership?.organization.id ?? null
+  if (!orgId) return null
+
   const supabase = await createClient()
 
   const { data, error } = await (supabase as any)
@@ -107,6 +115,7 @@ export async function getCompraById(clientId: string): Promise<CompraClient | nu
         delivery_start_date
       )
     `)
+    .eq('organization_id', orgId)
     .eq('client_id', clientId)
     .single()
 
