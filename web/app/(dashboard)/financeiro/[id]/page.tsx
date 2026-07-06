@@ -5,7 +5,8 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { ParcelasClient } from './ParcelasClient'
 
-export default async function FinanceiroClientePage({ params }: { params: { id: string } }) {
+export default async function FinanceiroClientePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const user = await getCurrentUserData()
   if (!user?.membership) redirect('/login')
 
@@ -13,13 +14,13 @@ export default async function FinanceiroClientePage({ params }: { params: { id: 
   const { data: clientData } = await supabase
     .from('clients')
     .select('id, name, city, pipeline_stage')
-    .eq('id', params.id)
+    .eq('id', id)
     .eq('organization_id', user.membership.organization.id)
     .single()
 
   if (!clientData) redirect('/financeiro')
 
-  const parcelas = await getParcelasByClient(params.id)
+  const parcelas = await getParcelasByClient(id)
 
   return (
     <div className="flex flex-col h-full">
@@ -43,7 +44,7 @@ export default async function FinanceiroClientePage({ params }: { params: { id: 
       </div>
       <div className="flex-1 overflow-auto px-6 py-5">
         <ParcelasClient
-          clientId={params.id}
+          clientId={id}
           parcelas={parcelas}
           pipelineStage={(clientData as any).pipeline_stage}
         />

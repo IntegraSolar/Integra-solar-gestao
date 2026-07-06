@@ -104,9 +104,10 @@ function processDocxPlaceholders(zip: PizZip, data: Record<string, string>): voi
 
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    await params // params not used in this handler (proposalId comes from body)
     const body = await req.json() as {
       proposalId: string
       templateId: string

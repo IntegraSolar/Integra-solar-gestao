@@ -3,8 +3,9 @@ import { notFound } from 'next/navigation'
 import { getPosObraById } from '@/lib/pos-obra/queries'
 import PosObraDetail from './PosObraDetail'
 
-export default async function PosObraDetailPage({ params }: { params: { id: string } }) {
-  const posObra = await getPosObraById(params.id)
+export default async function PosObraDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const posObra = await getPosObraById(id)
   if (!posObra) notFound()
-  return <PosObraDetail posObra={posObra} clientId={params.id} />
+  return <PosObraDetail posObra={posObra} clientId={id} />
 }

@@ -2,6 +2,9 @@ import { withSentryConfig } from '@sentry/nextjs'
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  turbopack: {
+    root: 'C:/Users/PC/Desktop/Integra Solar - Gestão/Integra-solar-gestao/web',
+  },
   experimental: {
     serverActions: {
       bodySizeLimit: '10mb',

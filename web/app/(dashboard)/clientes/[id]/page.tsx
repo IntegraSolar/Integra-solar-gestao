@@ -4,11 +4,12 @@ import { getClientById } from '@/lib/clients/queries'
 import { redirect, notFound } from 'next/navigation'
 import { ClientTabs } from './ClientTabs'
 
-export default async function ClientePage({ params }: { params: { id: string } }) {
+export default async function ClientePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const user = await getCurrentUserData()
   if (!user?.membership) redirect('/login')
 
-  const client = await getClientById(params.id)
+  const client = await getClientById(id)
   if (!client) notFound()
 
   return (

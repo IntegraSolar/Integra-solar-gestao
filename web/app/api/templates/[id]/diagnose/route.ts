@@ -81,9 +81,10 @@ function extractPlaceholders(zip: PizZip): {
 
 export async function GET(
   _req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await getCurrentUserData()
     const orgId = user?.membership?.organization.id
     if (!orgId) return NextResponse.json({ error: 'Não autenticado.' }, { status: 401 })
@@ -93,7 +94,7 @@ export async function GET(
     const { data: templateMeta } = await (supabase as any)
       .from('proposal_templates')
       .select('file_path, name')
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('org_id', orgId)
       .single()
 

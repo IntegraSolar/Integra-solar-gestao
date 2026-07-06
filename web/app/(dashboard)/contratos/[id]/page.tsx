@@ -4,11 +4,12 @@ import { getContratoById } from '@/lib/contratos/queries'
 import { redirect, notFound } from 'next/navigation'
 import { ContratoDetail } from './ContratoDetail'
 
-export default async function ContratoPage({ params }: { params: { id: string } }) {
+export default async function ContratoPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const user = await getCurrentUserData()
   if (!user?.membership) redirect('/login')
 
-  const client = await getContratoById(params.id)
+  const client = await getContratoById(id)
   if (!client) notFound()
 
   return (

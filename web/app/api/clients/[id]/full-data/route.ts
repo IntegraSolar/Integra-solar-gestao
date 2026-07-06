@@ -2,13 +2,13 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
 
-export async function GET(_req: Request, { params }: { params: { id: string } }) {
+export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id: clientId } = await params
   const user = await getCurrentUserData()
   const orgId = user?.membership?.organization.id
   if (!orgId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
   const supabase = await createClient()
-  const clientId = params.id
 
   // Verificar que o cliente pertence à organização do usuário
   const { data: client } = await (supabase as any)
