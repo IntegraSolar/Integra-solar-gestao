@@ -12,6 +12,8 @@ export const metadata: Metadata = {
   title: 'Dashboard — Integra Solar',
 }
 
+export const revalidate = 60
+
 export default async function DashboardPage() {
   const [pipelineCards, faturamento, leadsPorOrigem, initialKpi, initialMeta] = await Promise.all([
     getPipelineCards(),

@@ -2,6 +2,15 @@ import { withSentryConfig } from '@sentry/nextjs'
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co',
+        pathname: '/storage/v1/**',
+      },
+    ],
+  },
   turbopack: {
     root: 'C:/Users/PC/Desktop/Integra Solar - Gestão/Integra-solar-gestao/web',
   },

@@ -1,12 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo, memo } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type { Client } from '@/lib/clients/types'
 import { SearchBar, filterBySearch } from '@/components/ui/SearchBar'
 
-function PrazoBadge({ client }: { client: Client }) {
+const PrazoBadge = memo(function PrazoBadge({ client }: { client: Client }) {
   const start = client.delivery_start_date ? new Date(client.delivery_start_date) : null
   const max = client.contract_max_days ?? 0
   if (!start || !max) return null
@@ -26,9 +26,9 @@ function PrazoBadge({ client }: { client: Client }) {
       {finalizado ? `${dias} dias` : `${dias} / ${max} dias`}
     </span>
   )
-}
+})
 
-function ClientRow({ client }: { client: Client }) {
+const ClientRow = memo(function ClientRow({ client }: { client: Client }) {
   const tabsDone = Object.values(client.completed_tabs).filter(Boolean).length
   const isIncomplete = tabsDone < 6
   return (
@@ -59,7 +59,7 @@ function ClientRow({ client }: { client: Client }) {
       </div>
     </Link>
   )
-}
+})
 
 export default function ClientesClient({
   clients,
@@ -74,7 +74,10 @@ export default function ClientesClient({
 }) {
   const [search, setSearch] = useState('')
   const router = useRouter()
-  const filtered = filterBySearch(clients, search, ['name', 'phone', 'city', 'cpf_cnpj', 'email'])
+  const filtered = useMemo(
+    () => filterBySearch(clients, search, ['name', 'phone', 'city', 'cpf_cnpj', 'email']),
+    [clients, search]
+  )
   const totalPages = Math.ceil(total / pageSize)
 
   return (

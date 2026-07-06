@@ -4,11 +4,13 @@ import { useState, useTransition } from 'react'
 import { DatePicker } from '@/components/ui/inputs'
 import type { PipelineCard, FaturamentoMes, LeadOrigemItem, KpiData, MetaData } from '@/lib/dashboard/queries'
 import { getKpiData, getMetaData } from '@/lib/dashboard/actions'
+import dynamic from 'next/dynamic'
 import PipelineCards from './PipelineCards'
 import KpiCards from './KpiCards'
-import FaturamentoChart from './FaturamentoChart'
-import LeadsOrigemChart from './LeadsOrigemChart'
 import MetaCard from './MetaCard'
+
+const FaturamentoChart = dynamic(() => import('./FaturamentoChart'), { ssr: false })
+const LeadsOrigemChart = dynamic(() => import('./LeadsOrigemChart'), { ssr: false })
 
 export default function DashboardClient({
   pipelineCards,

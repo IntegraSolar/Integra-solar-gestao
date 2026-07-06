@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import type { EntregaMaterialClient } from '@/lib/entrega-material/queries'
 import { upsertDelivery, uploadDeliveryMedia } from '@/lib/entrega-material/actions'
 import { DatePicker } from '@/components/ui/inputs'
+import NextImage from 'next/image'
 import { Plus, ExternalLink, Trash2, Image as ImageIcon } from 'lucide-react'
 import { secureStorageUrl } from '@/lib/storage/url'
 
@@ -158,9 +159,9 @@ export default function EntregaMaterialDetail({
                     <div className="w-full h-full flex items-center justify-center">
                       <span className="text-2xl">▶</span>
                     </div>
-                  ) : (
-                    <img src={secureStorageUrl(url) ?? ''} alt={`Entrega ${i + 1}`} className="w-full h-full object-cover" />
-                  )}
+                  ) : secureStorageUrl(url) ? (
+                    <NextImage src={secureStorageUrl(url)!} alt={`Entrega ${i + 1}`} fill className="object-cover" />
+                  ) : null}
                   <div
                     className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                     style={{ background: 'rgba(0,0,0,0.5)' }}

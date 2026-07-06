@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 import type { Client } from '@/lib/clients/types'
 import { ATTACHMENT_TYPE_LABELS } from '@/lib/clients/types'
 import { formatCurrency, formatDate, formatPhone, formatCpfCnpj } from '@/lib/format'
+import Image from 'next/image'
 import { ExternalLink } from 'lucide-react'
 import { secureStorageUrl } from '@/lib/storage/url'
 
@@ -228,12 +229,12 @@ export function Tab8PastaCompleta({ client }: { client: Client }) {
                       <span className="text-xs" style={{ color: 'var(--theme-text-subtle)' }}>Fotos / Vídeos</span>
                       <div className="grid grid-cols-4 gap-2 mt-1.5">
                         {urls.map((url, i) => (
-                          <a key={i} href={secureStorageUrl(url) ?? '#'} target="_blank" rel="noopener noreferrer" className="rounded-lg overflow-hidden" style={{ aspectRatio: '1', background: 'var(--theme-surface)', border: '1px solid var(--theme-card-border)' }}>
+                          <a key={i} href={secureStorageUrl(url) ?? '#'} target="_blank" rel="noopener noreferrer" className="rounded-lg overflow-hidden" style={{ aspectRatio: '1', background: 'var(--theme-surface)', border: '1px solid var(--theme-card-border)', position: 'relative', display: 'block' }}>
                             {/\.(mp4|mov|webm)$/i.test(url) ? (
                               <div className="w-full h-full flex items-center justify-center text-white/30">▶</div>
-                            ) : (
-                              <img src={secureStorageUrl(url) ?? ''} alt={`Entrega ${i + 1}`} className="w-full h-full object-cover" />
-                            )}
+                            ) : secureStorageUrl(url) ? (
+                              <Image src={secureStorageUrl(url)!} alt={`Entrega ${i + 1}`} fill className="object-cover" />
+                            ) : null}
                           </a>
                         ))}
                       </div>

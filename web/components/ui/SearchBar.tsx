@@ -15,6 +15,10 @@ export function SearchBar({ value, onChange, placeholder = 'Buscar cliente...' }
 
   useEffect(() => { setLocal(value) }, [value])
 
+  useEffect(() => {
+    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
+  }, [])
+
   function handleChange(v: string) {
     setLocal(v)
     if (timerRef.current) clearTimeout(timerRef.current)

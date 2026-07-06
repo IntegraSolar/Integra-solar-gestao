@@ -1,12 +1,24 @@
 // web/app/(dashboard)/leads/LeadsClient.tsx
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import type { Lead, FunnelStage, LeadSource, LeadUser } from '@/lib/crm/types'
+import dynamic from 'next/dynamic'
 import { LeadsTable } from '@/components/crm/LeadsTable'
-import { KanbanBoard } from '@/components/crm/KanbanBoard'
 import { LeadDrawer } from '@/components/crm/LeadDrawer'
+
+const KanbanBoard = dynamic(
+  () => import('@/components/crm/KanbanBoard').then(m => m.KanbanBoard),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex-1 flex items-center justify-center text-sm" style={{ color: 'var(--theme-text-muted)' }}>
+        Carregando Kanban...
+      </div>
+    ),
+  }
+)
 import { Button } from '@/components/ui/Button'
 import { SearchBar, filterBySearch } from '@/components/ui/SearchBar'
 
@@ -23,7 +35,10 @@ export function LeadsClient({ initialLeads, stages, sources, members }: LeadsCli
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
   const [creatingNew, setCreatingNew] = useState(false)
   const [search, setSearch] = useState('')
-  const filteredLeads = filterBySearch(leads, search, ['name', 'phone', 'city'])
+  const filteredLeads = useMemo(
+    () => filterBySearch(leads, search, ['name', 'phone', 'city']),
+    [leads, search]
+  )
 
   const refreshLeads = useCallback(() => {
     fetch('/api/leads')
