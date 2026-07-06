@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
+import { logAction } from '@/lib/auditoria/actions'
 import type { ActionResult } from './types'
 
 // ── Helpers ───────────────────────────────────────────────────────
@@ -63,6 +64,7 @@ export async function updateTab1(
     .eq('id', clientId)
     .eq('organization_id', orgId)
   if (error) return { error: error.message }
+  await logAction('Cliente atualizado', `Cliente ID: ${clientId} — Dados pessoais`)
   revalidatePath(`/clientes/${clientId}`)
   return { success: 'Dados pessoais salvos.' }
 }
@@ -307,6 +309,7 @@ export async function uploadAttachment(
     })
   }
 
+  await logAction('Arquivo enviado', `Cliente ID: ${clientId} — Tipo: ${attachmentType}`)
   revalidatePath(`/clientes/${clientId}`)
   return { success: 'Arquivo enviado.' }
 }
@@ -389,6 +392,7 @@ export async function uploadContractFile(
     if (error) return { error: error.message }
   }
 
+  await logAction(field === 'contract' ? 'Contrato enviado' : 'Procuração enviada', `Cliente ID: ${clientId}`)
   revalidatePath(`/clientes/${clientId}`)
   return { success: field === 'contract' ? 'Contrato enviado.' : 'Procuração enviada.' }
 }

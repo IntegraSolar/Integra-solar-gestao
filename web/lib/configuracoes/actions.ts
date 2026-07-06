@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
+import { logAction } from '@/lib/auditoria/actions'
 import type { ActionResult } from '@/lib/crm/types'
 
 const str = z.string().max(500).optional().nullable()
@@ -55,6 +56,7 @@ export async function saveOrgConfig(formData: Record<string, unknown>): Promise<
   }
 
   if (error) return { error: error.message }
+  await logAction('Configurações da empresa salvas', '')
   revalidatePath('/configuracoes')
   return { success: 'Configurações salvas.' }
 }

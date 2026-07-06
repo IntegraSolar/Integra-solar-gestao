@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
+import { logAction } from '@/lib/auditoria/actions'
 import type { ActionResult } from './types'
 
 // ── Helpers ───────────────────────────────────────────────────────
@@ -53,6 +54,7 @@ export async function createLead(_prev: ActionResult, formData: FormData): Promi
   })
 
   if (error) return { error: error.message }
+  await logAction('Lead criado', `Nome: ${parsed.data.name}`)
   revalidatePath('/leads')
   return { success: 'Lead criado.' }
 }
@@ -81,6 +83,7 @@ export async function updateLead(
   }).eq('id', leadId).eq('organization_id', orgId)
 
   if (error) return { error: error.message }
+  await logAction('Lead atualizado', `Nome: ${parsed.data.name}`)
   revalidatePath('/leads')
   return { success: 'Lead atualizado.' }
 }
@@ -91,6 +94,7 @@ export async function deleteLead(leadId: string): Promise<ActionResult> {
   const supabase = await createClient()
   const { error } = await supabase.from('leads').delete().eq('id', leadId).eq('organization_id', orgId)
   if (error) return { error: error.message }
+  await logAction('Lead excluído', `ID: ${leadId}`)
   revalidatePath('/leads')
   return { success: 'Lead excluído.' }
 }
@@ -361,6 +365,8 @@ export async function convertLeadToClient(leadId: string): Promise<{ clientId?: 
     .single()
 
   if (clientError || !client) return { error: clientError?.message ?? 'Erro ao criar cliente.' }
+
+  await logAction('Lead convertido em cliente', `Lead: ${leadId} → Cliente: ${client.id}`)
 
   // Marcar lead como convertido
   const { error: updateError } = await supabase.from('leads').update({

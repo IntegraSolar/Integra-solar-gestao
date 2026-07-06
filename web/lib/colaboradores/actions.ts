@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getCurrentUserData } from '@/lib/org/queries'
+import { logAction } from '@/lib/auditoria/actions'
 import type { ActionResult } from '@/lib/crm/types'
 
 type CreateColaboradorData = {
@@ -63,6 +64,7 @@ export async function createColaborador(data: CreateColaboradorData): Promise<Ac
     return { error: 'Erro ao vincular à organização: ' + memberError.message }
   }
 
+  await logAction('Colaborador criado', `Nome: ${data.full_name}, E-mail: ${data.email}`)
   revalidatePath('/configuracoes')
   return { success: 'Colaborador criado com sucesso.' }
 }
@@ -78,6 +80,7 @@ export async function resetColaboradorPassword(
   const { error } = await adminClient.auth.admin.updateUserById(userId, { password: newPassword })
 
   if (error) return { error: 'Erro ao redefinir senha: ' + error.message }
+  await logAction('Senha de colaborador redefinida', `User ID: ${userId}`)
   return { success: 'Senha redefinida.', newPassword }
 }
 
@@ -106,6 +109,7 @@ export async function updateColaboradorPermissions(
     .eq('id', memberId)
 
   if (error) return { error: error.message }
+  await logAction('Permissões de colaborador atualizadas', `Member ID: ${memberId}`)
   revalidatePath('/configuracoes')
   return { success: 'Permissões atualizadas.' }
 }
@@ -136,6 +140,7 @@ export async function removeColaborador(memberId: string, userId: string): Promi
   await (adminClient as any).from('profiles').delete().eq('id', userId)
   await adminClient.auth.admin.deleteUser(userId)
 
+  await logAction('Colaborador removido', `Member ID: ${memberId}, User ID: ${userId}`)
   revalidatePath('/configuracoes')
   return { success: 'Colaborador removido.' }
 }
