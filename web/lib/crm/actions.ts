@@ -276,8 +276,14 @@ export async function updateFunnelStage(
   stageId: string,
   updates: { name?: string; color?: string; order?: number; is_final_stage?: boolean }
 ): Promise<ActionResult> {
+  const orgId = await getOrgId()
+  if (!orgId) return { error: 'Sem organização ativa.' }
   const supabase = await createClient()
-  const { error } = await supabase.from('pipeline_stages').update(updates).eq('id', stageId)
+  const { error } = await supabase
+    .from('pipeline_stages')
+    .update(updates)
+    .eq('id', stageId)
+    .eq('organization_id', orgId)
   if (error) return { error: error.message }
   revalidatePath('/leads')
   return { success: 'Etapa atualizada.' }
@@ -295,14 +301,26 @@ export async function deleteFunnelStage(stageId: string, moveTo: string): Promis
 }
 
 export async function reorderFunnelStages(stages: { id: string; order: number }[]): Promise<ActionResult> {
+  const orgId = await getOrgId()
+  if (!orgId) return { error: 'Sem organização ativa.' }
   const supabase = await createClient()
-  // Usar offset alto temporário para evitar conflito de unique constraint
+  // Dois passos para evitar conflito de unique constraint (organization_id, order)
   const offset = 10000
   for (const s of stages) {
-    await supabase.from('pipeline_stages').update({ order: s.order + offset }).eq('id', s.id)
+    const { error } = await supabase
+      .from('pipeline_stages')
+      .update({ order: s.order + offset })
+      .eq('id', s.id)
+      .eq('organization_id', orgId)
+    if (error) return { error: 'Erro ao reordenar etapas: ' + error.message }
   }
   for (const s of stages) {
-    await supabase.from('pipeline_stages').update({ order: s.order }).eq('id', s.id)
+    const { error } = await supabase
+      .from('pipeline_stages')
+      .update({ order: s.order })
+      .eq('id', s.id)
+      .eq('organization_id', orgId)
+    if (error) return { error: 'Erro ao confirmar ordem: ' + error.message }
   }
   revalidatePath('/leads')
   revalidatePath('/leads/configurar-funil')

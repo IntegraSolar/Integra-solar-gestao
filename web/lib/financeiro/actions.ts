@@ -8,13 +8,18 @@ import { getCurrentUserData } from '@/lib/org/queries'
 export type ActionResult = { error?: string; success?: string; receipt_url?: string }
 
 export async function confirmInstallment(installmentId: string): Promise<ActionResult> {
+  const user = await getCurrentUserData()
+  const orgId = user?.membership?.organization.id ?? null
+  if (!orgId) return { error: 'Sem organização ativa.' }
+
   const supabase = await createClient()
 
-  // Fetch the installment to check position and client_id
+  // Busca a parcela garantindo que pertence a um cliente da organização do usuário
   const { data: installment, error: fetchError } = await (supabase as any)
     .from('client_installments')
-    .select('id, position, client_id')
+    .select('id, position, client_id, clients!inner(organization_id)')
     .eq('id', installmentId)
+    .eq('clients.organization_id', orgId)
     .single()
 
   if (fetchError || !installment) return { error: 'Parcela não encontrada.' }
@@ -88,39 +93,57 @@ export async function confirmInstallment(installmentId: string): Promise<ActionR
   return { success: 'Pagamento confirmado.' }
 }
 
+const ALLOWED_RECEIPT_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
+const MAX_RECEIPT_SIZE_BYTES = 5 * 1024 * 1024 // 5 MB
+
 export async function uploadReceipt(installmentId: string, formData: FormData): Promise<ActionResult> {
+  const user = await getCurrentUserData()
+  const orgId = user?.membership?.organization.id ?? null
+  if (!orgId) return { error: 'Sem organização ativa.' }
+
   const file = formData.get('file') as File | null
   if (!file || file.size === 0) return { error: 'Selecione um arquivo.' }
 
+  // Validação de tipo e tamanho
+  if (!ALLOWED_RECEIPT_TYPES.includes(file.type)) {
+    return { error: 'Tipo de arquivo não permitido. Use PDF, JPEG, PNG ou WebP.' }
+  }
+  if (file.size > MAX_RECEIPT_SIZE_BYTES) {
+    return { error: 'Arquivo muito grande. O limite é 5 MB.' }
+  }
+
   const supabase = await createClient()
 
+  // Garante que a parcela pertence a um cliente da organização do usuário
   const { data: inst } = await (supabase as any)
     .from('client_installments')
-    .select('client_id')
+    .select('client_id, clients!inner(organization_id)')
     .eq('id', installmentId)
+    .eq('clients.organization_id', orgId)
     .single()
 
   if (!inst) return { error: 'Parcela não encontrada.' }
 
-  const ext = file.name.split('.').pop() ?? 'pdf'
+  const ext = file.name.split('.').pop()?.toLowerCase() ?? 'pdf'
   const filePath = `${inst.client_id}/${installmentId}.${ext}`
 
   const { error: uploadError } = await supabase.storage
     .from('receipts')
-    .upload(filePath, file, { upsert: true })
+    .upload(filePath, file, { upsert: true, contentType: file.type })
 
   if (uploadError) return { error: 'Erro ao enviar: ' + uploadError.message }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
-  const receiptUrl = `${supabaseUrl}/storage/v1/object/public/receipts/${filePath}`
+  // Salvar como URL de acesso via API segura (gera signed URL no servidor)
+  // O route /api/storage/download valida autenticação e org antes de redirecionar
+  const secureUrl = `/api/storage/download?bucket=receipts&path=${encodeURIComponent(filePath)}`
 
   await (supabase as any)
     .from('client_installments')
-    .update({ receipt_url: receiptUrl })
+    .update({ receipt_url: secureUrl })
     .eq('id', installmentId)
 
   revalidatePath('/financeiro')
-  return { success: 'Comprovante anexado.', receipt_url: receiptUrl }
+  return { success: 'Comprovante anexado.', receipt_url: secureUrl }
 }
 
 export async function advanceToProjects(clientId: string): Promise<ActionResult> {

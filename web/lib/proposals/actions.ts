@@ -24,6 +24,7 @@ export async function uploadProposalTemplate(formData: FormData): Promise<Action
   if (!file || file.size === 0) return { error: 'Arquivo é obrigatório.' }
   if (!name?.trim()) return { error: 'Nome é obrigatório.' }
   if (!file.name.endsWith('.docx')) return { error: 'Apenas arquivos .docx são aceitos.' }
+  if (file.size > 10 * 1024 * 1024) return { error: 'Arquivo muito grande. O limite para templates é 10 MB.' }
 
   const supabase = await createClient()
   const safeName = file.name
