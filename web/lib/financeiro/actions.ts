@@ -4,6 +4,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
+import { InstallmentStatus, PurchaseStatus, ProjectStatus, PipelineStage } from '@/lib/constants/status'
 
 export type ActionResult = { error?: string; success?: string; receipt_url?: string }
 
@@ -27,7 +28,7 @@ export async function confirmInstallment(installmentId: string): Promise<ActionR
   // Confirm the installment
   const { error } = await (supabase as any)
     .from('client_installments')
-    .update({ status: 'confirmada', confirmed_at: new Date().toISOString() })
+    .update({ status: InstallmentStatus.CONFIRMADA, confirmed_at: new Date().toISOString() })
     .eq('id', installmentId)
 
   if (error) return { error: error.message }
@@ -50,8 +51,8 @@ export async function confirmInstallment(installmentId: string): Promise<ActionR
       .update({
         pipeline_flags: {
           ...currentFlags,
-          projetos: 'pendente',
-          compras: 'aguardando',
+          projetos: ProjectStatus.PENDENTE,
+          compras: PurchaseStatus.AGUARDANDO,
         },
         updated_at: new Date().toISOString(),
       })
@@ -68,7 +69,7 @@ export async function confirmInstallment(installmentId: string): Promise<ActionR
       await (supabase as any).from('client_projects').insert({
         client_id: installment.client_id,
         organization_id: orgId,
-        status: 'pendente',
+        status: ProjectStatus.PENDENTE,
         checklist: { memorial_calculo: false, art: false, homologacao: false },
       })
     }
@@ -84,7 +85,7 @@ export async function confirmInstallment(installmentId: string): Promise<ActionR
       await (supabase as any).from('client_purchases').insert({
         client_id: installment.client_id,
         organization_id: orgId,
-        status: 'aguardando',
+        status: PurchaseStatus.AGUARDANDO,
       })
     }
   }
@@ -154,7 +155,7 @@ export async function advanceToProjects(clientId: string): Promise<ActionResult>
   const supabase = await createClient()
   const { error } = await (supabase as any)
     .from('clients')
-    .update({ pipeline_stage: 'projetos', updated_at: new Date().toISOString() })
+    .update({ pipeline_stage: PipelineStage.PROJETOS, updated_at: new Date().toISOString() })
     .eq('id', clientId)
     .eq('organization_id', orgId)
 

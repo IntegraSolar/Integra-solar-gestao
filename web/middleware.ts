@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { SUBSCRIPTION_BLOCKED_STATUSES } from '@/lib/constants/status'
 
 const PUBLIC_ROUTES = [
   '/login',
@@ -80,7 +81,6 @@ export async function middleware(request: NextRequest) {
   if (user && !isPublicRoute(pathname) && !pathname.startsWith(API_ROUTES_PREFIX)) {
     const SUB_CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutos
     const SUB_CACHE_COOKIE = 'sub_cache'
-    const BLOCKED_STATUSES = ['expired', 'canceled', 'overdue', 'unpaid']
 
     let isBlocked = false
 
@@ -94,7 +94,7 @@ export async function middleware(request: NextRequest) {
         if (Date.now() - cachedAt < SUB_CACHE_TTL_MS) {
           cacheHit = true
           const expired = expiresAt && new Date(expiresAt) < new Date()
-          isBlocked = BLOCKED_STATUSES.includes(status) || expired
+          isBlocked = SUBSCRIPTION_BLOCKED_STATUSES.includes(status) || expired
         }
       } catch { /* cache corrompido, ignorar */ }
     }
@@ -110,7 +110,7 @@ export async function middleware(request: NextRequest) {
 
       if (subscription) {
         const isExpired = subscription.expires_at && new Date(subscription.expires_at) < new Date()
-        isBlocked = BLOCKED_STATUSES.includes(subscription.status) || !!isExpired
+        isBlocked = SUBSCRIPTION_BLOCKED_STATUSES.includes(subscription.status as any) || !!isExpired
 
         // Gravar no cookie de cache
         const cacheValue = JSON.stringify({

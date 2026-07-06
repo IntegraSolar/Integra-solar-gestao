@@ -1,6 +1,10 @@
 // web/lib/dashboard/queries.ts
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
+import {
+  InstallmentStatus, PurchaseStatus, ProjectStatus,
+  DeliveryStatus, ObraStatus, CommissionStatus, PosObraStatus,
+} from '@/lib/constants/status'
 
 export type PipelineCard = {
   label: string
@@ -120,35 +124,35 @@ export async function getPipelineCards(): Promise<PipelineCard[]> {
     })(),
     // Financeiro pendentes: clientes com parcelas vencidas não pagas
     (async () => {
-      const { data } = await (supabase as any).from('client_installments').select('client_id').eq('organization_id', orgId).eq('status', 'pendente').lt('due_date', today)
+      const { data } = await (supabase as any).from('client_installments').select('client_id').eq('organization_id', orgId).eq('status', InstallmentStatus.PENDENTE).lt('due_date', today)
       return new Set((data ?? []).map((r: any) => r.client_id)).size
     })(),
     // Projetos
     countTable('client_projects'),
-    countByStatus('client_projects', 'status', ['pendente', 'enviado']),
+    countByStatus('client_projects', 'status', [ProjectStatus.PENDENTE, ProjectStatus.ENVIADO]),
     // Compras
     countTable('client_purchases'),
     // Compras pendentes: sem status ou aguardando
     (async () => {
-      const { count: aguardando } = await (supabase as any).from('client_purchases').select('id', { count: 'exact', head: true }).eq('organization_id', orgId).eq('status', 'aguardando')
+      const { count: aguardando } = await (supabase as any).from('client_purchases').select('id', { count: 'exact', head: true }).eq('organization_id', orgId).eq('status', PurchaseStatus.AGUARDANDO)
       const { count: semStatus } = await (supabase as any).from('client_purchases').select('id', { count: 'exact', head: true }).eq('organization_id', orgId).is('status', null)
       return (aguardando ?? 0) + (semStatus ?? 0)
     })(),
     // Comissões
     countTable('client_commissions'),
-    countByStatus('client_commissions', 'status', ['pendente']),
+    countByStatus('client_commissions', 'status', [CommissionStatus.PENDENTE]),
     // Entrega Material
     countTable('client_deliveries'),
-    countByStatus('client_deliveries', 'status', ['pendente']),
+    countByStatus('client_deliveries', 'status', [DeliveryStatus.PENDENTE]),
     // Obra
     countTable('client_obras'),
-    countByStatus('client_obras', 'status', ['aguardando', 'em_andamento']),
+    countByStatus('client_obras', 'status', [ObraStatus.AGUARDANDO, ObraStatus.EM_ANDAMENTO]),
     // Entrega da Obra
     countTable('client_obra_deliveries'),
-    countByStatus('client_obra_deliveries', 'status', ['pendente']),
+    countByStatus('client_obra_deliveries', 'status', [DeliveryStatus.PENDENTE]),
     // Pós-Obra
     countTable('client_pos_obra'),
-    countByStatus('client_pos_obra', 'status', ['pendente']),
+    countByStatus('client_pos_obra', 'status', [PosObraStatus.PENDENTE]),
   ])
 
   return [
