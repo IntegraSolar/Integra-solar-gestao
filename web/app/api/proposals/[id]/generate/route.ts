@@ -115,9 +115,24 @@ export async function POST(
       valor_entrada: number
       valor_parcelas: number
       num_parcelas: number
+      overrides?: {
+        valor_instalacao_por_placa?: number
+        valor_projeto_por_kwp?: number
+        pct_material_ca?: number
+        quilometragem?: number
+        pct_comissao?: number
+        pct_imposto?: number
+        pct_margem?: number
+      }
+      extras?: Array<{
+        categoria: string
+        item: string
+        qtd: number
+        custo_unit: number
+      }>
     }
 
-    const { proposalId, templateId, valor_entrada, valor_parcelas, num_parcelas } = body
+    const { proposalId, templateId, valor_entrada, valor_parcelas, num_parcelas, overrides, extras } = body
 
     if (!proposalId) return NextResponse.json({ error: 'proposalId é obrigatório.' }, { status: 400 })
     if (!templateId) return NextResponse.json({ error: 'Selecione um template.' }, { status: 400 })
@@ -151,6 +166,10 @@ export async function POST(
 
     const orgConfig = await getOrgConfig()
 
+    // Mescla os valores editados pelo usuário sobre a config global.
+    // orgConfig serve apenas como fallback — os overrides têm precedência absoluta.
+    const effectiveConfig = { ...orgConfig, ...(overrides ?? {}) }
+
     const pricing = calcularPreco(
       {
         kit_value: p.kit_value ?? 0,
@@ -158,8 +177,18 @@ export async function POST(
         panel_qty: p.total_modules ?? 0,
         km_rodados: p.km_rodados ?? 0,
       },
-      orgConfig
+      effectiveConfig
     )
+
+    // Calcula a contribuição dos custos extras adicionados pelo usuário,
+    // usando o mesmo divisor (imposto + margem + comissão) da proposta.
+    const pct_imposto  = (effectiveConfig.pct_imposto  ?? 0) / 100
+    const pct_margem   = (effectiveConfig.pct_margem   ?? 0) / 100
+    const pct_comissao = (effectiveConfig.pct_comissao ?? 0) / 100
+    const divisor = 1 - pct_imposto - pct_margem - pct_comissao
+    const d = divisor > 0 ? divisor : 1
+    const extrasVenda = (extras ?? []).reduce((sum, ec) => sum + (ec.qtd * ec.custo_unit) / d, 0)
+    const preco_total_final = pricing.preco_total + extrasVenda
 
     const { data: templateMeta } = await (supabase as any)
       .from('proposal_templates')
@@ -201,7 +230,7 @@ export async function POST(
           inverter_brand_model: p.inverter_brand_model ?? null,
           total_power_kwp: p.total_power_kwp ?? 0,
           monthly_generation_kwh: p.monthly_generation_kwh ?? 0,
-          preco_total: pricing.preco_total,
+          preco_total: preco_total_final,
           valor_entrada: valor_entrada ?? 0,
           num_parcelas: num_parcelas ?? 0,
           valor_parcelas: valor_parcelas ?? 0,
@@ -283,7 +312,7 @@ export async function POST(
     const docxUrl = `/api/storage/download?bucket=proposals&path=${encodeURIComponent(docxPath)}`
     await supabase.from('proposals').update({
       template_id: templateId,
-      preco_total: pricing.preco_total,
+      preco_total: preco_total_final,
       custo_kit: pricing.custo_kit,
       custo_projeto: pricing.custo_projeto,
       custo_instalacao: pricing.custo_instalacao,
