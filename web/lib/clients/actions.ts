@@ -133,6 +133,15 @@ export async function updateTab3(
 
   const supabase = await createClient()
 
+  // Verificar que o cliente pertence à organização antes de operar em tabelas relacionadas
+  const { data: clientCheck } = await supabase
+    .from('clients')
+    .select('id')
+    .eq('id', clientId)
+    .eq('organization_id', orgId)
+    .maybeSingle()
+  if (!clientCheck) return { error: 'Cliente não encontrado.' }
+
   // Upsert client_sale
   const { data: existingSale } = await supabase
     .from('client_sale')
@@ -182,6 +191,7 @@ export async function updateTab3(
       completed_tabs: await mergeCompletedTabs(clientId, supabase, { tab3: true }),
     })
     .eq('id', clientId)
+    .eq('organization_id', orgId)
   if (error) return { error: error.message }
   revalidatePath(`/clientes/${clientId}`)
   return { success: 'Venda e faturamento salvos.' }
@@ -259,17 +269,22 @@ export async function uploadAttachment(
   const file = formData.get('file') as File
   if (!file || file.size === 0) return { error: 'Selecione um arquivo.' }
 
+  const ALLOWED_MIME = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
+  const ALLOWED_EXT = ['pdf', 'jpg', 'jpeg', 'png', 'webp']
+  const ext = (file.name.split('.').pop() ?? '').toLowerCase()
+  if (!ALLOWED_MIME.includes(file.type)) return { error: 'Tipo de arquivo não permitido. Use PDF, JPG ou PNG.' }
+  if (!ALLOWED_EXT.includes(ext)) return { error: 'Extensão não permitida.' }
+
   const supabase = await createClient()
-  const ext = file.name.split('.').pop() ?? 'bin'
-  const path = `${orgId}/${clientId}/${attachmentType}.${ext}`
+  const safePath = `${orgId}/${clientId}/${attachmentType}.${ext}`
 
   const { error: uploadError } = await supabase.storage
     .from('client-files')
-    .upload(path, file, { upsert: true })
+    .upload(safePath, file, { upsert: true })
   if (uploadError) return { error: uploadError.message }
 
   // Armazenar URL segura (via API autenticada) em vez de URL pública do bucket
-  const fileUrl = `/api/storage/download?bucket=client-files&path=${encodeURIComponent(path)}`
+  const fileUrl = `/api/storage/download?bucket=client-files&path=${encodeURIComponent(safePath)}`
 
   const { data: existing } = await supabase
     .from('client_attachments')
@@ -325,17 +340,22 @@ export async function uploadContractFile(
   const file = formData.get('file') as File
   if (!file || file.size === 0) return { error: 'Selecione um arquivo.' }
 
+  const ALLOWED_MIME = ['application/pdf', 'image/jpeg', 'image/png']
+  const ALLOWED_EXT = ['pdf', 'jpg', 'jpeg', 'png']
+  const ext = (file.name.split('.').pop() ?? '').toLowerCase()
+  if (!ALLOWED_MIME.includes(file.type)) return { error: 'Tipo de arquivo não permitido. Use PDF ou imagem.' }
+  if (!ALLOWED_EXT.includes(ext)) return { error: 'Extensão não permitida.' }
+
   const supabase = await createClient()
-  const ext = file.name.split('.').pop() ?? 'pdf'
-  const path = `${orgId}/${clientId}/${field}.${ext}`
+  const safePath = `${orgId}/${clientId}/${field}.${ext}`
 
   const { error: uploadError } = await supabase.storage
     .from('client-files')
-    .upload(path, file, { upsert: true })
+    .upload(safePath, file, { upsert: true })
   if (uploadError) return { error: uploadError.message }
 
   // Armazenar URL segura (via API autenticada) em vez de URL pública do bucket
-  const fileUrl = `/api/storage/download?bucket=client-files&path=${encodeURIComponent(path)}`
+  const fileUrl = `/api/storage/download?bucket=client-files&path=${encodeURIComponent(safePath)}`
   const dbField = field === 'contract' ? 'contract_url' : 'power_of_attorney_url'
 
   const { data: existing } = await supabase

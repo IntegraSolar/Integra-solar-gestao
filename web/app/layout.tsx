@@ -37,7 +37,7 @@ export default function RootLayout({
     <html lang="pt-BR" suppressHydrationWarning className={`${figtree.variable} ${dmSans.variable} ${sora.variable}`}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: `
-          (function(){var t=localStorage.getItem('theme')||'green';document.documentElement.setAttribute('data-theme',t)})()
+          (function(){var ALLOWED=['green','navy','dark','light'];var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',ALLOWED.indexOf(t)!==-1?t:'green')})()
         `}} />
       </head>
       <body className="antialiased">{children}</body>

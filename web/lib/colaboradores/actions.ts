@@ -1,6 +1,7 @@
 // web/lib/colaboradores/actions.ts
 'use server'
 
+import { randomBytes } from 'crypto'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -70,8 +71,8 @@ export async function resetColaboradorPassword(
   userId: string
 ): Promise<ActionResult & { newPassword?: string }> {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'
-  let newPassword = ''
-  for (let i = 0; i < 10; i++) newPassword += chars[Math.floor(Math.random() * chars.length)]
+  const bytes = randomBytes(10)
+  const newPassword = Array.from(bytes).map(b => chars[b % chars.length]).join('')
 
   const adminClient = createAdminClient()
   const { error } = await adminClient.auth.admin.updateUserById(userId, { password: newPassword })
