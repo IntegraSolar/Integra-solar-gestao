@@ -132,9 +132,10 @@ export async function createNote(leadId: string, content: string): Promise<Actio
 }
 
 export async function deleteNote(noteId: string): Promise<ActionResult> {
-  // RLS policy 'lead_notes_org_isolation' scopes this to the current user's org
+  const orgId = await getOrgId()
+  if (!orgId) return { error: 'Sem organização ativa.' }
   const supabase = await createClient()
-  const { error } = await (supabase as any).from('lead_notes').delete().eq('id', noteId)
+  const { error } = await (supabase as any).from('lead_notes').delete().eq('id', noteId).eq('organization_id', orgId)
   if (error) return { error: (error as any).message }
   revalidatePath('/leads')
   return { success: 'Anotação excluída.' }
@@ -179,12 +180,14 @@ export async function createFollowUp(
 }
 
 export async function toggleFollowUp(taskId: string, done: boolean): Promise<ActionResult> {
-  // RLS policy 'tasks_org_isolation' scopes this to the current user's org
+  const orgId = await getOrgId()
+  if (!orgId) return { error: 'Sem organização ativa.' }
   const supabase = await createClient()
   const { error } = await supabase
     .from('tasks')
     .update({ completed_at: done ? new Date().toISOString() : null })
     .eq('id', taskId)
+    .eq('organization_id', orgId)
   if (error) return { error: error.message }
   revalidatePath('/leads')
   return { success: 'Follow-up atualizado.' }
@@ -246,9 +249,10 @@ export async function createProposal(
 }
 
 export async function deleteProposal(proposalId: string): Promise<ActionResult> {
-  // RLS policy 'proposals_org_isolation' scopes this to the current user's org
+  const orgId = await getOrgId()
+  if (!orgId) return { error: 'Sem organização ativa.' }
   const supabase = await createClient()
-  const { error } = await supabase.from('proposals').delete().eq('id', proposalId)
+  const { error } = await supabase.from('proposals').delete().eq('id', proposalId).eq('organization_id', orgId)
   if (error) return { error: error.message }
   revalidatePath('/leads')
   return { success: 'Proposta excluída.' }

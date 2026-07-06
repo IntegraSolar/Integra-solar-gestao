@@ -85,11 +85,14 @@ export async function getLeadById(id: string): Promise<Lead | null> {
 }
 
 export async function getProposalsByLead(leadId: string): Promise<Proposal[]> {
+  const user = await getCurrentUserData()
+  if (!user?.membership) return []
   const supabase = await createClient()
   const { data } = await supabase
     .from('proposals')
     .select(`*, supplier:suppliers(id, name)`)
     .eq('lead_id', leadId)
+    .eq('organization_id', user.membership.organization.id)
     .order('created_at', { ascending: false })
   const proposals = (data ?? []) as any[]
   return proposals.map((p) => ({
