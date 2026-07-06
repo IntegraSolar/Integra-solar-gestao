@@ -11,27 +11,32 @@ const CLIENT_SELECT = `
   contract:client_contracts(id, client_id, contract_url, power_of_attorney_url, signed, signed_at)
 `
 
-// All clients (including those with incomplete registration)
-export async function getClients(): Promise<Client[]> {
+export const CLIENTS_PAGE_SIZE = 50
+
+// Paginated client list. Returns { clients, total }.
+export async function getClients(page = 0): Promise<{ clients: Client[]; total: number }> {
   const user = await getCurrentUserData()
-  if (!user?.membership) return []
+  if (!user?.membership) return { clients: [], total: 0 }
   const supabase = await createClient()
-  const { data } = await (supabase as any)
+  const from = page * CLIENTS_PAGE_SIZE
+  const to = from + CLIENTS_PAGE_SIZE - 1
+  const { data, count } = await (supabase as any)
     .from('clients')
-    .select(CLIENT_SELECT)
+    .select(CLIENT_SELECT, { count: 'exact' })
     .eq('organization_id', user.membership.organization.id)
     .order('created_at', { ascending: false })
-  return (data ?? []).map(normalizeClient) as Client[]
+    .range(from, to)
+  return { clients: (data ?? []).map(normalizeClient) as Client[], total: count ?? 0 }
 }
 
-// All clients (for navigation after lead conversion — tabs may be incomplete)
+// All clients (for selects / navigation after lead conversion)
 export async function getAllClients(): Promise<Client[]> {
   const user = await getCurrentUserData()
   if (!user?.membership) return []
   const supabase = await createClient()
   const { data } = await (supabase as any)
     .from('clients')
-    .select(CLIENT_SELECT)
+    .select('id, name, phone, city, pipeline_stage, completed_tabs, delivery_start_date, contract_max_days')
     .eq('organization_id', user.membership.organization.id)
     .order('created_at', { ascending: false })
   return (data ?? []).map(normalizeClient) as Client[]

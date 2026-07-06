@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
 export type FollowUpNotification = {
   id: string
@@ -29,23 +30,18 @@ function groupByUrgency(followups: FollowUpNotification[]): GroupedFollowUps {
 
   for (const f of followups) {
     const due = new Date(f.due_date)
-    if (due < startOfDay) {
-      overdue.push(f)
-    } else if (due < endOfDay) {
-      today.push(f)
-    } else {
-      upcoming.push(f)
-    }
+    if (due < startOfDay) overdue.push(f)
+    else if (due < endOfDay) today.push(f)
+    else upcoming.push(f)
   }
 
   return { overdue, today, upcoming }
 }
 
-const POLL_INTERVAL = 5 * 60 * 1000
-
 export function useFollowUpNotifications() {
   const [followups, setFollowups] = useState<FollowUpNotification[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const channelRef = useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null)
 
   const fetchFollowups = useCallback(async () => {
     try {
@@ -61,8 +57,24 @@ export function useFollowUpNotifications() {
 
   useEffect(() => {
     fetchFollowups()
-    const interval = setInterval(fetchFollowups, POLL_INTERVAL)
-    return () => clearInterval(interval)
+
+    const supabase = createClient()
+
+    // Subscribe to task inserts/updates/deletes — refetch on any change
+    const channel = supabase
+      .channel('tasks-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'tasks' },
+        () => { fetchFollowups() }
+      )
+      .subscribe()
+
+    channelRef.current = channel
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [fetchFollowups])
 
   const grouped = groupByUrgency(followups)

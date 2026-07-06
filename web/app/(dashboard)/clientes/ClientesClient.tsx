@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import type { Client } from '@/lib/clients/types'
 import { SearchBar, filterBySearch } from '@/components/ui/SearchBar'
 
@@ -60,16 +61,30 @@ function ClientRow({ client }: { client: Client }) {
   )
 }
 
-export default function ClientesClient({ clients }: { clients: Client[] }) {
+export default function ClientesClient({
+  clients,
+  total,
+  page,
+  pageSize,
+}: {
+  clients: Client[]
+  total: number
+  page: number
+  pageSize: number
+}) {
   const [search, setSearch] = useState('')
+  const router = useRouter()
   const filtered = filterBySearch(clients, search, ['name', 'phone', 'city', 'cpf_cnpj', 'email'])
+  const totalPages = Math.ceil(total / pageSize)
 
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-6 py-4 flex-shrink-0" style={{ borderBottom: '1px solid var(--theme-border)' }}>
         <div>
           <h1 className="text-lg font-semibold" style={{ color: 'var(--theme-text)' }}>Clientes</h1>
-          <p className="text-xs mt-0.5" style={{ color: 'var(--theme-text-subtle)' }}>{clients.length} clientes</p>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--theme-text-subtle)' }}>
+            {total} clientes {totalPages > 1 ? `· página ${page + 1} de ${totalPages}` : ''}
+          </p>
         </div>
         <SearchBar value={search} onChange={setSearch} placeholder="Buscar cliente..." />
       </div>
@@ -87,6 +102,30 @@ export default function ClientesClient({ clients }: { clients: Client[] }) {
           </div>
         )}
       </div>
+
+      {!search && totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 px-6 py-3 flex-shrink-0" style={{ borderTop: '1px solid var(--theme-border)' }}>
+          <button
+            onClick={() => router.push(`/clientes?page=${page - 1}`)}
+            disabled={page === 0}
+            className="px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-30 transition-colors"
+            style={{ background: 'var(--theme-surface)', color: 'var(--theme-text)' }}
+          >
+            ← Anterior
+          </button>
+          <span className="text-xs" style={{ color: 'var(--theme-text-subtle)' }}>
+            {page + 1} / {totalPages}
+          </span>
+          <button
+            onClick={() => router.push(`/clientes?page=${page + 1}`)}
+            disabled={page >= totalPages - 1}
+            className="px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-30 transition-colors"
+            style={{ background: 'var(--theme-surface)', color: 'var(--theme-text)' }}
+          >
+            Próxima →
+          </button>
+        </div>
+      )}
     </div>
   )
 }

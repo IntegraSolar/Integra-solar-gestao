@@ -78,25 +78,59 @@ export async function middleware(request: NextRequest) {
 
   // Verificar subscription para rotas protegidas do dashboard (não APIs)
   if (user && !isPublicRoute(pathname) && !pathname.startsWith(API_ROUTES_PREFIX)) {
-    const { data: subscription } = await supabase
-      .from('subscriptions')
-      .select('status, expires_at')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
+    const SUB_CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutos
+    const SUB_CACHE_COOKIE = 'sub_cache'
+    const BLOCKED_STATUSES = ['expired', 'canceled', 'overdue', 'unpaid']
 
-    if (subscription) {
-      const isExpired = subscription.expires_at && new Date(subscription.expires_at) < new Date()
-      const blockedStatuses = ['expired', 'canceled', 'overdue', 'unpaid']
+    let isBlocked = false
 
-      if (blockedStatuses.includes(subscription.status) || isExpired) {
-        if (pathname !== '/subscription-expired') {
-          const url = request.nextUrl.clone()
-          url.pathname = '/subscription-expired'
-          return NextResponse.redirect(url)
+    // Verificar cache antes de ir ao DB
+    const cached = request.cookies.get(SUB_CACHE_COOKIE)?.value
+    let cacheHit = false
+
+    if (cached) {
+      try {
+        const { status, expiresAt, cachedAt } = JSON.parse(cached)
+        if (Date.now() - cachedAt < SUB_CACHE_TTL_MS) {
+          cacheHit = true
+          const expired = expiresAt && new Date(expiresAt) < new Date()
+          isBlocked = BLOCKED_STATUSES.includes(status) || expired
         }
+      } catch { /* cache corrompido, ignorar */ }
+    }
+
+    if (!cacheHit) {
+      const { data: subscription } = await supabase
+        .from('subscriptions')
+        .select('status, expires_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (subscription) {
+        const isExpired = subscription.expires_at && new Date(subscription.expires_at) < new Date()
+        isBlocked = BLOCKED_STATUSES.includes(subscription.status) || !!isExpired
+
+        // Gravar no cookie de cache
+        const cacheValue = JSON.stringify({
+          status: subscription.status,
+          expiresAt: subscription.expires_at,
+          cachedAt: Date.now(),
+        })
+        supabaseResponse.cookies.set(SUB_CACHE_COOKIE, cacheValue, {
+          httpOnly: true,
+          sameSite: 'lax',
+          path: '/',
+          maxAge: Math.floor(SUB_CACHE_TTL_MS / 1000),
+        })
       }
+    }
+
+    if (isBlocked && pathname !== '/subscription-expired') {
+      const url = request.nextUrl.clone()
+      url.pathname = '/subscription-expired'
+      return NextResponse.redirect(url)
     }
     // Se não tem subscription (usuário antigo/owner original), permite acesso
   }
