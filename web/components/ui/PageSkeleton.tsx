@@ -57,6 +57,87 @@ export function ListPageSkeleton({ rows = 8 }: { rows?: number }) {
   )
 }
 
+export function DetailPageSkeleton({ tabs = 8 }: { tabs?: number }) {
+  return (
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div
+        className="flex items-center gap-3 px-6 py-4 flex-shrink-0 animate-pulse"
+        style={{ borderBottom: '1px solid var(--theme-border)' }}
+      >
+        <SkeletonLine w="w-20" h="h-3" />
+        <div className="space-y-1.5">
+          <SkeletonLine w="w-40" h="h-5" />
+          <SkeletonLine w="w-24" h="h-3" />
+        </div>
+      </div>
+      {/* Tab bar */}
+      <div className="flex gap-1 px-6 py-3 flex-shrink-0" style={{ borderBottom: '1px solid var(--theme-border)' }}>
+        {Array.from({ length: tabs }).map((_, i) => (
+          <div
+            key={i}
+            className="w-16 h-8 rounded-lg animate-pulse"
+            style={{ background: 'var(--theme-surface-hover)' }}
+          />
+        ))}
+      </div>
+      {/* Content */}
+      <div className="flex-1 overflow-auto px-6 py-5 space-y-4">
+        <div
+          className="rounded-2xl p-5 space-y-4 animate-pulse"
+          style={{ background: 'var(--theme-surface)', border: '1px solid var(--theme-border)' }}
+        >
+          <SkeletonLine w="w-1/4" h="h-5" />
+          <div className="grid grid-cols-2 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="space-y-1.5">
+                <SkeletonLine w="w-1/3" h="h-3" />
+                <SkeletonLine w="w-2/3" h="h-4" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export function ConfiguracoesSkeleton() {
+  return (
+    <div className="p-6 space-y-6">
+      <div className="space-y-1.5 animate-pulse">
+        <SkeletonLine w="w-40" h="h-7" />
+        <SkeletonLine w="w-64" h="h-4" />
+      </div>
+      {/* Tab bar */}
+      <div className="flex gap-1 w-fit animate-pulse">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div
+            key={i}
+            className="w-24 h-10 rounded-lg"
+            style={{ background: 'var(--theme-surface-hover)' }}
+          />
+        ))}
+      </div>
+      {/* Content card */}
+      <div
+        className="rounded-2xl p-5 space-y-5 animate-pulse"
+        style={{ background: 'var(--theme-surface)', border: '1px solid var(--theme-border)' }}
+      >
+        <SkeletonLine w="w-1/4" h="h-5" />
+        <div className="grid grid-cols-2 gap-5">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="space-y-1.5">
+              <SkeletonLine w="w-1/3" h="h-3" />
+              <SkeletonLine w="full" h="h-10" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function DashboardSkeleton() {
   return (
     <div className="flex flex-col gap-6 p-6">

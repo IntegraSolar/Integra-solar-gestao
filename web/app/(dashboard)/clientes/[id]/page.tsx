@@ -6,10 +6,14 @@ import { ClientTabs } from './ClientTabs'
 
 export default async function ClientePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const user = await getCurrentUserData()
-  if (!user?.membership) redirect('/login')
 
-  const client = await getClientById(id)
+  // Autenticação e dados do cliente em paralelo
+  const [user, client] = await Promise.all([
+    getCurrentUserData(),
+    getClientById(id),
+  ])
+
+  if (!user?.membership) redirect('/login')
   if (!client) notFound()
 
   return (

@@ -9,11 +9,15 @@ export default async function ClientesPage({
 }: {
   searchParams: { page?: string }
 }) {
-  const user = await getCurrentUserData()
-  if (!user?.membership) redirect('/login')
-
   const page = Math.max(0, parseInt(searchParams.page ?? '0', 10) || 0)
-  const { clients, total } = await getClients(page)
+
+  // Autenticação e dados em paralelo — ambos usam a sessão internamente
+  const [user, { clients, total }] = await Promise.all([
+    getCurrentUserData(),
+    getClients(page),
+  ])
+
+  if (!user?.membership) redirect('/login')
 
   return <ClientesClient clients={clients} total={total} page={page} pageSize={CLIENTS_PAGE_SIZE} />
 }

@@ -11,7 +11,8 @@ export default function DashboardError({
   reset: () => void
 }) {
   useEffect(() => {
-    console.error('[DashboardError]', error)
+    // Loga apenas mensagem e digest — sem stack trace em produção
+    console.error('[DashboardError]', { message: error.message, digest: error.digest })
   }, [error])
 
   return (
