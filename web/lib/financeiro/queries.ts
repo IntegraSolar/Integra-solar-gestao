@@ -122,18 +122,12 @@ export async function getParcelasByClient(clientId: string): Promise<FinanceiroI
   const supabase = await createClient()
   const { data } = await supabase
     .from('client_installments')
-    .select('id, client_id, position, due_date, amount, notes, status, confirmed_at, payment_proof_url')
+    .select('id, client_id, position, due_date, amount, notes, status, confirmed_at, payment_proof_url, clients!client_id(name)')
     .eq('client_id', clientId)
     .eq('organization_id', user.membership.organization.id)
     .order('position', { ascending: true })
 
-  // Need client name — fetch separately
-  const { data: clientData } = await supabase
-    .from('clients')
-    .select('name')
-    .eq('id', clientId)
-    .single()
-  const clientName = (clientData as any)?.name ?? 'Cliente'
+  const clientName = (data as any)?.[0]?.clients?.name ?? 'Cliente'
 
   return ((data ?? []) as any[]).map((i) => ({
     id: i.id,

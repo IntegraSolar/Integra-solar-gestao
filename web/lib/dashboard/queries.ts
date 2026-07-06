@@ -249,6 +249,7 @@ export async function getLeadsPorOrigem(): Promise<LeadOrigemItem[]> {
     .from('leads')
     .select('lead_source_id, lead_sources!lead_source_id(name)')
     .eq('organization_id', orgId)
+    .limit(2000)
 
   const map: Record<string, { name: string; count: number }> = {}
   for (const row of (data ?? []) as any[]) {
@@ -268,10 +269,6 @@ export async function getMetaData(dateFrom: string | null, dateTo: string | null
 
   const supabase = await createClient()
 
-  const { data: config } = await supabase.from('org_config').select('meta_anual').eq('organization_id', orgId).maybeSingle()
-  const meta_anual = config?.meta_anual ?? 0
-  const meta_mensal = meta_anual > 0 ? meta_anual / 12 : 0
-
   const now = new Date()
   const mesInicio = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
   const hoje = now.toISOString().split('T')[0]
@@ -281,10 +278,15 @@ export async function getMetaData(dateFrom: string | null, dateTo: string | null
   const fromMes = dateFrom ?? mesInicio
   const toMes = dateTo ?? hoje
 
-  const [clientesMes, clientesAno] = await Promise.all([
+  // config + ambas as queries de clientes em paralelo
+  const [configResult, clientesMes, clientesAno] = await Promise.all([
+    supabase.from('org_config').select('meta_anual').eq('organization_id', orgId).maybeSingle(),
     supabase.from('clients').select('id').eq('organization_id', orgId).gte('contract_date', fromMes).lte('contract_date', toMes),
     supabase.from('clients').select('id').eq('organization_id', orgId).gte('contract_date', anoInicio).lte('contract_date', anoFim),
   ])
+
+  const meta_anual = configResult.data?.meta_anual ?? 0
+  const meta_mensal = meta_anual > 0 ? meta_anual / 12 : 0
 
   const idsMes = ((clientesMes.data ?? []) as any[]).map((c) => c.id)
   const idsAno = ((clientesAno.data ?? []) as any[]).map((c) => c.id)

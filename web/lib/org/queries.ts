@@ -1,4 +1,5 @@
-﻿import { createClient } from '@/lib/supabase/server'
+﻿import { cache } from 'react'
+import { createClient } from '@/lib/supabase/server'
 
 export type ModulePermission = {
   access: boolean
@@ -27,7 +28,10 @@ export type CurrentUserData = {
   } | null
 }
 
-export async function getCurrentUserData(): Promise<CurrentUserData | null> {
+// cache() do React deduplica chamadas dentro do mesmo request de servidor.
+// Múltiplas funções chamando getCurrentUserData() no mesmo page load
+// executam as 3 queries apenas uma vez.
+export const getCurrentUserData = cache(async function (): Promise<CurrentUserData | null> {
   const supabase = await createClient()
 
   const {
@@ -65,4 +69,4 @@ export async function getCurrentUserData(): Promise<CurrentUserData | null> {
         }
       : null,
   }
-}
+})

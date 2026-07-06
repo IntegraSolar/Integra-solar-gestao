@@ -196,11 +196,23 @@ export async function getFinanceiroData(filter: RelatorioFilter): Promise<Financ
 
   const supabase = await createClient()
 
-  const { data: allContracts } = await supabase
+  // Filtros de data aplicados no banco — evita trazer todos os registros
+  const now = new Date()
+  const defaultFrom = `${now.getFullYear() - 3}-01-01`
+  const effectiveFrom = filter.dateFrom ?? defaultFrom
+  const effectiveTo = filter.dateTo ?? now.toISOString().split('T')[0]
+
+  let q = supabase
     .from('clients')
     .select('id, contract_date, created_at, responsible_id, profiles!responsible_id(full_name, email), client_sale(sale_value, commission_pct)')
     .eq('organization_id', orgId)
     .order('created_at', { ascending: true })
+    .limit(2000)
+
+  // Filtra por contract_date quando disponível; fallback para created_at é feito em JS
+  q = q.gte('created_at', effectiveFrom).lte('created_at', effectiveTo + 'T23:59:59')
+
+  const { data: allContracts } = await q
 
   const todos = ((allContracts ?? []) as any[]).filter((c: any) => {
     const sale = Array.isArray(c.client_sale) ? c.client_sale[0] : c.client_sale
@@ -250,7 +262,6 @@ export async function getFinanceiroData(filter: RelatorioFilter): Promise<Financ
     mes, label: mesLabel(mes + '-01'), qtd_contratos: v.qtd, valor_total: v.valor, ticket_medio: v.qtd > 0 ? v.valor / v.qtd : 0,
   }))
 
-  const now = new Date()
   const mesAtualKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
   const mesAnteriorDate = new Date(now.getFullYear(), now.getMonth() - 1, 1)
   const mesAnteriorKey = `${mesAnteriorDate.getFullYear()}-${String(mesAnteriorDate.getMonth() + 1).padStart(2, '0')}`

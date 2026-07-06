@@ -46,7 +46,8 @@ export async function getComissoesPainel(params: {
       paid_at,
       comprovante_url,
       created_at,
-      clients!inner ( name )
+      clients!inner ( name ),
+      vendedor:profiles!vendedor_id ( full_name )
     `)
     .gte('created_at', startDate)
     .lt('created_at', endDate)
@@ -58,25 +59,12 @@ export async function getComissoesPainel(params: {
   const { data, error } = await query
   if (error || !data) return { items: [], total_pendente: 0, total_pago: 0 }
 
-  // Resolve vendedor names
-  const vendedorIds = Array.from(new Set(data.map((r: any) => r.vendedor_id).filter(Boolean))) as string[]
-  const vendedorMap: Record<string, string> = {}
-  if (vendedorIds.length > 0) {
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id, full_name')
-      .in('id', vendedorIds)
-    for (const p of profiles ?? []) {
-      vendedorMap[p.id] = p.full_name ?? ''
-    }
-  }
-
   const items: ComissaoItem[] = data.map((r: any) => ({
     id: r.id,
     client_id: r.client_id,
     client_name: r.clients.name,
     vendedor_id: r.vendedor_id ?? null,
-    vendedor_name: r.vendedor_id ? (vendedorMap[r.vendedor_id] ?? null) : null,
+    vendedor_name: r.vendedor?.full_name ?? null,
     valor_comissao: r.valor_comissao,
     status: r.status,
     paid_at: r.paid_at ?? null,
