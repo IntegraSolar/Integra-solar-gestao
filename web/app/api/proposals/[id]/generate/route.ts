@@ -5,6 +5,7 @@ import { getCurrentUserData } from '@/lib/org/queries'
 import { getOrgConfig } from '@/lib/configuracoes/queries'
 import { calcularPreco } from '@/lib/proposals/pricing'
 import { buildPlaceholders } from '@/lib/proposals/placeholders'
+import { rateLimit, rateLimitResponse } from '@/lib/rate-limit'
 
 const CONVERT_TIMEOUT_MS = 90_000
 
@@ -122,6 +123,9 @@ export async function POST(
     const user = await getCurrentUserData()
     const orgId = user?.membership?.organization.id
     if (!orgId) return NextResponse.json({ error: 'Não autenticado.' }, { status: 401 })
+
+    // 5 gerações por minuto por organização
+    if (!rateLimit(`generate:${orgId}`, 5, 60_000)) return rateLimitResponse()
 
     const supabase = await createClient()
 

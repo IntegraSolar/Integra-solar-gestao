@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
+import { rateLimit, rateLimitResponse } from '@/lib/rate-limit'
 
 const ALLOWED_BUCKETS = ['proposals', 'receipts', 'project-docs', 'client-files']
 
@@ -9,6 +10,10 @@ export async function GET(req: NextRequest) {
   if (!user?.membership?.organization.id) {
     return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
   }
+
+  // 30 downloads por minuto por organização
+  const orgId = user.membership.organization.id
+  if (!rateLimit(`download:${orgId}`, 30, 60_000)) return rateLimitResponse()
 
   const bucket = req.nextUrl.searchParams.get('bucket')
   const path = req.nextUrl.searchParams.get('path')
@@ -22,7 +27,6 @@ export async function GET(req: NextRequest) {
   }
 
   // Verificar que o path pertence à organização do usuário
-  const orgId = user.membership.organization.id
   if (!path.startsWith(orgId) && !path.startsWith(`entrega-material/${orgId}`)) {
     return NextResponse.json({ error: 'Acesso negado' }, { status: 403 })
   }
