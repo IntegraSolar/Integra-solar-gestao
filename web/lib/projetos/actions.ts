@@ -1,4 +1,4 @@
-// web/lib/projetos/actions.ts
+﻿// web/lib/projetos/actions.ts
 'use server'
 
 import { revalidatePath } from 'next/cache'
@@ -49,7 +49,6 @@ export async function upsertProject(
     prazo_vistoria: data.prazo_vistoria ?? null,
     status: data.status,
     checklist: data.checklist,
-    updated_at: new Date().toISOString(),
   }
 
   let error: any
@@ -82,7 +81,6 @@ export async function upsertProject(
         ...currentFlags,
         projetos: data.status,
       },
-      updated_at: new Date().toISOString(),
     })
     .eq('id', clientId)
 
@@ -113,7 +111,7 @@ export async function uploadProjectDoc(
 
   await (supabase as any)
     .from('client_projects')
-    .update({ [`${docType}_url`]: url, updated_at: new Date().toISOString() })
+    .update({ [`${docType}_url`]: url })
     .eq('client_id', clientId)
 
   revalidatePath(`/projetos/${clientId}`)

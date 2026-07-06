@@ -1,4 +1,4 @@
-'use server'
+﻿'use server'
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
@@ -46,7 +46,6 @@ export async function updateStockItem(
       quantity: data.quantity,
       unit_value: data.unit_value,
       description: data.description ?? null,
-      updated_at: new Date().toISOString(),
     })
     .eq('id', id)
 

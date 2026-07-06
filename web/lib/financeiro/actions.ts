@@ -1,4 +1,4 @@
-// web/lib/financeiro/actions.ts
+﻿// web/lib/financeiro/actions.ts
 'use server'
 
 import { revalidatePath } from 'next/cache'
@@ -54,7 +54,6 @@ export async function confirmInstallment(installmentId: string): Promise<ActionR
           projetos: ProjectStatus.PENDENTE,
           compras: PurchaseStatus.AGUARDANDO,
         },
-        updated_at: new Date().toISOString(),
       })
       .eq('id', installment.client_id)
 
@@ -155,7 +154,7 @@ export async function advanceToProjects(clientId: string): Promise<ActionResult>
   const supabase = await createClient()
   const { error } = await (supabase as any)
     .from('clients')
-    .update({ pipeline_stage: PipelineStage.PROJETOS, updated_at: new Date().toISOString() })
+    .update({ pipeline_stage: PipelineStage.PROJETOS })
     .eq('id', clientId)
     .eq('organization_id', orgId)
 

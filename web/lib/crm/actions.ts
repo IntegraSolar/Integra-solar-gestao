@@ -1,4 +1,4 @@
-// web/lib/crm/actions.ts
+﻿// web/lib/crm/actions.ts
 'use server'
 
 import { revalidatePath } from 'next/cache'
@@ -78,7 +78,6 @@ export async function updateLead(
     assigned_to_user_id: assigned_to_user_id || null,
     lead_source_id: lead_source_id || null,
     next_action_date: next_action_date || null,
-    updated_at: new Date().toISOString(),
   }).eq('id', leadId).eq('organization_id', orgId)
 
   if (error) return { error: error.message }
@@ -102,7 +101,7 @@ export async function moveLeadStage(leadId: string, stageId: string): Promise<Ac
   const supabase = await createClient()
   const { error } = await supabase
     .from('leads')
-    .update({ current_stage_id: stageId, updated_at: new Date().toISOString() })
+    .update({ current_stage_id: stageId })
     .eq('id', leadId)
     .eq('organization_id', orgId)
   if (error) return { error: error.message }
@@ -363,7 +362,6 @@ export async function convertLeadToClient(leadId: string): Promise<{ clientId?: 
   const { error: updateError } = await (supabase as any).from('leads').update({
     converted: true,
     converted_to_client_id: client.id,
-    updated_at: new Date().toISOString(),
   }).eq('id', leadId)
 
   if (updateError) {

@@ -1,4 +1,4 @@
-// web/lib/contratos/actions.ts
+﻿// web/lib/contratos/actions.ts
 'use server'
 
 import { revalidatePath } from 'next/cache'
@@ -30,7 +30,6 @@ export async function updateContractStatus(
 
   const contractUpdate: Record<string, unknown> = {
     status,
-    updated_at: new Date().toISOString(),
   }
   if (status === 'assinado') {
     contractUpdate.signed = true
@@ -48,7 +47,7 @@ export async function updateContractStatus(
   if (status === 'assinado') {
     const { error: clientError } = await (supabase as any)
       .from('clients')
-      .update({ pipeline_stage: 'financeiro', updated_at: new Date().toISOString() })
+      .update({ pipeline_stage: 'financeiro' })
       .eq('id', clientId)
       .eq('organization_id', orgId)
     if (clientError) return { error: clientError.message }

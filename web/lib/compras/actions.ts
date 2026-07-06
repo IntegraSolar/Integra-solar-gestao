@@ -1,4 +1,4 @@
-'use server'
+﻿'use server'
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
@@ -42,7 +42,6 @@ export async function upsertPurchase(
     status: data.status,
     nf_url: data.nf_url ?? null,
     comprovante_url: data.comprovante_url ?? null,
-    updated_at: new Date().toISOString(),
   }
 
   let error: any
@@ -130,7 +129,6 @@ export async function upsertPurchase(
     .from('clients')
     .update({
       pipeline_flags: newFlags,
-      updated_at: new Date().toISOString(),
     })
     .eq('id', clientId)
 
@@ -161,7 +159,7 @@ export async function uploadPurchaseDoc(
 
   await (supabase as any)
     .from('client_purchases')
-    .update({ [`${docType}_url`]: url, updated_at: new Date().toISOString() })
+    .update({ [`${docType}_url`]: url })
     .eq('client_id', clientId)
 
   revalidatePath(`/compras/${clientId}`)

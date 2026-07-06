@@ -1,4 +1,4 @@
-// web/lib/configuracoes/actions.ts
+﻿// web/lib/configuracoes/actions.ts
 'use server'
 
 import { revalidatePath } from 'next/cache'
@@ -19,7 +19,7 @@ export async function saveOrgConfig(formData: Record<string, unknown>): Promise<
     .eq('organization_id', orgId)
     .maybeSingle()
 
-  const payload = { ...formData, organization_id: orgId, updated_at: new Date().toISOString() }
+  const payload = { ...formData, organization_id: orgId }
 
   let error: any
   if (existing) {

@@ -1,4 +1,4 @@
-'use server'
+﻿'use server'
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
@@ -47,7 +47,6 @@ export async function upsertObraDelivery(
     monitor_app: data.monitor_app ?? null,
     monitor_user: data.monitor_user ?? null,
     monitor_pass: data.monitor_pass ?? null,
-    updated_at: new Date().toISOString(),
   }
 
   let error: any
@@ -92,7 +91,7 @@ export async function upsertObraDelivery(
 
   await (supabase as any)
     .from('clients')
-    .update({ pipeline_flags: newFlags, updated_at: new Date().toISOString() })
+    .update({ pipeline_flags: newFlags })
     .eq('id', clientId)
 
   revalidatePath('/entrega-obra')

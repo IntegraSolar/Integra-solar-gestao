@@ -1,4 +1,4 @@
-// web/lib/clients/actions.ts
+﻿// web/lib/clients/actions.ts
 'use server'
 
 import { revalidatePath } from 'next/cache'
@@ -59,7 +59,6 @@ export async function updateTab1(
     .update({
       ...parsed.data,
       completed_tabs: await mergeCompletedTabs(clientId, supabase, { tab1: true }),
-      updated_at: new Date().toISOString(),
     })
     .eq('id', clientId)
     .eq('organization_id', orgId)
@@ -94,7 +93,6 @@ export async function updateTab2(
       direct_delivery: raw.direct_delivery === 'on',
       viability_proposal_id: (raw.viability_proposal_id as string) || null,
       completed_tabs: await mergeCompletedTabs(clientId, supabase, { tab2: true }),
-      updated_at: new Date().toISOString(),
     })
     .eq('id', clientId)
     .eq('organization_id', orgId)
@@ -150,7 +148,6 @@ export async function updateTab3(
       commission_pct: parsed.data.commission_pct,
       commission_seller: parsed.data.commission_seller ?? null,
       proposal_id: parsed.data.proposal_id || null,
-      updated_at: new Date().toISOString(),
     }).eq('id', existingSale.id)
   } else {
     await (supabase as any).from('client_sale').insert({
@@ -183,7 +180,6 @@ export async function updateTab3(
     .from('clients')
     .update({
       completed_tabs: await mergeCompletedTabs(clientId, supabase, { tab3: true }),
-      updated_at: new Date().toISOString(),
     })
     .eq('id', clientId)
   if (error) return { error: error.message }
@@ -216,7 +212,6 @@ export async function updateTab4(
       client_notes: (raw.client_notes as string) || null,
       extra_promises: (raw.extra_promises as string) || null,
       completed_tabs: await mergeCompletedTabs(clientId, supabase, { tab4: true }),
-      updated_at: new Date().toISOString(),
     })
     .eq('id', clientId)
     .eq('organization_id', orgId)
@@ -243,7 +238,6 @@ export async function updateTab5(
       contract_date: (raw.contract_date as string) || null,
       contract_max_days: raw.contract_max_days ? Number(raw.contract_max_days) : null,
       completed_tabs: await mergeCompletedTabs(clientId, supabase, { tab5: true }),
-      updated_at: new Date().toISOString(),
     })
     .eq('id', clientId)
     .eq('organization_id', orgId)
@@ -309,7 +303,6 @@ export async function confirmTab6(clientId: string): Promise<ActionResult> {
     .from('clients')
     .update({
       completed_tabs: await mergeCompletedTabs(clientId, supabase, { tab6: true }),
-      updated_at: new Date().toISOString(),
     })
     .eq('id', clientId)
     .eq('organization_id', orgId)
@@ -352,7 +345,7 @@ export async function uploadContractFile(
   if (existing) {
     await (supabase as any)
       .from('client_contracts')
-      .update({ [dbField]: publicUrl, updated_at: new Date().toISOString() })
+      .update({ [dbField]: publicUrl })
       .eq('id', existing.id)
   } else {
     await (supabase as any).from('client_contracts').insert({
@@ -369,7 +362,6 @@ export async function uploadContractFile(
       .update({
         completed_tabs: await mergeCompletedTabs(clientId, supabase, { tab7: true }),
         pipeline_stage: 'contratos',
-        updated_at: new Date().toISOString(),
       })
       .eq('id', clientId)
     if (error) return { error: error.message }

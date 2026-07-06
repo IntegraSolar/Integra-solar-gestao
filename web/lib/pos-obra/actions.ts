@@ -1,4 +1,4 @@
-'use server'
+﻿'use server'
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
@@ -35,7 +35,6 @@ export async function upsertPosObra(
     nps: data.nps ?? null,
     observacoes: data.observacoes ?? null,
     status: data.status,
-    updated_at: new Date().toISOString(),
   }
 
   let error: any
@@ -63,7 +62,7 @@ export async function upsertPosObra(
 
   await (supabase as any)
     .from('clients')
-    .update({ pipeline_flags: newFlags, updated_at: new Date().toISOString() })
+    .update({ pipeline_flags: newFlags })
     .eq('id', clientId)
 
   revalidatePath('/pos-obra')

@@ -1,4 +1,4 @@
-'use server'
+﻿'use server'
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
@@ -25,7 +25,6 @@ export async function markCommissionPaid(
       status: 'paga',
       paid_at: new Date().toISOString(),
       comprovante_url: comprovanteUrl ?? null,
-      updated_at: new Date().toISOString(),
     })
     .eq('id', commissionId)
 
@@ -44,7 +43,6 @@ export async function markCommissionPaid(
     .from('clients')
     .update({
       pipeline_flags: { ...currentFlags, comissoes: 'paga' },
-      updated_at: new Date().toISOString(),
     })
     .eq('id', commission.client_id)
 
