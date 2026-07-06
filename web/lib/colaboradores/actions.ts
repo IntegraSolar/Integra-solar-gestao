@@ -84,7 +84,21 @@ export async function updateColaboradorPermissions(
   memberId: string,
   permissions: Record<string, unknown>
 ): Promise<ActionResult> {
+  const user = await getCurrentUserData()
+  const orgId = user?.membership?.organization.id
+  if (!orgId) return { error: 'Sem organização ativa.' }
+
   const adminClient = createAdminClient()
+
+  // Verificar que o membro pertence à organização do usuário autenticado
+  const { data: member } = await (adminClient as any)
+    .from('organization_members')
+    .select('id')
+    .eq('id', memberId)
+    .eq('organization_id', orgId)
+    .maybeSingle()
+  if (!member) return { error: 'Colaborador não encontrado.' }
+
   const { error } = await (adminClient as any)
     .from('organization_members')
     .update({ permissions })
@@ -96,7 +110,20 @@ export async function updateColaboradorPermissions(
 }
 
 export async function removeColaborador(memberId: string, userId: string): Promise<ActionResult> {
+  const user = await getCurrentUserData()
+  const orgId = user?.membership?.organization.id
+  if (!orgId) return { error: 'Sem organização ativa.' }
+
   const adminClient = createAdminClient()
+
+  // Verificar que o membro pertence à organização do usuário autenticado
+  const { data: member } = await (adminClient as any)
+    .from('organization_members')
+    .select('id, user_id')
+    .eq('id', memberId)
+    .eq('organization_id', orgId)
+    .maybeSingle()
+  if (!member) return { error: 'Colaborador não encontrado.' }
 
   const { error } = await (adminClient as any)
     .from('organization_members')

@@ -268,7 +268,8 @@ export async function uploadAttachment(
     .upload(path, file, { upsert: true })
   if (uploadError) return { error: uploadError.message }
 
-  const { data: { publicUrl } } = supabase.storage.from('client-files').getPublicUrl(path)
+  // Armazenar URL segura (via API autenticada) em vez de URL pública do bucket
+  const fileUrl = `/api/storage/download?bucket=client-files&path=${encodeURIComponent(path)}`
 
   const { data: existing } = await supabase
     .from('client_attachments')
@@ -280,14 +281,14 @@ export async function uploadAttachment(
   if (existing) {
     await supabase
       .from('client_attachments')
-      .update({ file_url: publicUrl, uploaded_at: new Date().toISOString() })
+      .update({ file_url: fileUrl, uploaded_at: new Date().toISOString() })
       .eq('id', existing.id)
   } else {
     await supabase.from('client_attachments').insert({
       client_id: clientId,
       organization_id: orgId,
       type: attachmentType,
-      file_url: publicUrl,
+      file_url: fileUrl,
     })
   }
 
@@ -333,7 +334,8 @@ export async function uploadContractFile(
     .upload(path, file, { upsert: true })
   if (uploadError) return { error: uploadError.message }
 
-  const { data: { publicUrl } } = supabase.storage.from('client-files').getPublicUrl(path)
+  // Armazenar URL segura (via API autenticada) em vez de URL pública do bucket
+  const fileUrl = `/api/storage/download?bucket=client-files&path=${encodeURIComponent(path)}`
   const dbField = field === 'contract' ? 'contract_url' : 'power_of_attorney_url'
 
   const { data: existing } = await supabase
@@ -345,13 +347,13 @@ export async function uploadContractFile(
   if (existing) {
     await supabase
       .from('client_contracts')
-      .update({ [dbField]: publicUrl } as any)
+      .update({ [dbField]: fileUrl } as any)
       .eq('id', existing.id)
   } else {
     await supabase.from('client_contracts').insert({
       client_id: clientId,
       organization_id: orgId,
-      [dbField]: publicUrl,
+      [dbField]: fileUrl,
     } as any)
   }
 

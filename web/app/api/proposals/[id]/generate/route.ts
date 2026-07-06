@@ -278,7 +278,8 @@ export async function POST(
       return NextResponse.json({ error: 'ConvertAPI não retornou URL do PDF.', step: 'pdf_result' }, { status: 502 })
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
+    // Armazenar URL segura (via API autenticada) em vez de URL pública do bucket
+    const docxUrl = `/api/storage/download?bucket=proposals&path=${encodeURIComponent(docxPath)}`
     await supabase.from('proposals').update({
       template_id: templateId,
       preco_total: pricing.preco_total,
@@ -291,7 +292,7 @@ export async function POST(
       valor_parcelas: valor_parcelas ?? 0,
       num_parcelas: num_parcelas ?? 0,
       pdf_url: pdfUrl,
-      docx_url: `${supabaseUrl}/storage/v1/object/public/proposals/${docxPath}`,
+      docx_url: docxUrl,
       gerado_em: new Date().toISOString(),
     } as any).eq('id', proposalId)
 

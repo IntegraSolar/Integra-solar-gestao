@@ -50,8 +50,16 @@ export async function addLeadOrigin(name: string): Promise<ActionResult> {
 }
 
 export async function removeLeadOrigin(id: string): Promise<ActionResult> {
+  const user = await getCurrentUserData()
+  const orgId = user?.membership?.organization.id
+  if (!orgId) return { error: 'Sem organização ativa.' }
+
   const supabase = await createClient()
-  const { error } = await supabase.from('lead_sources').delete().eq('id', id)
+  const { error } = await supabase
+    .from('lead_sources')
+    .delete()
+    .eq('id', id)
+    .eq('organization_id', orgId)
   if (error) return { error: error.message }
   revalidatePath('/configuracoes')
   return { success: 'Origem removida.' }
