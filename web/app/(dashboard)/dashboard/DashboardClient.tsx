@@ -9,8 +9,24 @@ import PipelineCards from './PipelineCards'
 import KpiCards from './KpiCards'
 import MetaCard from './MetaCard'
 
-const FaturamentoChart = dynamic(() => import('./FaturamentoChart'), { ssr: false })
-const LeadsOrigemChart = dynamic(() => import('./LeadsOrigemChart'), { ssr: false })
+const ChartSkeleton = ({ height = 220 }: { height?: number }) => (
+  <div
+    className="rounded-2xl border border-white/10 p-5 animate-pulse"
+    style={{ background: 'var(--theme-surface)', height: height + 64 }}
+  >
+    <div className="h-3 w-36 rounded bg-white/10 mb-4" />
+    <div className="rounded-lg bg-white/5" style={{ height }} />
+  </div>
+)
+
+const FaturamentoChart = dynamic(() => import('./FaturamentoChart'), {
+  ssr: false,
+  loading: () => <ChartSkeleton height={220} />,
+})
+const LeadsOrigemChart = dynamic(() => import('./LeadsOrigemChart'), {
+  ssr: false,
+  loading: () => <ChartSkeleton height={200} />,
+})
 
 export default function DashboardClient({
   pipelineCards,

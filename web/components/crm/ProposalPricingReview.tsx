@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useMemo } from 'react'
 import { X, Plus, Trash2, Settings2 } from 'lucide-react'
 import type { Proposal, ProposalTemplate } from '@/lib/crm/types'
 import { formatCurrency } from '@/lib/format'
@@ -49,22 +49,6 @@ export function ProposalPricingReview({
   const [vImposto, setVImposto] = useState(orgConfig.pct_imposto ?? 0)
   const [vMargem, setVMargem] = useState(orgConfig.pct_margem ?? 0)
 
-  // Cálculos com variáveis locais
-  const pct_imposto  = vImposto / 100
-  const pct_margem   = vMargem / 100
-  const pct_comissao = vComissao / 100
-  const pct_ca       = vMaterialCa / 100
-  const divisor = 1 - pct_imposto - pct_margem - pct_comissao
-  const d = divisor > 0 ? divisor : 1
-
-  const km_rodados = (proposal as any).km_rodados ?? 0
-
-  const custo_kit        = proposal.kit_value
-  const custo_projeto    = proposal.total_power_kwp * vProjeto
-  const custo_instalacao = proposal.panel_qty * vInstalacao
-  const custo_km         = vKm * km_rodados
-  const custo_ca         = proposal.kit_value * pct_ca
-
   type Row = {
     categoria: string
     item: string
@@ -76,33 +60,47 @@ export function ProposalPricingReview({
     venda: number
   }
 
-  function buildRow(categoria: string, item: string, qtd: number | string, custoUnit: number, custo: number): Row {
-    const venda = custo / d
-    return {
-      categoria, item, qtd, custoUnit, custo,
-      imposto: venda * pct_imposto,
-      lucro: venda * pct_margem,
-      venda,
+  // Memoizado: recalcula apenas quando variáveis de preço ou custos extras mudam.
+  // Evita reprocessar a tabela ao alterar estado não relacionado (error, isPending, etc).
+  const { rows, totals } = useMemo(() => {
+    const pct_imposto  = vImposto / 100
+    const pct_margem   = vMargem / 100
+    const pct_comissao = vComissao / 100
+    const pct_ca       = vMaterialCa / 100
+    const divisor = 1 - pct_imposto - pct_margem - pct_comissao
+    const d = divisor > 0 ? divisor : 1
+    const km_rodados = (proposal as any).km_rodados ?? 0
+
+    function buildRow(categoria: string, item: string, qtd: number | string, custoUnit: number, custo: number): Row {
+      const venda = custo / d
+      return {
+        categoria, item, qtd, custoUnit, custo,
+        imposto: venda * pct_imposto,
+        lucro: venda * pct_margem,
+        venda,
+      }
     }
-  }
 
-  const rows: Row[] = [
-    buildRow('Kit', 'Equipamentos', 1, proposal.kit_value, custo_kit),
-    buildRow('Projeto', 'Engenharia elétrica', proposal.total_power_kwp.toFixed(2) + ' kWp', vProjeto, custo_projeto),
-    buildRow('Instalação', 'Mão de obra', proposal.panel_qty, vInstalacao, custo_instalacao),
-    buildRow('Quilometragem', 'Deslocamento', km_rodados, vKm, custo_km),
-    buildRow('Material CA', '% sobre kit', `${vMaterialCa}%`, custo_ca, custo_ca),
-  ]
+    const computed: Row[] = [
+      buildRow('Kit', 'Equipamentos', 1, proposal.kit_value, proposal.kit_value),
+      buildRow('Projeto', 'Engenharia elétrica', proposal.total_power_kwp.toFixed(2) + ' kWp', vProjeto, proposal.total_power_kwp * vProjeto),
+      buildRow('Instalação', 'Mão de obra', proposal.panel_qty, vInstalacao, proposal.panel_qty * vInstalacao),
+      buildRow('Quilometragem', 'Deslocamento', km_rodados, vKm, vKm * km_rodados),
+      buildRow('Material CA', '% sobre kit', `${vMaterialCa}%`, proposal.kit_value * pct_ca, proposal.kit_value * pct_ca),
+    ]
 
-  for (const ec of extraCosts) {
-    const custo = ec.qtd * ec.custo_unit
-    rows.push(buildRow(ec.categoria || 'Extra', ec.item || '—', ec.qtd, ec.custo_unit, custo))
-  }
+    for (const ec of extraCosts) {
+      const custo = ec.qtd * ec.custo_unit
+      computed.push(buildRow(ec.categoria || 'Extra', ec.item || '—', ec.qtd, ec.custo_unit, custo))
+    }
 
-  const totals = rows.reduce(
-    (acc, r) => ({ custo: acc.custo + r.custo, imposto: acc.imposto + r.imposto, lucro: acc.lucro + r.lucro, venda: acc.venda + r.venda }),
-    { custo: 0, imposto: 0, lucro: 0, venda: 0 }
-  )
+    const totals = computed.reduce(
+      (acc, r) => ({ custo: acc.custo + r.custo, imposto: acc.imposto + r.imposto, lucro: acc.lucro + r.lucro, venda: acc.venda + r.venda }),
+      { custo: 0, imposto: 0, lucro: 0, venda: 0 }
+    )
+
+    return { rows: computed, totals }
+  }, [vInstalacao, vProjeto, vMaterialCa, vKm, vComissao, vImposto, vMargem, extraCosts, proposal])
 
   function addExtraCost() {
     setExtraCosts((prev) => [...prev, { id: crypto.randomUUID(), categoria: '', item: '', qtd: 1, custo_unit: 0 }])

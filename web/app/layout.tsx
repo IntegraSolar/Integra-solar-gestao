@@ -4,21 +4,21 @@ import './globals.css'
 
 const figtree = Figtree({
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700', '800'],
+  weight: ['400', '500', '600', '700'],
   variable: '--font-figtree',
   display: 'swap',
 })
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
+  weight: ['400', '500', '600'],
   variable: '--font-dm-sans',
   display: 'swap',
 })
 
 const sora = Sora({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
+  weight: ['400', '600'],
   variable: '--font-sora',
   display: 'swap',
 })
