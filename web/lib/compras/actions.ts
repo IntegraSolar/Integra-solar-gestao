@@ -26,7 +26,7 @@ export async function upsertPurchase(
   const supabase = await createClient()
 
   // Check if record exists
-  const { data: existing } = await (supabase as any)
+  const { data: existing } = await supabase
     .from('client_purchases')
     .select('id')
     .eq('client_id', clientId)
@@ -46,12 +46,12 @@ export async function upsertPurchase(
 
   let error: any
   if (existing) {
-    ;({ error } = await (supabase as any)
+    ;({ error } = await supabase
       .from('client_purchases')
       .update(purchaseData)
       .eq('id', existing.id))
   } else {
-    ;({ error } = await (supabase as any)
+    ;({ error } = await supabase
       .from('client_purchases')
       .insert(purchaseData))
   }
@@ -59,7 +59,7 @@ export async function upsertPurchase(
   if (error) return { error: error.message }
 
   // Fetch current pipeline_flags
-  const { data: client } = await (supabase as any)
+  const { data: client } = await supabase
     .from('clients')
     .select('pipeline_flags, lead_id')
     .eq('id', clientId)
@@ -75,7 +75,7 @@ export async function upsertPurchase(
     // Find vendedor_id via lead
     let vendedorId: string | null = null
     if (client?.lead_id) {
-      const { data: lead } = await (supabase as any)
+      const { data: lead } = await supabase
         .from('leads')
         .select('assigned_to_user_id')
         .eq('id', client.lead_id)
@@ -96,7 +96,7 @@ export async function upsertPurchase(
     }
 
     // Create commission record
-    await (supabase as any).from('client_commissions').insert({
+    await supabase.from('client_commissions').insert({
       client_id: clientId,
       organization_id: orgId,
       vendedor_id: vendedorId,
@@ -109,14 +109,14 @@ export async function upsertPurchase(
   if (!currentFlags.entrega_material) {
     newFlags.entrega_material = 'pendente'
 
-    const { data: existingDelivery } = await (supabase as any)
+    const { data: existingDelivery } = await supabase
       .from('client_deliveries')
       .select('id')
       .eq('client_id', clientId)
       .maybeSingle()
 
     if (!existingDelivery) {
-      await (supabase as any).from('client_deliveries').insert({
+      await supabase.from('client_deliveries').insert({
         client_id: clientId,
         organization_id: orgId,
         status: 'pendente',
@@ -125,7 +125,7 @@ export async function upsertPurchase(
     }
   }
 
-  await (supabase as any)
+  await supabase
     .from('clients')
     .update({
       pipeline_flags: newFlags,
@@ -157,9 +157,9 @@ export async function uploadPurchaseDoc(
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
   const url = `${supabaseUrl}/storage/v1/object/public/client-files/${filePath}`
 
-  await (supabase as any)
+  await supabase
     .from('client_purchases')
-    .update({ [`${docType}_url`]: url })
+    .update({ [`${docType}_url`]: url } as any)
     .eq('client_id', clientId)
 
   revalidatePath(`/compras/${clientId}`)

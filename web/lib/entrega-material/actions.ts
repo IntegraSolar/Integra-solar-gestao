@@ -24,7 +24,7 @@ export async function upsertDelivery(
 
   const supabase = await createClient()
 
-  const { data: existing } = await (supabase as any)
+  const { data: existing } = await supabase
     .from('client_deliveries')
     .select('id')
     .eq('client_id', clientId)
@@ -40,19 +40,19 @@ export async function upsertDelivery(
 
   let error: any
   if (existing) {
-    ;({ error } = await (supabase as any)
+    ;({ error } = await supabase
       .from('client_deliveries')
       .update(deliveryData)
       .eq('id', existing.id))
   } else {
-    ;({ error } = await (supabase as any)
+    ;({ error } = await supabase
       .from('client_deliveries')
       .insert(deliveryData))
   }
 
   if (error) return { error: error.message }
 
-  const { data: client } = await (supabase as any)
+  const { data: client } = await supabase
     .from('clients')
     .select('pipeline_flags')
     .eq('id', clientId)
@@ -64,14 +64,14 @@ export async function upsertDelivery(
   if (!currentFlags.obra) {
     newFlags.obra = 'pendente'
 
-    const { data: existingObra } = await (supabase as any)
+    const { data: existingObra } = await supabase
       .from('client_obras')
       .select('id')
       .eq('client_id', clientId)
       .maybeSingle()
 
     if (!existingObra) {
-      await (supabase as any).from('client_obras').insert({
+      await supabase.from('client_obras').insert({
         client_id: clientId,
         organization_id: orgId,
         status: 'aguardando',
@@ -79,7 +79,7 @@ export async function upsertDelivery(
     }
   }
 
-  await (supabase as any)
+  await supabase
     .from('clients')
     .update({ pipeline_flags: newFlags })
     .eq('id', clientId)
@@ -110,7 +110,7 @@ export async function uploadDeliveryMedia(
   const url = `${supabaseUrl}/storage/v1/object/public/client-files/${filePath}`
 
   // Append to media_urls JSON array
-  const { data: delivery } = await (supabase as any)
+  const { data: delivery } = await supabase
     .from('client_deliveries')
     .select('media_urls')
     .eq('client_id', clientId)
@@ -122,7 +122,7 @@ export async function uploadDeliveryMedia(
 
   currentUrls.push(url)
 
-  await (supabase as any)
+  await supabase
     .from('client_deliveries')
     .update({ media_urls: JSON.stringify(currentUrls) })
     .eq('client_id', clientId)

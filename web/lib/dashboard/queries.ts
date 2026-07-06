@@ -1,4 +1,4 @@
-// web/lib/dashboard/queries.ts
+﻿// web/lib/dashboard/queries.ts
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
 import {
@@ -82,7 +82,7 @@ export async function getPipelineCards(): Promise<PipelineCard[]> {
   ] = await Promise.all([
     // Leads: total ativos
     (async () => {
-      const { count } = await (supabase as any).from('leads').select('id', { count: 'exact', head: true }).eq('organization_id', orgId).eq('converted', false)
+      const { count } = await supabase.from('leads').select('id', { count: 'exact', head: true }).eq('organization_id', orgId).eq('converted', false)
       return count ?? 0
     })(),
     // Leads pendentes: follow-ups atrasados OU sem movimentação há 7+ dias
@@ -90,7 +90,7 @@ export async function getPipelineCards(): Promise<PipelineCard[]> {
       const seteDiasAtras = new Date(Date.now() - 7 * 86400000).toISOString()
 
       // Leads com follow-ups atrasados
-      const { data: followupLeads } = await (supabase as any)
+      const { data: followupLeads } = await supabase
         .from('tasks')
         .select('related_to_lead_id')
         .eq('organization_id', orgId)
@@ -99,7 +99,7 @@ export async function getPipelineCards(): Promise<PipelineCard[]> {
       const leadsComFollowupAtrasado = new Set((followupLeads ?? []).map((r: any) => r.related_to_lead_id).filter(Boolean))
 
       // Leads sem movimentação há 7+ dias
-      const { data: leadsInativos } = await (supabase as any)
+      const { data: leadsInativos } = await supabase
         .from('leads')
         .select('id')
         .eq('organization_id', orgId)
@@ -114,17 +114,17 @@ export async function getPipelineCards(): Promise<PipelineCard[]> {
     countTable('client_contracts'),
     // Contratos pendentes: não assinados
     (async () => {
-      const { count } = await (supabase as any).from('client_contracts').select('id', { count: 'exact', head: true }).eq('organization_id', orgId).eq('signed', false)
+      const { count } = await supabase.from('client_contracts').select('id', { count: 'exact', head: true }).eq('organization_id', orgId).eq('signed', false)
       return count ?? 0
     })(),
     // Financeiro: total clientes distintos com parcelas
     (async () => {
-      const { data } = await (supabase as any).from('client_installments').select('client_id').eq('organization_id', orgId)
+      const { data } = await supabase.from('client_installments').select('client_id').eq('organization_id', orgId)
       return new Set((data ?? []).map((r: any) => r.client_id)).size
     })(),
     // Financeiro pendentes: clientes com parcelas vencidas não pagas
     (async () => {
-      const { data } = await (supabase as any).from('client_installments').select('client_id').eq('organization_id', orgId).eq('status', InstallmentStatus.PENDENTE).lt('due_date', today)
+      const { data } = await supabase.from('client_installments').select('client_id').eq('organization_id', orgId).eq('status', InstallmentStatus.PENDENTE).lt('due_date', today)
       return new Set((data ?? []).map((r: any) => r.client_id)).size
     })(),
     // Projetos
@@ -134,8 +134,8 @@ export async function getPipelineCards(): Promise<PipelineCard[]> {
     countTable('client_purchases'),
     // Compras pendentes: sem status ou aguardando
     (async () => {
-      const { count: aguardando } = await (supabase as any).from('client_purchases').select('id', { count: 'exact', head: true }).eq('organization_id', orgId).eq('status', PurchaseStatus.AGUARDANDO)
-      const { count: semStatus } = await (supabase as any).from('client_purchases').select('id', { count: 'exact', head: true }).eq('organization_id', orgId).is('status', null)
+      const { count: aguardando } = await supabase.from('client_purchases').select('id', { count: 'exact', head: true }).eq('organization_id', orgId).eq('status', PurchaseStatus.AGUARDANDO)
+      const { count: semStatus } = await supabase.from('client_purchases').select('id', { count: 'exact', head: true }).eq('organization_id', orgId).is('status', null)
       return (aguardando ?? 0) + (semStatus ?? 0)
     })(),
     // Comissões
@@ -177,7 +177,7 @@ export async function getKpiData(dateFrom: string | null, dateTo: string | null)
 
   const supabase = await createClient()
 
-  let q = (supabase as any).from('clients').select('id, system_power_kwp').eq('organization_id', orgId).not('contract_date', 'is', null)
+  let q = supabase.from('clients').select('id, system_power_kwp').eq('organization_id', orgId).not('contract_date', 'is', null)
   if (dateFrom) q = q.gte('contract_date', dateFrom)
   if (dateTo) q = q.lte('contract_date', dateTo)
   const { data: clientsData } = await q
@@ -189,7 +189,7 @@ export async function getKpiData(dateFrom: string | null, dateTo: string | null)
 
   let valor_total = 0
   if (ids.length > 0) {
-    const { data: sales } = await (supabase as any).from('client_sale').select('sale_value').in('client_id', ids)
+    const { data: sales } = await supabase.from('client_sale').select('sale_value').in('client_id', ids)
     valor_total = ((sales ?? []) as any[]).reduce((s, x) => s + (x.sale_value ?? 0), 0)
   }
 
@@ -207,7 +207,7 @@ export async function getFaturamentoComparativo(): Promise<FaturamentoMes[]> {
   const anoAtual = now.getFullYear()
   const anoAnterior = anoAtual - 1
 
-  const { data: raw } = await (supabase as any)
+  const { data: raw } = await supabase
     .from('clients')
     .select('contract_date, client_sale(sale_value)')
     .eq('organization_id', orgId)
@@ -245,7 +245,7 @@ export async function getLeadsPorOrigem(): Promise<LeadOrigemItem[]> {
   if (!orgId) return []
 
   const supabase = await createClient()
-  const { data } = await (supabase as any)
+  const { data } = await supabase
     .from('leads')
     .select('lead_source_id, lead_sources!lead_source_id(name)')
     .eq('organization_id', orgId)
@@ -268,7 +268,7 @@ export async function getMetaData(dateFrom: string | null, dateTo: string | null
 
   const supabase = await createClient()
 
-  const { data: config } = await (supabase as any).from('org_config').select('meta_anual').eq('organization_id', orgId).maybeSingle()
+  const { data: config } = await supabase.from('org_config').select('meta_anual').eq('organization_id', orgId).maybeSingle()
   const meta_anual = config?.meta_anual ?? 0
   const meta_mensal = meta_anual > 0 ? meta_anual / 12 : 0
 
@@ -282,16 +282,16 @@ export async function getMetaData(dateFrom: string | null, dateTo: string | null
   const toMes = dateTo ?? hoje
 
   const [clientesMes, clientesAno] = await Promise.all([
-    (supabase as any).from('clients').select('id').eq('organization_id', orgId).gte('contract_date', fromMes).lte('contract_date', toMes),
-    (supabase as any).from('clients').select('id').eq('organization_id', orgId).gte('contract_date', anoInicio).lte('contract_date', anoFim),
+    supabase.from('clients').select('id').eq('organization_id', orgId).gte('contract_date', fromMes).lte('contract_date', toMes),
+    supabase.from('clients').select('id').eq('organization_id', orgId).gte('contract_date', anoInicio).lte('contract_date', anoFim),
   ])
 
   const idsMes = ((clientesMes.data ?? []) as any[]).map((c) => c.id)
   const idsAno = ((clientesAno.data ?? []) as any[]).map((c) => c.id)
 
   const [salesMes, salesAno] = await Promise.all([
-    idsMes.length > 0 ? (supabase as any).from('client_sale').select('sale_value').in('client_id', idsMes) : { data: [] },
-    idsAno.length > 0 ? (supabase as any).from('client_sale').select('sale_value').in('client_id', idsAno) : { data: [] },
+    idsMes.length > 0 ? supabase.from('client_sale').select('sale_value').in('client_id', idsMes) : { data: [] },
+    idsAno.length > 0 ? supabase.from('client_sale').select('sale_value').in('client_id', idsAno) : { data: [] },
   ])
 
   const realizado_mes = ((salesMes.data ?? []) as any[]).reduce((s, x) => s + (x.sale_value ?? 0), 0)

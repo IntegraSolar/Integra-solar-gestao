@@ -20,7 +20,7 @@ export async function updateContractStatus(
   const supabase = await createClient()
 
   // Busca o contrato existente
-  const { data: existing } = await (supabase as any)
+  const { data: existing } = await supabase
     .from('client_contracts')
     .select('id')
     .eq('client_id', clientId)
@@ -36,16 +36,16 @@ export async function updateContractStatus(
     contractUpdate.signed_at = new Date().toISOString()
   }
 
-  const { error: contractError } = await (supabase as any)
+  const { error: contractError } = await supabase
     .from('client_contracts')
-    .update(contractUpdate)
+    .update(contractUpdate as any)
     .eq('id', existing.id)
 
   if (contractError) return { error: contractError.message }
 
   // Avança pipeline se assinado
   if (status === 'assinado') {
-    const { error: clientError } = await (supabase as any)
+    const { error: clientError } = await supabase
       .from('clients')
       .update({ pipeline_stage: 'financeiro' })
       .eq('id', clientId)

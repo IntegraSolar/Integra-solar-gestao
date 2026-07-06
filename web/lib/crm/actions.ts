@@ -120,7 +120,7 @@ export async function createNote(leadId: string, content: string): Promise<Actio
   if (!content.trim()) return { error: 'Anotação não pode ser vazia.' }
 
   const supabase = await createClient()
-  const { error } = await (supabase as any).from('lead_notes').insert({
+  const { error } = await supabase.from('lead_notes').insert({
     lead_id: leadId,
     organization_id: orgId,
     created_by: userId,
@@ -135,7 +135,7 @@ export async function deleteNote(noteId: string): Promise<ActionResult> {
   const orgId = await getOrgId()
   if (!orgId) return { error: 'Sem organização ativa.' }
   const supabase = await createClient()
-  const { error } = await (supabase as any).from('lead_notes').delete().eq('id', noteId).eq('organization_id', orgId)
+  const { error } = await supabase.from('lead_notes').delete().eq('id', noteId).eq('organization_id', orgId)
   if (error) return { error: (error as any).message }
   revalidatePath('/leads')
   return { success: 'Anotação excluída.' }
@@ -347,7 +347,7 @@ export async function convertLeadToClient(leadId: string): Promise<{ clientId?: 
   if (!lead) return { error: 'Lead não encontrado.' }
 
   // Criar cliente básico
-  const { data: client, error: clientError } = await (supabase as any)
+  const { data: client, error: clientError } = await supabase
     .from('clients')
     .insert({
       organization_id: orgId,
@@ -363,7 +363,7 @@ export async function convertLeadToClient(leadId: string): Promise<{ clientId?: 
   if (clientError || !client) return { error: clientError?.message ?? 'Erro ao criar cliente.' }
 
   // Marcar lead como convertido
-  const { error: updateError } = await (supabase as any).from('leads').update({
+  const { error: updateError } = await supabase.from('leads').update({
     converted: true,
     converted_to_client_id: client.id,
   }).eq('id', leadId)

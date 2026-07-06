@@ -1,4 +1,4 @@
-// web/lib/crm/queries.ts
+﻿// web/lib/crm/queries.ts
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
 import type { Lead, FunnelStage, LeadSource, Proposal, Supplier } from './types'
@@ -144,7 +144,7 @@ export async function getGenerationFactor(): Promise<number> {
   const user = await getCurrentUserData()
   if (!user?.membership) return 1.0
   const supabase = await createClient()
-  const { data } = await (supabase as any)
+  const { data } = await supabase
     .from('org_config')
     .select('kwh_por_kwp')
     .eq('organization_id', user.membership.organization.id)

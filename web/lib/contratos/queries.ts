@@ -1,4 +1,4 @@
-// web/lib/contratos/queries.ts
+﻿// web/lib/contratos/queries.ts
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
 
@@ -22,7 +22,7 @@ export async function getContratos(): Promise<ContratoClient[]> {
   const user = await getCurrentUserData()
   if (!user?.membership) return []
   const supabase = await createClient()
-  const { data } = await (supabase as any)
+  const { data } = await supabase
     .from('clients')
     .select(`
       id, name, city, contract_date, pipeline_stage,
@@ -38,7 +38,7 @@ export async function getContratoById(clientId: string): Promise<ContratoClient 
   const user = await getCurrentUserData()
   if (!user?.membership) return null
   const supabase = await createClient()
-  const { data } = await (supabase as any)
+  const { data } = await supabase
     .from('clients')
     .select(`
       id, name, city, contract_date, pipeline_stage,

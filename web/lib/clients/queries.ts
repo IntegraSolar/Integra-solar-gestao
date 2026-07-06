@@ -1,4 +1,4 @@
-// web/lib/clients/queries.ts
+﻿// web/lib/clients/queries.ts
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
 import type { Client } from './types'
@@ -20,7 +20,7 @@ export async function getClients(page = 0): Promise<{ clients: Client[]; total: 
   const supabase = await createClient()
   const from = page * CLIENTS_PAGE_SIZE
   const to = from + CLIENTS_PAGE_SIZE - 1
-  const { data, count } = await (supabase as any)
+  const { data, count } = await supabase
     .from('clients')
     .select(CLIENT_SELECT, { count: 'exact' })
     .eq('organization_id', user.membership.organization.id)
@@ -34,7 +34,7 @@ export async function getAllClients(): Promise<Client[]> {
   const user = await getCurrentUserData()
   if (!user?.membership) return []
   const supabase = await createClient()
-  const { data } = await (supabase as any)
+  const { data } = await supabase
     .from('clients')
     .select('id, name, phone, city, pipeline_stage, completed_tabs, delivery_start_date, contract_max_days')
     .eq('organization_id', user.membership.organization.id)
@@ -46,7 +46,7 @@ export async function getClientById(id: string): Promise<Client | null> {
   const user = await getCurrentUserData()
   if (!user?.membership) return null
   const supabase = await createClient()
-  const { data } = await (supabase as any)
+  const { data } = await supabase
     .from('clients')
     .select(CLIENT_SELECT)
     .eq('id', id)

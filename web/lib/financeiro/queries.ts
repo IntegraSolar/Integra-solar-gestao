@@ -1,4 +1,4 @@
-// web/lib/financeiro/queries.ts
+﻿// web/lib/financeiro/queries.ts
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
 
@@ -55,7 +55,7 @@ export async function getFinanceiroPainel(params: {
   const lastDay = new Date(params.year, params.month, 0).getDate()
   const endDate = `${params.year}-${String(params.month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
 
-  const { data } = await (supabase as any)
+  const { data } = await supabase
     .from('client_installments')
     .select(`
       id, client_id, position, due_date, amount, notes, status, confirmed_at,
@@ -78,7 +78,7 @@ export async function getFinanceiroPainel(params: {
     const leadIds = ((leads ?? []) as any[]).map((l) => l.id)
 
     if (leadIds.length > 0) {
-      const { data: clientsForVendedor } = await (supabase as any)
+      const { data: clientsForVendedor } = await supabase
         .from('clients')
         .select('id')
         .in('lead_id', leadIds)
@@ -120,7 +120,7 @@ export async function getParcelasByClient(clientId: string): Promise<FinanceiroI
   const user = await getCurrentUserData()
   if (!user?.membership) return []
   const supabase = await createClient()
-  const { data } = await (supabase as any)
+  const { data } = await supabase
     .from('client_installments')
     .select('id, client_id, position, due_date, amount, notes, status, confirmed_at')
     .eq('client_id', clientId)

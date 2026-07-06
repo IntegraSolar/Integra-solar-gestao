@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+﻿import { createClient } from '@/lib/supabase/server'
 
 export type ModulePermission = {
   access: boolean
@@ -43,7 +43,7 @@ export async function getCurrentUserData(): Promise<CurrentUserData | null> {
 
   if (!profile) return null
 
-  const { data: membership } = await (supabase as any)
+  const { data: membership } = await supabase
     .from('organization_members')
     .select(`
       id,

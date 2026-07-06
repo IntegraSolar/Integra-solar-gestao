@@ -1,4 +1,4 @@
-// web/lib/auditoria/actions.ts
+﻿// web/lib/auditoria/actions.ts
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
@@ -12,7 +12,7 @@ export async function logAction(action: string, description: string): Promise<vo
     if (!orgId) return
 
     const supabase = await createClient()
-    await (supabase as any).from('audit_logs').insert({
+    await supabase.from('audit_logs').insert({
       organization_id: orgId,
       user_id: user.profile.id,
       user_name: user.profile.full_name ?? user.profile.email,

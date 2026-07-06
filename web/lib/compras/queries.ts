@@ -1,4 +1,4 @@
-// web/lib/compras/queries.ts
+﻿// web/lib/compras/queries.ts
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
 
@@ -26,7 +26,7 @@ export async function getCompras(): Promise<CompraClient[]> {
 
   const supabase = await createClient()
 
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('client_purchases')
     .select(`
       id,
@@ -50,7 +50,7 @@ export async function getCompras(): Promise<CompraClient[]> {
   if (error || !data) return []
 
   const clientIds: string[] = data.map((r: any) => r.client_id)
-  const { data: parcelas } = await (supabase as any)
+  const { data: parcelas } = await supabase
     .from('client_installments')
     .select('client_id, confirmed_at')
     .in('client_id', clientIds)
@@ -97,11 +97,12 @@ export async function getCompraById(clientId: string): Promise<CompraClient | nu
 
   const supabase = await createClient()
 
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('client_purchases')
     .select(`
       id,
       client_id,
+      created_at,
       fornecedor,
       itens,
       valor,

@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+﻿import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
 
 export type EntregaObraChecklist = {
@@ -28,7 +28,7 @@ export async function getEntregasObra(): Promise<EntregaObraClient[]> {
 
   const supabase = await createClient()
 
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('client_obra_deliveries')
     .select(`
       id,
@@ -63,7 +63,7 @@ export async function getEntregasObra(): Promise<EntregaObraClient[]> {
       data_entrega: r.data_entrega ?? null,
       termo_url: r.termo_url ?? null,
       observacoes: r.observacoes ?? null,
-      checklist: r.checklist ?? { vistoria: false, fotos: false, cliente_ok: false },
+      checklist: (r.checklist as EntregaObraChecklist) ?? { vistoria: false, fotos: false, cliente_ok: false },
       status: r.status,
       dias_usados: diasUsados,
       contract_max_days: r.clients.contract_max_days ?? null,
@@ -78,7 +78,7 @@ export async function getEntregaObraById(clientId: string): Promise<EntregaObraC
 
   const supabase = await createClient()
 
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('client_obra_deliveries')
     .select(`
       id,
@@ -114,7 +114,7 @@ export async function getEntregaObraById(clientId: string): Promise<EntregaObraC
     data_entrega: data.data_entrega ?? null,
     termo_url: data.termo_url ?? null,
     observacoes: data.observacoes ?? null,
-    checklist: data.checklist ?? { vistoria: false, fotos: false, cliente_ok: false },
+    checklist: (data.checklist as EntregaObraChecklist) ?? { vistoria: false, fotos: false, cliente_ok: false },
     status: data.status,
     dias_usados: diasUsados,
     contract_max_days: data.clients.contract_max_days ?? null,

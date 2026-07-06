@@ -1,4 +1,4 @@
-'use server'
+﻿'use server'
 
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
@@ -13,7 +13,7 @@ export async function getProposalTemplates(): Promise<ProposalTemplate[]> {
   const orgId = await getOrgId()
   if (!orgId) return []
   const supabase = await createClient()
-  const { data } = await (supabase as any)
+  const { data } = await supabase
     .from('proposal_templates')
     .select('*')
     .eq('org_id', orgId)
@@ -25,7 +25,7 @@ export async function getActiveProposalTemplates(): Promise<ProposalTemplate[]> 
   const orgId = await getOrgId()
   if (!orgId) return []
   const supabase = await createClient()
-  const { data } = await (supabase as any)
+  const { data } = await supabase
     .from('proposal_templates')
     .select('*')
     .eq('org_id', orgId)

@@ -13,7 +13,7 @@ export async function saveOrgConfig(formData: Record<string, unknown>): Promise<
 
   const supabase = await createClient()
 
-  const { data: existing } = await (supabase as any)
+  const { data: existing } = await supabase
     .from('org_config')
     .select('id')
     .eq('organization_id', orgId)
@@ -23,9 +23,9 @@ export async function saveOrgConfig(formData: Record<string, unknown>): Promise<
 
   let error: any
   if (existing) {
-    ;({ error } = await (supabase as any).from('org_config').update(payload).eq('id', existing.id))
+    ;({ error } = await supabase.from('org_config').update(payload).eq('id', existing.id))
   } else {
-    ;({ error } = await (supabase as any).from('org_config').insert(payload))
+    ;({ error } = await supabase.from('org_config').insert(payload))
   }
 
   if (error) return { error: error.message }
@@ -40,7 +40,7 @@ export async function addLeadOrigin(name: string): Promise<ActionResult> {
   if (!name.trim()) return { error: 'Nome obrigatório.' }
 
   const supabase = await createClient()
-  const { error } = await (supabase as any)
+  const { error } = await supabase
     .from('lead_sources')
     .insert({ organization_id: orgId, name: name.trim() })
 
@@ -51,7 +51,7 @@ export async function addLeadOrigin(name: string): Promise<ActionResult> {
 
 export async function removeLeadOrigin(id: string): Promise<ActionResult> {
   const supabase = await createClient()
-  const { error } = await (supabase as any).from('lead_sources').delete().eq('id', id)
+  const { error } = await supabase.from('lead_sources').delete().eq('id', id)
   if (error) return { error: error.message }
   revalidatePath('/configuracoes')
   return { success: 'Origem removida.' }

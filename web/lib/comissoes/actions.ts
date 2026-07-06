@@ -11,7 +11,7 @@ export async function markCommissionPaid(
   const supabase = await createClient()
 
   // Fetch commission to get client_id
-  const { data: commission, error: fetchError } = await (supabase as any)
+  const { data: commission, error: fetchError } = await supabase
     .from('client_commissions')
     .select('id, client_id')
     .eq('id', commissionId)
@@ -19,7 +19,7 @@ export async function markCommissionPaid(
 
   if (fetchError || !commission) return { error: 'Comissão não encontrada.' }
 
-  const { error } = await (supabase as any)
+  const { error } = await supabase
     .from('client_commissions')
     .update({
       status: 'paga',
@@ -31,7 +31,7 @@ export async function markCommissionPaid(
   if (error) return { error: error.message }
 
   // Update pipeline_flags.comissoes = 'paga'
-  const { data: client } = await (supabase as any)
+  const { data: client } = await supabase
     .from('clients')
     .select('pipeline_flags')
     .eq('id', commission.client_id)
@@ -39,7 +39,7 @@ export async function markCommissionPaid(
 
   const currentFlags = (client?.pipeline_flags as Record<string, string>) ?? {}
 
-  await (supabase as any)
+  await supabase
     .from('clients')
     .update({
       pipeline_flags: { ...currentFlags, comissoes: 'paga' },

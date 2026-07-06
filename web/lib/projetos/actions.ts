@@ -32,7 +32,7 @@ export async function upsertProject(
   const supabase = await createClient()
 
   // Check if record exists
-  const { data: existing } = await (supabase as any)
+  const { data: existing } = await supabase
     .from('client_projects')
     .select('id')
     .eq('client_id', clientId)
@@ -53,12 +53,12 @@ export async function upsertProject(
 
   let error: any
   if (existing) {
-    ;({ error } = await (supabase as any)
+    ;({ error } = await supabase
       .from('client_projects')
       .update(projectData)
       .eq('id', existing.id))
   } else {
-    ;({ error } = await (supabase as any)
+    ;({ error } = await supabase
       .from('client_projects')
       .insert(projectData))
   }
@@ -66,7 +66,7 @@ export async function upsertProject(
   if (error) return { error: error.message }
 
   // Update pipeline_flags
-  const { data: client } = await (supabase as any)
+  const { data: client } = await supabase
     .from('clients')
     .select('pipeline_flags')
     .eq('id', clientId)
@@ -74,7 +74,7 @@ export async function upsertProject(
 
   const currentFlags = (client?.pipeline_flags as Record<string, string>) ?? {}
 
-  await (supabase as any)
+  await supabase
     .from('clients')
     .update({
       pipeline_flags: {
@@ -109,9 +109,9 @@ export async function uploadProjectDoc(
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
   const url = `${supabaseUrl}/storage/v1/object/public/project-docs/${filePath}`
 
-  await (supabase as any)
+  await supabase
     .from('client_projects')
-    .update({ [`${docType}_url`]: url })
+    .update({ [`${docType}_url`]: url } as any)
     .eq('client_id', clientId)
 
   revalidatePath(`/projetos/${clientId}`)

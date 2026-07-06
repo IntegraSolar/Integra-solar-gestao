@@ -1,4 +1,4 @@
-// web/lib/projetos/queries.ts
+﻿// web/lib/projetos/queries.ts
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
 
@@ -43,11 +43,12 @@ export async function getProjetos(): Promise<ProjetoClient[]> {
 
   const supabase = await createClient()
 
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('client_projects')
     .select(`
       id,
       client_id,
+      created_at,
       responsavel_id,
       responsavel_nome,
       numero_processo,
@@ -74,7 +75,7 @@ export async function getProjetos(): Promise<ProjetoClient[]> {
 
   // Fetch primeira parcela confirmed_at for prazo global
   const clientIds: string[] = data.map((r: any) => r.client_id)
-  const { data: parcelas } = await (supabase as any)
+  const { data: parcelas } = await supabase
     .from('client_installments')
     .select('client_id, confirmed_at')
     .in('client_id', clientIds)
@@ -89,12 +90,12 @@ export async function getProjetos(): Promise<ProjetoClient[]> {
   const responsavelIds = Array.from(new Set(data.map((r: any) => r.responsavel_id).filter(Boolean))) as string[]
   const responsavelMap: Record<string, string> = {}
   if (responsavelIds.length > 0) {
-    const { data: profiles } = await (supabase as any)
+    const { data: profiles } = await supabase
       .from('profiles')
       .select('id, full_name')
       .in('id', responsavelIds)
     for (const p of profiles ?? []) {
-      responsavelMap[p.id] = p.full_name
+      responsavelMap[p.id] = p.full_name ?? ''
     }
   }
 
@@ -120,7 +121,7 @@ export async function getProjetos(): Promise<ProjetoClient[]> {
       data_solicitacao_vistoria: r.data_solicitacao_vistoria ?? null,
       prazo_vistoria: r.prazo_vistoria ?? null,
       status: r.status,
-      checklist: r.checklist ?? { memorial_calculo: false, art: false, homologacao: false },
+      checklist: (r.checklist as ProjetoChecklist) ?? { memorial_calculo: false, art: false, homologacao: false },
       dias_usados: diasUsados,
       dias_em_projetos: diasEmProjetos,
       contract_max_days: r.clients.contract_max_days ?? null,
@@ -139,11 +140,12 @@ export async function getProjetoById(clientId: string): Promise<ProjetoClient | 
 
   const supabase = await createClient()
 
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('client_projects')
     .select(`
       id,
       client_id,
+      created_at,
       responsavel_id,
       responsavel_nome,
       numero_processo,
@@ -190,7 +192,7 @@ export async function getProjetoById(clientId: string): Promise<ProjetoClient | 
     data_solicitacao_vistoria: data.data_solicitacao_vistoria ?? null,
     prazo_vistoria: data.prazo_vistoria ?? null,
     status: data.status,
-    checklist: data.checklist ?? { memorial_calculo: false, art: false, homologacao: false },
+    checklist: (data.checklist as ProjetoChecklist) ?? { memorial_calculo: false, art: false, homologacao: false },
     dias_usados: diasUsados,
     dias_em_projetos: diasEmProjetos,
     contract_max_days: data.clients.contract_max_days ?? null,
@@ -207,7 +209,7 @@ export async function getProjetoMembers(): Promise<ProjetoMember[]> {
   if (!orgId) return []
 
   const supabase = await createClient()
-  const { data } = await (supabase as any)
+  const { data } = await supabase
     .from('organization_members')
     .select('user_id, profiles!user_id(id, full_name)')
     .eq('organization_id', orgId)

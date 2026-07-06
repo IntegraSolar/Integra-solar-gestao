@@ -1,4 +1,4 @@
-'use server'
+﻿'use server'
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
@@ -38,7 +38,7 @@ export async function uploadProposalTemplate(formData: FormData): Promise<Action
 
   if (uploadError) return { error: 'Erro ao enviar arquivo: ' + uploadError.message }
 
-  const { data, error: insertError } = await (supabase as any)
+  const { data, error: insertError } = await supabase
     .from('proposal_templates')
     .insert({
       org_id: orgId,
@@ -68,13 +68,13 @@ export async function updateProposalTemplate(
   const supabase = await createClient()
 
   if (updates.is_default === true) {
-    await (supabase as any)
+    await supabase
       .from('proposal_templates')
       .update({ is_default: false })
       .eq('org_id', orgId)
   }
 
-  const { error } = await (supabase as any)
+  const { error } = await supabase
     .from('proposal_templates')
     .update(updates)
     .eq('id', id)
@@ -92,7 +92,7 @@ export async function deleteProposalTemplate(id: string): Promise<ActionResult> 
 
   const supabase = await createClient()
 
-  const { data, error: selectError } = await (supabase as any)
+  const { data, error: selectError } = await supabase
     .from('proposal_templates')
     .select('file_path')
     .eq('id', id)
@@ -105,7 +105,7 @@ export async function deleteProposalTemplate(id: string): Promise<ActionResult> 
   const { error: storageError } = await supabase.storage.from('proposal-templates').remove([data.file_path])
   if (storageError) console.log('[deleteTemplate] storage remove error:', storageError.message)
 
-  const { error } = await (supabase as any)
+  const { error } = await supabase
     .from('proposal_templates')
     .delete()
     .eq('id', id)

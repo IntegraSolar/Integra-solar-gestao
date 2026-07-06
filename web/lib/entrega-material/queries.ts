@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+﻿import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
 
 export type EntregaMaterialChecklist = {
@@ -27,7 +27,7 @@ export async function getEntregasMaterial(): Promise<EntregaMaterialClient[]> {
 
   const supabase = await createClient()
 
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('client_deliveries')
     .select(`
       id,
@@ -48,7 +48,7 @@ export async function getEntregasMaterial(): Promise<EntregaMaterialClient[]> {
   if (error || !data) return []
 
   const clientIds: string[] = data.map((r: any) => r.client_id)
-  const { data: parcelas } = await (supabase as any)
+  const { data: parcelas } = await supabase
     .from('client_installments')
     .select('client_id, confirmed_at')
     .in('client_id', clientIds)
@@ -72,7 +72,7 @@ export async function getEntregasMaterial(): Promise<EntregaMaterialClient[]> {
       client_city: r.clients.city ?? null,
       data_entrega: r.data_entrega ?? null,
       termo_url: r.termo_url ?? null,
-      checklist: r.checklist ?? { limpeza: false, manuais: false, orientacao_uso: false },
+      checklist: (r.checklist as EntregaMaterialChecklist) ?? { limpeza: false, manuais: false, orientacao_uso: false },
       status: r.status,
       dias_usados: diasUsados,
       contract_max_days: r.clients.contract_max_days ?? null,
@@ -87,7 +87,7 @@ export async function getEntregaMaterialById(clientId: string): Promise<EntregaM
 
   const supabase = await createClient()
 
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('client_deliveries')
     .select(`
       id,
@@ -108,7 +108,7 @@ export async function getEntregaMaterialById(clientId: string): Promise<EntregaM
 
   if (error || !data) return null
 
-  const { data: parcela } = await (supabase as any)
+  const { data: parcela } = await supabase
     .from('client_installments')
     .select('confirmed_at')
     .eq('client_id', clientId)
@@ -128,7 +128,7 @@ export async function getEntregaMaterialById(clientId: string): Promise<EntregaM
     client_city: data.clients.city ?? null,
     data_entrega: data.data_entrega ?? null,
     termo_url: data.termo_url ?? null,
-    checklist: data.checklist ?? { limpeza: false, manuais: false, orientacao_uso: false },
+    checklist: (data.checklist as EntregaMaterialChecklist) ?? { limpeza: false, manuais: false, orientacao_uso: false },
     status: data.status,
     dias_usados: diasUsados,
     contract_max_days: data.clients.contract_max_days ?? null,

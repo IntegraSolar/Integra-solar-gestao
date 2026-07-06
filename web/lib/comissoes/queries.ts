@@ -1,4 +1,4 @@
-// web/lib/comissoes/queries.ts
+﻿// web/lib/comissoes/queries.ts
 import { createClient } from '@/lib/supabase/server'
 
 export type ComissaoItem = {
@@ -35,7 +35,7 @@ export async function getComissoesPainel(params: {
   const startDate = new Date(params.year, params.month - 1, 1).toISOString()
   const endDate = new Date(params.year, params.month, 1).toISOString()
 
-  let query = (supabase as any)
+  let query = supabase
     .from('client_commissions')
     .select(`
       id,
@@ -62,12 +62,12 @@ export async function getComissoesPainel(params: {
   const vendedorIds = Array.from(new Set(data.map((r: any) => r.vendedor_id).filter(Boolean))) as string[]
   const vendedorMap: Record<string, string> = {}
   if (vendedorIds.length > 0) {
-    const { data: profiles } = await (supabase as any)
+    const { data: profiles } = await supabase
       .from('profiles')
       .select('id, full_name')
       .in('id', vendedorIds)
     for (const p of profiles ?? []) {
-      vendedorMap[p.id] = p.full_name
+      vendedorMap[p.id] = p.full_name ?? ''
     }
   }
 
@@ -102,7 +102,7 @@ export async function getComissoesPainel(params: {
 export async function getComissaoById(commissionId: string): Promise<ComissaoItem | null> {
   const supabase = await createClient()
 
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('client_commissions')
     .select(`
       id,
@@ -122,7 +122,7 @@ export async function getComissaoById(commissionId: string): Promise<ComissaoIte
 
   let vendedorName: string | null = null
   if (data.vendedor_id) {
-    const { data: profile } = await (supabase as any)
+    const { data: profile } = await supabase
       .from('profiles')
       .select('full_name')
       .eq('id', data.vendedor_id)
@@ -146,7 +146,7 @@ export async function getComissaoById(commissionId: string): Promise<ComissaoIte
 
 export async function getComissoesMembers(): Promise<ComissaoMember[]> {
   const supabase = await createClient()
-  const { data } = await (supabase as any)
+  const { data } = await supabase
     .from('profiles')
     .select('id, full_name')
     .order('full_name')

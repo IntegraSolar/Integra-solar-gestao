@@ -1,4 +1,4 @@
-// web/lib/auditoria/queries.ts
+﻿// web/lib/auditoria/queries.ts
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
 
@@ -19,7 +19,7 @@ export async function getAuditLogs(page = 1, pageSize = 20): Promise<{ logs: Aud
   const from = (page - 1) * pageSize
   const to = from + pageSize - 1
 
-  const { data, count, error } = await (supabase as any)
+  const { data, count, error } = await supabase
     .from('audit_logs')
     .select('id, user_name, action, description, created_at', { count: 'exact' })
     .eq('organization_id', orgId)

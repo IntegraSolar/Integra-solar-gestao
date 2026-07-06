@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+﻿import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
 
 export type PosObraClient = {
@@ -21,7 +21,7 @@ export async function getPosObras(): Promise<PosObraClient[]> {
 
   const supabase = await createClient()
 
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('client_pos_obra')
     .select(`
       id,
@@ -69,7 +69,7 @@ export async function getPosObraById(clientId: string): Promise<PosObraClient | 
 
   const supabase = await createClient()
 
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('client_pos_obra')
     .select(`
       id,

@@ -1,4 +1,4 @@
-// web/lib/relatorios/queries.ts
+﻿// web/lib/relatorios/queries.ts
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
 
@@ -91,12 +91,12 @@ export async function getComercialData(filter: RelatorioFilter): Promise<Comerci
 
   const supabase = await createClient()
 
-  let propQuery = (supabase as any).from('clients').select('id', { count: 'exact' }).eq('organization_id', orgId)
+  let propQuery = supabase.from('clients').select('id', { count: 'exact' }).eq('organization_id', orgId)
   if (filter.dateFrom) propQuery = propQuery.gte('created_at', filter.dateFrom)
   if (filter.dateTo) propQuery = propQuery.lte('created_at', filter.dateTo + 'T23:59:59')
   const { count: qtd_propostas } = await propQuery
 
-  let contQuery = (supabase as any)
+  let contQuery = supabase
     .from('clients')
     .select('id, type, contract_date, client_sale(sale_value)')
     .eq('organization_id', orgId)
@@ -106,7 +106,7 @@ export async function getComercialData(filter: RelatorioFilter): Promise<Comerci
   const { data: contratos } = await contQuery
   const arr = (contratos ?? []) as any[]
 
-  const { data: orgConfig } = await (supabase as any).from('org_config').select('pct_margem').eq('organization_id', orgId).maybeSingle()
+  const { data: orgConfig } = await supabase.from('org_config').select('pct_margem').eq('organization_id', orgId).maybeSingle()
   const margem_config = orgConfig?.pct_margem ?? 0
 
   let valor_total = 0, pf = 0, pj = 0
@@ -145,7 +145,7 @@ export async function getLeadsData(filter: RelatorioFilter): Promise<{ origens: 
 
   const supabase = await createClient()
 
-  let leadsQuery = (supabase as any).from('leads').select('id, converted, lead_source_id, lead_sources!lead_source_id(name)').eq('organization_id', orgId)
+  let leadsQuery = supabase.from('leads').select('id, converted, lead_source_id, lead_sources!lead_source_id(name)').eq('organization_id', orgId)
   if (filter.dateFrom) leadsQuery = leadsQuery.gte('created_at', filter.dateFrom)
   if (filter.dateTo) leadsQuery = leadsQuery.lte('created_at', filter.dateTo + 'T23:59:59')
   const { data: leadsData } = await leadsQuery
@@ -160,7 +160,7 @@ export async function getLeadsData(filter: RelatorioFilter): Promise<{ origens: 
   const origens = Object.entries(origemMap).sort(([, a], [, b]) => b.total - a.total)
     .map(([origem, v]) => ({ origem, total_leads: v.total, leads_convertidos: v.convertidos, taxa_conversao: v.total > 0 ? (v.convertidos / v.total) * 100 : 0 }))
 
-  let rankQuery = (supabase as any).from('clients')
+  let rankQuery = supabase.from('clients')
     .select('id, contract_date, responsible_id, profiles!responsible_id(full_name, email), client_sale(sale_value)')
     .eq('organization_id', orgId)
   if (filter.dateFrom) rankQuery = rankQuery.gte('created_at', filter.dateFrom)
@@ -196,7 +196,7 @@ export async function getFinanceiroData(filter: RelatorioFilter): Promise<Financ
 
   const supabase = await createClient()
 
-  const { data: allContracts } = await (supabase as any)
+  const { data: allContracts } = await supabase
     .from('clients')
     .select('id, contract_date, created_at, responsible_id, profiles!responsible_id(full_name, email), client_sale(sale_value, commission_pct)')
     .eq('organization_id', orgId)
@@ -308,7 +308,7 @@ export async function getTecnicoData(filter: RelatorioFilter): Promise<TecnicoSu
 
   const supabase = await createClient()
 
-  let clientQuery = (supabase as any)
+  let clientQuery = supabase
     .from('clients')
     .select('id, panel_brand, inverter_brand, promised_kwh')
     .eq('organization_id', orgId)
@@ -329,7 +329,7 @@ export async function getTecnicoData(filter: RelatorioFilter): Promise<TecnicoSu
     total_kwh += Number(c.promised_kwh ?? 0)
   }
 
-  let obrasQuery = (supabase as any)
+  let obrasQuery = supabase
     .from('client_obras')
     .select('client_id, data_inicio, clients!client_id(delivery_start_date)')
     .eq('organization_id', orgId)
@@ -381,7 +381,7 @@ export async function getPosVendaData(filter: RelatorioFilter): Promise<PosVenda
   const supabase = await createClient()
 
   // Clientes com capacidade extra
-  let expQuery = (supabase as any)
+  let expQuery = supabase
     .from('clients')
     .select('name, city, phone, system_power_kwp, inverter_brand, inverter_extra_capacity, contract_date')
     .eq('organization_id', orgId)
@@ -402,7 +402,7 @@ export async function getPosVendaData(filter: RelatorioFilter): Promise<PosVenda
   }))
 
   // NPS médio
-  const { data: posData } = await (supabase as any)
+  const { data: posData } = await supabase
     .from('client_pos_obra')
     .select('nps, status')
     .eq('organization_id', orgId)
@@ -437,7 +437,7 @@ export async function getSlaData(): Promise<SlaSummary> {
   const supabase = await createClient()
 
   // Buscar clientes com delivery_start_date e pipeline_flags
-  const { data: clients } = await (supabase as any)
+  const { data: clients } = await supabase
     .from('clients')
     .select('id, delivery_start_date, contract_max_days, pipeline_flags')
     .eq('organization_id', orgId)

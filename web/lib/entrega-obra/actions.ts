@@ -31,7 +31,7 @@ export async function upsertObraDelivery(
 
   const supabase = await createClient()
 
-  const { data: existing } = await (supabase as any)
+  const { data: existing } = await supabase
     .from('client_obra_deliveries')
     .select('id')
     .eq('client_id', clientId)
@@ -51,19 +51,19 @@ export async function upsertObraDelivery(
 
   let error: any
   if (existing) {
-    ;({ error } = await (supabase as any)
+    ;({ error } = await supabase
       .from('client_obra_deliveries')
       .update(deliveryData)
       .eq('id', existing.id))
   } else {
-    ;({ error } = await (supabase as any)
+    ;({ error } = await supabase
       .from('client_obra_deliveries')
       .insert(deliveryData))
   }
 
   if (error) return { error: error.message }
 
-  const { data: client } = await (supabase as any)
+  const { data: client } = await supabase
     .from('clients')
     .select('pipeline_flags')
     .eq('id', clientId)
@@ -74,14 +74,14 @@ export async function upsertObraDelivery(
 
   newFlags.pos_obra = 'pendente'
 
-  const { data: existingPosObra } = await (supabase as any)
+  const { data: existingPosObra } = await supabase
     .from('client_pos_obra')
     .select('id')
     .eq('client_id', clientId)
     .maybeSingle()
 
   if (!existingPosObra) {
-    const { error: insertErr } = await (supabase as any).from('client_pos_obra').insert({
+    const { error: insertErr } = await supabase.from('client_pos_obra').insert({
       client_id: clientId,
       organization_id: orgId,
       status: 'pendente',
@@ -89,7 +89,7 @@ export async function upsertObraDelivery(
     if (insertErr) return { error: insertErr.message }
   }
 
-  await (supabase as any)
+  await supabase
     .from('clients')
     .update({ pipeline_flags: newFlags })
     .eq('id', clientId)

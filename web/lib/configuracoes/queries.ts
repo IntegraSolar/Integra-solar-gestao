@@ -1,4 +1,4 @@
-// web/lib/configuracoes/queries.ts
+﻿// web/lib/configuracoes/queries.ts
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
 
@@ -59,7 +59,7 @@ export async function getOrgConfig(): Promise<OrgConfig> {
   if (!orgId) return emptyConfig()
 
   const supabase = await createClient()
-  const { data } = await (supabase as any)
+  const { data } = await supabase
     .from('org_config')
     .select('*')
     .eq('organization_id', orgId)
@@ -75,7 +75,7 @@ export async function getLeadOrigins(): Promise<LeadOrigin[]> {
   if (!orgId) return []
 
   const supabase = await createClient()
-  const { data } = await (supabase as any)
+  const { data } = await supabase
     .from('lead_sources')
     .select('id, name')
     .eq('organization_id', orgId)

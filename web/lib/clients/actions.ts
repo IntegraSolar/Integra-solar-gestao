@@ -54,7 +54,7 @@ export async function updateTab1(
   const parsed = tab1Schema.safeParse(Object.fromEntries(formData))
   if (!parsed.success) return { error: parsed.error.issues[0].message }
   const supabase = await createClient()
-  const { error } = await (supabase as any)
+  const { error } = await supabase
     .from('clients')
     .update({
       ...parsed.data,
@@ -78,7 +78,7 @@ export async function updateTab2(
   if (!orgId) return { error: 'Sem organização ativa.' }
   const raw = Object.fromEntries(formData)
   const supabase = await createClient()
-  const { error } = await (supabase as any)
+  const { error } = await supabase
     .from('clients')
     .update({
       promised_kwh: raw.promised_kwh ? Number(raw.promised_kwh) : null,
@@ -134,14 +134,14 @@ export async function updateTab3(
   const supabase = await createClient()
 
   // Upsert client_sale
-  const { data: existingSale } = await (supabase as any)
+  const { data: existingSale } = await supabase
     .from('client_sale')
     .select('id')
     .eq('client_id', clientId)
     .maybeSingle()
 
   if (existingSale) {
-    await (supabase as any).from('client_sale').update({
+    await supabase.from('client_sale').update({
       sale_value: parsed.data.sale_value,
       payment_method: parsed.data.payment_method ?? null,
       nf_notes: parsed.data.nf_notes ?? null,
@@ -150,7 +150,7 @@ export async function updateTab3(
       proposal_id: parsed.data.proposal_id || null,
     }).eq('id', existingSale.id)
   } else {
-    await (supabase as any).from('client_sale').insert({
+    await supabase.from('client_sale').insert({
       client_id: clientId,
       organization_id: orgId,
       sale_value: parsed.data.sale_value,
@@ -163,8 +163,8 @@ export async function updateTab3(
   }
 
   // Replace installments
-  await (supabase as any).from('client_installments').delete().eq('client_id', clientId)
-  const { error: instError } = await (supabase as any).from('client_installments').insert(
+  await supabase.from('client_installments').delete().eq('client_id', clientId)
+  const { error: instError } = await supabase.from('client_installments').insert(
     installments.map((inst) => ({
       client_id: clientId,
       organization_id: orgId,
@@ -176,7 +176,7 @@ export async function updateTab3(
   )
   if (instError) return { error: instError.message }
 
-  const { error } = await (supabase as any)
+  const { error } = await supabase
     .from('clients')
     .update({
       completed_tabs: await mergeCompletedTabs(clientId, supabase, { tab3: true }),
@@ -198,7 +198,7 @@ export async function updateTab4(
   if (!orgId) return { error: 'Sem organização ativa.' }
   const raw = Object.fromEntries(formData)
   const supabase = await createClient()
-  const { error } = await (supabase as any)
+  const { error } = await supabase
     .from('clients')
     .update({
       has_adaptation_works: raw.has_adaptation_works === 'on',
@@ -231,7 +231,7 @@ export async function updateTab5(
   if (!orgId) return { error: 'Sem organização ativa.' }
   const raw = Object.fromEntries(formData)
   const supabase = await createClient()
-  const { error } = await (supabase as any)
+  const { error } = await supabase
     .from('clients')
     .update({
       delivery_start_date: (raw.delivery_start_date as string) || null,
@@ -270,7 +270,7 @@ export async function uploadAttachment(
 
   const { data: { publicUrl } } = supabase.storage.from('client-files').getPublicUrl(path)
 
-  const { data: existing } = await (supabase as any)
+  const { data: existing } = await supabase
     .from('client_attachments')
     .select('id')
     .eq('client_id', clientId)
@@ -278,12 +278,12 @@ export async function uploadAttachment(
     .maybeSingle()
 
   if (existing) {
-    await (supabase as any)
+    await supabase
       .from('client_attachments')
       .update({ file_url: publicUrl, uploaded_at: new Date().toISOString() })
       .eq('id', existing.id)
   } else {
-    await (supabase as any).from('client_attachments').insert({
+    await supabase.from('client_attachments').insert({
       client_id: clientId,
       organization_id: orgId,
       type: attachmentType,
@@ -299,7 +299,7 @@ export async function confirmTab6(clientId: string): Promise<ActionResult> {
   const orgId = await getOrgId()
   if (!orgId) return { error: 'Sem organização ativa.' }
   const supabase = await createClient()
-  const { error } = await (supabase as any)
+  const { error } = await supabase
     .from('clients')
     .update({
       completed_tabs: await mergeCompletedTabs(clientId, supabase, { tab6: true }),
@@ -336,28 +336,28 @@ export async function uploadContractFile(
   const { data: { publicUrl } } = supabase.storage.from('client-files').getPublicUrl(path)
   const dbField = field === 'contract' ? 'contract_url' : 'power_of_attorney_url'
 
-  const { data: existing } = await (supabase as any)
+  const { data: existing } = await supabase
     .from('client_contracts')
     .select('id')
     .eq('client_id', clientId)
     .maybeSingle()
 
   if (existing) {
-    await (supabase as any)
+    await supabase
       .from('client_contracts')
-      .update({ [dbField]: publicUrl })
+      .update({ [dbField]: publicUrl } as any)
       .eq('id', existing.id)
   } else {
-    await (supabase as any).from('client_contracts').insert({
+    await supabase.from('client_contracts').insert({
       client_id: clientId,
       organization_id: orgId,
       [dbField]: publicUrl,
-    })
+    } as any)
   }
 
   // Contrato enviado = tab7 completa + avança pipeline para 'contratos'
   if (field === 'contract') {
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('clients')
       .update({
         completed_tabs: await mergeCompletedTabs(clientId, supabase, { tab7: true }),

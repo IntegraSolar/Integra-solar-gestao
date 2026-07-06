@@ -16,7 +16,7 @@ export async function confirmInstallment(installmentId: string): Promise<ActionR
   const supabase = await createClient()
 
   // Busca a parcela garantindo que pertence a um cliente da organização do usuário
-  const { data: installment, error: fetchError } = await (supabase as any)
+  const { data: installment, error: fetchError } = await supabase
     .from('client_installments')
     .select('id, position, client_id, clients!inner(organization_id)')
     .eq('id', installmentId)
@@ -26,7 +26,7 @@ export async function confirmInstallment(installmentId: string): Promise<ActionR
   if (fetchError || !installment) return { error: 'Parcela não encontrada.' }
 
   // Confirm the installment
-  const { error } = await (supabase as any)
+  const { error } = await supabase
     .from('client_installments')
     .update({ status: InstallmentStatus.CONFIRMADA, confirmed_at: new Date().toISOString() })
     .eq('id', installmentId)
@@ -36,7 +36,7 @@ export async function confirmInstallment(installmentId: string): Promise<ActionR
   // If this is position 1 (entrada), activate Projetos and Compras
   if (installment.position === 1) {
     // Fetch client to get org_id and current flags
-    const { data: client } = await (supabase as any)
+    const { data: client } = await supabase
       .from('clients')
       .select('pipeline_flags, organization_id')
       .eq('id', installment.client_id)
@@ -46,7 +46,7 @@ export async function confirmInstallment(installmentId: string): Promise<ActionR
     const orgId = client?.organization_id
 
     // Update pipeline_flags
-    await (supabase as any)
+    await supabase
       .from('clients')
       .update({
         pipeline_flags: {
@@ -58,14 +58,14 @@ export async function confirmInstallment(installmentId: string): Promise<ActionR
       .eq('id', installment.client_id)
 
     // Create initial client_projects record if not exists
-    const { data: existingProject } = await (supabase as any)
+    const { data: existingProject } = await supabase
       .from('client_projects')
       .select('id')
       .eq('client_id', installment.client_id)
       .maybeSingle()
 
     if (!existingProject && orgId) {
-      await (supabase as any).from('client_projects').insert({
+      await supabase.from('client_projects').insert({
         client_id: installment.client_id,
         organization_id: orgId,
         status: ProjectStatus.PENDENTE,
@@ -74,14 +74,14 @@ export async function confirmInstallment(installmentId: string): Promise<ActionR
     }
 
     // Create initial client_purchases record if not exists
-    const { data: existingPurchase } = await (supabase as any)
+    const { data: existingPurchase } = await supabase
       .from('client_purchases')
       .select('id')
       .eq('client_id', installment.client_id)
       .maybeSingle()
 
     if (!existingPurchase && orgId) {
-      await (supabase as any).from('client_purchases').insert({
+      await supabase.from('client_purchases').insert({
         client_id: installment.client_id,
         organization_id: orgId,
         status: PurchaseStatus.AGUARDANDO,
@@ -115,7 +115,7 @@ export async function uploadReceipt(installmentId: string, formData: FormData): 
   const supabase = await createClient()
 
   // Garante que a parcela pertence a um cliente da organização do usuário
-  const { data: inst } = await (supabase as any)
+  const { data: inst } = await supabase
     .from('client_installments')
     .select('client_id, clients!inner(organization_id)')
     .eq('id', installmentId)
@@ -137,9 +137,9 @@ export async function uploadReceipt(installmentId: string, formData: FormData): 
   // O route /api/storage/download valida autenticação e org antes de redirecionar
   const secureUrl = `/api/storage/download?bucket=receipts&path=${encodeURIComponent(filePath)}`
 
-  await (supabase as any)
+  await supabase
     .from('client_installments')
-    .update({ receipt_url: secureUrl })
+    .update({ receipt_url: secureUrl } as any)
     .eq('id', installmentId)
 
   revalidatePath('/financeiro')
@@ -152,7 +152,7 @@ export async function advanceToProjects(clientId: string): Promise<ActionResult>
   if (!orgId) return { error: 'Sem organização ativa.' }
 
   const supabase = await createClient()
-  const { error } = await (supabase as any)
+  const { error } = await supabase
     .from('clients')
     .update({ pipeline_stage: PipelineStage.PROJETOS })
     .eq('id', clientId)

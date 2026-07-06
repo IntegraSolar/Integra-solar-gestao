@@ -16,7 +16,7 @@ export async function createStockItem(data: {
   if (!orgId) return { error: 'Sem organização ativa.' }
 
   const supabase = await createClient()
-  const { error } = await (supabase as any).from('stock_items').insert({
+  const { error } = await supabase.from('stock_items').insert({
     organization_id: orgId,
     name: data.name,
     quantity: data.quantity,
@@ -39,7 +39,7 @@ export async function updateStockItem(
   }
 ): Promise<ActionResult> {
   const supabase = await createClient()
-  const { error } = await (supabase as any)
+  const { error } = await supabase
     .from('stock_items')
     .update({
       name: data.name,
@@ -56,7 +56,7 @@ export async function updateStockItem(
 
 export async function deleteStockItem(id: string): Promise<ActionResult> {
   const supabase = await createClient()
-  const { error } = await (supabase as any).from('stock_items').delete().eq('id', id)
+  const { error } = await supabase.from('stock_items').delete().eq('id', id)
   if (error) return { error: error.message }
   revalidatePath('/estoque')
   return { success: 'Item removido.' }

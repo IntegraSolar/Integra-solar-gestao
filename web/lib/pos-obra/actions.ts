@@ -22,7 +22,7 @@ export async function upsertPosObra(
 
   const supabase = await createClient()
 
-  const { data: existing } = await (supabase as any)
+  const { data: existing } = await supabase
     .from('client_pos_obra')
     .select('id')
     .eq('client_id', clientId)
@@ -39,19 +39,19 @@ export async function upsertPosObra(
 
   let error: any
   if (existing) {
-    ;({ error } = await (supabase as any)
+    ;({ error } = await supabase
       .from('client_pos_obra')
       .update(posObraData)
       .eq('id', existing.id))
   } else {
-    ;({ error } = await (supabase as any)
+    ;({ error } = await supabase
       .from('client_pos_obra')
       .insert(posObraData))
   }
 
   if (error) return { error: error.message }
 
-  const { data: client } = await (supabase as any)
+  const { data: client } = await supabase
     .from('clients')
     .select('pipeline_flags')
     .eq('id', clientId)
@@ -60,7 +60,7 @@ export async function upsertPosObra(
   const currentFlags = (client?.pipeline_flags as Record<string, string>) ?? {}
   const newFlags: Record<string, string> = { ...currentFlags, pos_obra: data.status }
 
-  await (supabase as any)
+  await supabase
     .from('clients')
     .update({ pipeline_flags: newFlags })
     .eq('id', clientId)

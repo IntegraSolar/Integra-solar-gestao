@@ -1,4 +1,4 @@
-// web/lib/estoque/queries.ts
+﻿// web/lib/estoque/queries.ts
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
 
@@ -17,7 +17,7 @@ export async function getStockItems(): Promise<StockItem[]> {
   const orgId = user?.membership?.organization.id
   if (!orgId) return []
 
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('stock_items')
     .select('id, name, quantity, unit_value, description')
     .eq('organization_id', orgId)
