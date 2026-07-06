@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
 
   // 30 downloads por minuto por organização
   const orgId = user.membership.organization.id
-  if (!rateLimit(`download:${orgId}`, 30, 60_000)) return rateLimitResponse()
+  if (!await rateLimit(`download:${orgId}`, 30, 60_000)) return rateLimitResponse()
 
   const bucket = req.nextUrl.searchParams.get('bucket')
   const path = req.nextUrl.searchParams.get('path')

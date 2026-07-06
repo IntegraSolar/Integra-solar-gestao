@@ -126,7 +126,7 @@ export async function POST(
     if (!orgId) return NextResponse.json({ error: 'Não autenticado.' }, { status: 401 })
 
     // 5 gerações por minuto por organização
-    if (!rateLimit(`generate:${orgId}`, 5, 60_000)) return rateLimitResponse()
+    if (!await rateLimit(`generate:${orgId}`, 5, 60_000)) return rateLimitResponse()
 
     const supabase = await createClient()
 

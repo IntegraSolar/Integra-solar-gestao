@@ -1,6 +1,27 @@
+import { createHmac, timingSafeEqual } from 'crypto'
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { SUBSCRIPTION_BLOCKED_STATUSES } from '@/lib/constants/status'
+
+const COOKIE_SECRET = process.env.COOKIE_SECRET ?? ''
+
+function signValue(value: string): string {
+  if (!COOKIE_SECRET) return value
+  const sig = createHmac('sha256', COOKIE_SECRET).update(value).digest('base64url')
+  return `${value}.${sig}`
+}
+
+function verifyAndExtract(signed: string): string | null {
+  if (!COOKIE_SECRET) return signed
+  const lastDot = signed.lastIndexOf('.')
+  if (lastDot === -1) return null
+  const value = signed.slice(0, lastDot)
+  const sig = Buffer.from(signed.slice(lastDot + 1))
+  const expected = Buffer.from(createHmac('sha256', COOKIE_SECRET).update(value).digest('base64url'))
+  if (sig.length !== expected.length) return null
+  try { if (!timingSafeEqual(sig, expected)) return null } catch { return null }
+  return value
+}
 
 const PUBLIC_ROUTES = [
   '/login',
@@ -85,7 +106,8 @@ export async function middleware(request: NextRequest) {
     let isBlocked = false
 
     // Verificar cache antes de ir ao DB
-    const cached = request.cookies.get(SUB_CACHE_COOKIE)?.value
+    const rawCached = request.cookies.get(SUB_CACHE_COOKIE)?.value
+    const cached = rawCached ? verifyAndExtract(rawCached) : null
     let cacheHit = false
 
     if (cached) {
@@ -112,12 +134,13 @@ export async function middleware(request: NextRequest) {
         const isExpired = subscription.expires_at && new Date(subscription.expires_at) < new Date()
         isBlocked = SUBSCRIPTION_BLOCKED_STATUSES.includes(subscription.status as any) || !!isExpired
 
-        // Gravar no cookie de cache
-        const cacheValue = JSON.stringify({
+        // Gravar no cookie de cache (assinado com HMAC)
+        const cachePayload = JSON.stringify({
           status: subscription.status,
           expiresAt: subscription.expires_at,
           cachedAt: Date.now(),
         })
+        const cacheValue = signValue(cachePayload)
         supabaseResponse.cookies.set(SUB_CACHE_COOKIE, cacheValue, {
           httpOnly: true,
           sameSite: 'lax',
