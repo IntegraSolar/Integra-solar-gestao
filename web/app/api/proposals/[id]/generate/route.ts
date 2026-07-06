@@ -164,7 +164,8 @@ export async function POST(
 
     if (!lead) return NextResponse.json({ error: 'Lead não encontrado.' }, { status: 404 })
 
-    const orgConfig = await getOrgConfig()
+    // Reutiliza orgId já obtido em getCurrentUserData() — evita segunda chamada redundante
+    const orgConfig = await getOrgConfig(orgId)
 
     // Mescla os valores editados pelo usuário sobre a config global.
     // orgConfig serve apenas como fallback — os overrides têm precedência absoluta.

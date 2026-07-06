@@ -53,9 +53,8 @@ function emptyConfig(): OrgConfig {
   }
 }
 
-export async function getOrgConfig(): Promise<OrgConfig> {
-  const user = await getCurrentUserData()
-  const orgId = user?.membership?.organization.id
+export async function getOrgConfig(orgIdParam?: string): Promise<OrgConfig> {
+  const orgId = orgIdParam ?? (await getCurrentUserData())?.membership?.organization.id
   if (!orgId) return emptyConfig()
 
   const supabase = await createClient()

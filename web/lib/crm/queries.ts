@@ -58,6 +58,7 @@ export async function getLeads(): Promise<Lead[]> {
     `)
     .eq('organization_id', user.membership.organization.id)
     .order('created_at', { ascending: false })
+    .limit(200)
   const leads = (data ?? []) as any[]
   return leads.map((l) => ({ ...l, notes: l.notes ?? [], followups: l.followups ?? [] })) as Lead[]
 }
