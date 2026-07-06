@@ -3,6 +3,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
+import { logger } from '@/lib/logger'
 import type { AuditLog } from './queries'
 
 export async function logAction(action: string, description: string): Promise<void> {
@@ -19,8 +20,10 @@ export async function logAction(action: string, description: string): Promise<vo
       action,
       description,
     })
-  } catch {
-    // audit failures must never crash the main flow
+  } catch (err) {
+    // Falha de auditoria nunca deve derrubar o fluxo principal,
+    // mas deve ser registrada para diagnóstico e alertas.
+    logger.error('audit', 'Falha ao registrar audit log', err, { action })
   }
 }
 

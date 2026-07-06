@@ -87,7 +87,6 @@ export async function updateProposalTemplate(
 
 export async function deleteProposalTemplate(id: string): Promise<ActionResult> {
   const orgId = await getOrgId()
-  console.log('[deleteTemplate] orgId:', orgId, 'templateId:', id)
   if (!orgId) return { error: 'Sem organização ativa. Faça login novamente.' }
 
   const supabase = await createClient()
@@ -99,11 +98,14 @@ export async function deleteProposalTemplate(id: string): Promise<ActionResult> 
     .eq('org_id', orgId)
     .single()
 
-  console.log('[deleteTemplate] select result:', data, selectError?.message)
   if (!data) return { error: selectError?.message ?? 'Template não encontrado.' }
 
   const { error: storageError } = await supabase.storage.from('proposal-templates').remove([data.file_path])
-  if (storageError) console.log('[deleteTemplate] storage remove error:', storageError.message)
+  if (storageError) {
+    // Arquivo ausente no storage não impede a exclusão do registro no banco
+    const { logger } = await import('@/lib/logger')
+    logger.warn('proposals', 'Falha ao remover arquivo do storage', { templateId: id })
+  }
 
   const { error } = await supabase
     .from('proposal_templates')
@@ -111,7 +113,6 @@ export async function deleteProposalTemplate(id: string): Promise<ActionResult> 
     .eq('id', id)
     .eq('org_id', orgId)
 
-  console.log('[deleteTemplate] delete result:', error?.message)
   if (error) return { error: error.message }
   revalidatePath('/configuracoes')
   return { success: 'Template excluído.' }

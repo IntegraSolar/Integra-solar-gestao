@@ -6,6 +6,7 @@ import { getOrgConfig } from '@/lib/configuracoes/queries'
 import { calcularPreco } from '@/lib/proposals/pricing'
 import { buildPlaceholders } from '@/lib/proposals/placeholders'
 import { rateLimit, rateLimitResponse } from '@/lib/rate-limit'
+import { logger } from '@/lib/logger'
 
 const CONVERT_TIMEOUT_MS = 90_000
 
@@ -210,7 +211,7 @@ export async function POST(
       processDocxPlaceholders(zip, placeholders)
       docxBuffer = Buffer.from(zip.generate({ type: 'nodebuffer' }))
     } catch (templateErr: any) {
-      console.error('[generate-proposal] Template error:', templateErr)
+      logger.error('proposals/generate', 'Erro ao processar template', templateErr, { proposalId, templateId })
       return NextResponse.json({
         error: `Erro ao processar template: ${templateErr?.message ?? 'Erro desconhecido'}`,
         step: 'template_processing',
@@ -257,7 +258,7 @@ export async function POST(
 
       if (!convertResponse.ok) {
         const errText = await convertResponse.text()
-        console.error('[generate-proposal] ConvertAPI error:', errText)
+        logger.error('proposals/generate', 'ConvertAPI retornou erro', undefined, { status: convertResponse.status })
         return NextResponse.json({ error: 'Erro na conversão para PDF. Tente novamente.', step: 'pdf_conversion' }, { status: 502 })
       }
 
@@ -299,7 +300,7 @@ export async function POST(
     return NextResponse.json({ pdf_url: pdfUrl, pdf_filename: `${proposalName}.pdf` })
 
   } catch (err: any) {
-    console.error('[generate-proposal]', err)
-    return NextResponse.json({ error: err?.message ?? 'Erro interno.', step: 'unknown' }, { status: 500 })
+    logger.error('proposals/generate', 'Erro interno inesperado', err)
+    return NextResponse.json({ error: 'Erro interno ao gerar proposta.', step: 'unknown' }, { status: 500 })
   }
 }

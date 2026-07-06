@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database.types'
+import { logger, mask } from '@/lib/logger'
 
 export type AsaasEventType =
   | 'PAYMENT_CONFIRMED'
@@ -47,7 +48,7 @@ async function handlePaymentConfirmed(
 ): Promise<{ success: boolean; message: string }> {
   const userId = payload.payment.externalReference
   if (!userId) {
-    console.warn('[Asaas] PAYMENT_CONFIRMED sem externalReference — ignorado')
+    logger.warn('asaas', 'PAYMENT_CONFIRMED sem externalReference — ignorado', { paymentId: payload.payment.id })
     return { success: true, message: 'Sem externalReference, ignorado.' }
   }
 
@@ -62,7 +63,7 @@ async function handlePaymentConfirmed(
     .maybeSingle()
 
   if (error || !sub) {
-    console.error('[Asaas] Subscription não encontrada para user_id:', userId)
+    logger.error('asaas', 'Subscription não encontrada', error, { userId: mask(userId) })
     return { success: false, message: 'Subscription não encontrada.' }
   }
 
@@ -83,11 +84,11 @@ async function handlePaymentConfirmed(
     .eq('id', sub.id)
 
   if (updateError) {
-    console.error('[Asaas] Erro ao atualizar subscription:', updateError.message)
+    logger.error('asaas', 'Erro ao atualizar subscription', updateError, { userId: mask(userId) })
     return { success: false, message: updateError.message }
   }
 
-  console.log('[Asaas] Subscription ativada para user_id:', userId, 'até:', newExpiresAt.toISOString())
+  logger.info('asaas', 'Subscription ativada', { userId: mask(userId), expiresAt: newExpiresAt.toISOString() })
   return { success: true, message: 'Subscription ativada.' }
 }
 
@@ -104,7 +105,7 @@ async function handlePaymentOverdue(
     .eq('user_id', userId)
     .eq('status', 'active')
 
-  console.log('[Asaas] Subscription marcada como overdue para user_id:', userId)
+  logger.info('asaas', 'Subscription marcada como overdue', { userId: mask(userId) })
   return { success: true, message: 'Subscription marcada como overdue.' }
 }
 
@@ -120,7 +121,7 @@ async function handlePaymentDeleted(
     .update({ status: 'canceled' })
     .eq('user_id', userId)
 
-  console.log('[Asaas] Subscription cancelada para user_id:', userId)
+  logger.info('asaas', 'Subscription cancelada', { userId: mask(userId) })
   return { success: true, message: 'Subscription cancelada.' }
 }
 
@@ -137,7 +138,7 @@ export async function dispatchAsaasEvent(
     case 'PAYMENT_REFUNDED':
       return handlePaymentDeleted(payload)
     default:
-      console.log(`[Asaas] Evento não tratado: ${payload.event}`)
+      logger.warn('asaas', 'Evento não tratado', { event: payload.event, paymentId: payload.payment.id })
       return { success: true, message: `Evento ${payload.event} ignorado.` }
   }
 }

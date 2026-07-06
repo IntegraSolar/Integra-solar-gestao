@@ -142,7 +142,10 @@ export async function middleware(request: NextRequest) {
           const expired = expiresAt && new Date(expiresAt) < new Date()
           isBlocked = SUBSCRIPTION_BLOCKED_STATUSES.includes(status) || expired
         }
-      } catch { /* cache corrompido, ignorar */ }
+      } catch {
+        // Cache corrompido ou assinatura inválida — será sobrescrito na próxima consulta ao DB
+        if (process.env.NODE_ENV !== 'production') console.warn('[middleware] sub_cache inválido ou corrompido')
+      }
     }
 
     if (!cacheHit) {
