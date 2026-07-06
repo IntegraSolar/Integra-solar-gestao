@@ -64,10 +64,10 @@ export async function getComissoesPainel(params: {
   if (vendedorIds.length > 0) {
     const { data: profiles } = await (supabase as any)
       .from('profiles')
-      .select('id, name')
+      .select('id, full_name')
       .in('id', vendedorIds)
     for (const p of profiles ?? []) {
-      vendedorMap[p.id] = p.name
+      vendedorMap[p.id] = p.full_name
     }
   }
 
@@ -124,10 +124,10 @@ export async function getComissaoById(commissionId: string): Promise<ComissaoIte
   if (data.vendedor_id) {
     const { data: profile } = await (supabase as any)
       .from('profiles')
-      .select('name')
+      .select('full_name')
       .eq('id', data.vendedor_id)
       .single()
-    vendedorName = profile?.name ?? null
+    vendedorName = profile?.full_name ?? null
   }
 
   return {
@@ -148,7 +148,7 @@ export async function getComissoesMembers(): Promise<ComissaoMember[]> {
   const supabase = await createClient()
   const { data } = await (supabase as any)
     .from('profiles')
-    .select('id, name')
-    .order('name')
-  return (data ?? []).map((p: any) => ({ id: p.id, name: p.name }))
+    .select('id, full_name')
+    .order('full_name')
+  return (data ?? []).map((p: any) => ({ id: p.id, name: p.full_name }))
 }

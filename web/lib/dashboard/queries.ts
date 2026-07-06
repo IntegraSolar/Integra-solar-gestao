@@ -245,7 +245,6 @@ export async function getLeadsPorOrigem(): Promise<LeadOrigemItem[]> {
     .from('leads')
     .select('lead_source_id, lead_sources!lead_source_id(name)')
     .eq('organization_id', orgId)
-    .eq('converted', false)
 
   const map: Record<string, { name: string; count: number }> = {}
   for (const row of (data ?? []) as any[]) {

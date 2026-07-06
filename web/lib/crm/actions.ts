@@ -352,6 +352,7 @@ export async function convertLeadToClient(leadId: string): Promise<{ clientId?: 
       phone: lead.phone,
       city: lead.city,
       lead_id: leadId,
+      pipeline_stage: 'contratos',
     })
     .select('id')
     .single()
