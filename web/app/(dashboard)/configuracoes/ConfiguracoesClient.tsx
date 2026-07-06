@@ -10,12 +10,14 @@ import AcessoTab from './AcessoTab'
 import AuditoriaTab from './AuditoriaTab'
 import TemplatesTab from './TemplatesTab'
 import AparenciaTab from './AparenciaTab'
+import LgpdTab from './LgpdTab'
 
 const TABS = [
   { key: 'empresa', label: 'Empresa' },
   { key: 'acesso', label: 'Acesso' },
   { key: 'templates', label: 'Templates' },
   { key: 'auditoria', label: 'Auditoria' },
+  { key: 'lgpd', label: 'LGPD' },
   { key: 'aparencia', label: 'Aparência' },
 ] as const
 
@@ -70,6 +72,7 @@ export default function ConfiguracoesClient({
       {activeTab === 'acesso'    && <AcessoTab colaboradores={colaboradores} />}
       {activeTab === 'templates' && <TemplatesTab initialTemplates={proposalTemplates} />}
       {activeTab === 'auditoria' && <AuditoriaTab logs={auditLogs} total={auditTotal} />}
+      {activeTab === 'lgpd'      && <LgpdTab />}
       {activeTab === 'aparencia' && <AparenciaTab />}
     </div>
   )

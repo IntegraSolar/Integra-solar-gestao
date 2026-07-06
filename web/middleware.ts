@@ -1,26 +1,50 @@
-import { createHmac, timingSafeEqual } from 'crypto'
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { SUBSCRIPTION_BLOCKED_STATUSES } from '@/lib/constants/status'
 
 const COOKIE_SECRET = process.env.COOKIE_SECRET ?? ''
 
-function signValue(value: string): string {
-  if (!COOKIE_SECRET) return value
-  const sig = createHmac('sha256', COOKIE_SECRET).update(value).digest('base64url')
-  return `${value}.${sig}`
+let _hmacKey: CryptoKey | null = null
+
+async function getHmacKey(): Promise<CryptoKey | null> {
+  if (!COOKIE_SECRET) return null
+  if (_hmacKey) return _hmacKey
+  _hmacKey = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(COOKIE_SECRET),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign', 'verify']
+  )
+  return _hmacKey
 }
 
-function verifyAndExtract(signed: string): string | null {
-  if (!COOKIE_SECRET) return signed
+function toBase64url(buf: ArrayBuffer): string {
+  return btoa(String.fromCharCode(...new Uint8Array(buf)))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
+}
+
+async function signValue(value: string): Promise<string> {
+  const key = await getHmacKey()
+  if (!key) return value
+  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(value))
+  return `${value}.${toBase64url(sig)}`
+}
+
+async function verifyAndExtract(signed: string): Promise<string | null> {
+  const key = await getHmacKey()
+  if (!key) return signed
   const lastDot = signed.lastIndexOf('.')
   if (lastDot === -1) return null
   const value = signed.slice(0, lastDot)
-  const sig = Buffer.from(signed.slice(lastDot + 1))
-  const expected = Buffer.from(createHmac('sha256', COOKIE_SECRET).update(value).digest('base64url'))
-  if (sig.length !== expected.length) return null
-  try { if (!timingSafeEqual(sig, expected)) return null } catch { return null }
-  return value
+  const sigB64 = signed.slice(lastDot + 1).replace(/-/g, '+').replace(/_/g, '/')
+  try {
+    const sigBytes = Uint8Array.from(atob(sigB64), (c) => c.charCodeAt(0))
+    const ok = await crypto.subtle.verify('HMAC', key, sigBytes, new TextEncoder().encode(value))
+    return ok ? value : null
+  } catch {
+    return null
+  }
 }
 
 const PUBLIC_ROUTES = [
@@ -107,7 +131,7 @@ export async function middleware(request: NextRequest) {
 
     // Verificar cache antes de ir ao DB
     const rawCached = request.cookies.get(SUB_CACHE_COOKIE)?.value
-    const cached = rawCached ? verifyAndExtract(rawCached) : null
+    const cached = rawCached ? await verifyAndExtract(rawCached) : null
     let cacheHit = false
 
     if (cached) {
@@ -140,7 +164,7 @@ export async function middleware(request: NextRequest) {
           expiresAt: subscription.expires_at,
           cachedAt: Date.now(),
         })
-        const cacheValue = signValue(cachePayload)
+        const cacheValue = await signValue(cachePayload)
         supabaseResponse.cookies.set(SUB_CACHE_COOKIE, cacheValue, {
           httpOnly: true,
           sameSite: 'lax',
