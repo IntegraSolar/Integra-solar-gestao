@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
 import { InstallmentStatus, PurchaseStatus, ProjectStatus, PipelineStage } from '@/lib/constants/status'
 
-export type ActionResult = { error?: string; success?: string; receipt_url?: string }
+export type ActionResult = { error?: string; success?: string; payment_proof_url?: string }
 
 export async function confirmInstallment(installmentId: string): Promise<ActionResult> {
   const user = await getCurrentUserData()
@@ -142,14 +142,14 @@ export async function uploadReceipt(installmentId: string, formData: FormData): 
   // Nota: o trigger auto_confirm_on_receipt no banco deve estar dropado (migration 20260706000002).
   const { error: updateError } = await supabase
     .from('client_installments')
-    .update({ receipt_url: secureUrl } as any)
+    .update({ payment_proof_url: secureUrl } as any)
     .eq('id', installmentId)
 
   if (updateError) return { error: 'Erro ao salvar comprovante: ' + updateError.message }
 
   revalidatePath('/financeiro')
   revalidatePath(`/financeiro/${inst.client_id}`)
-  return { success: 'Comprovante anexado.', receipt_url: secureUrl }
+  return { success: 'Comprovante anexado.', payment_proof_url: secureUrl }
 }
 
 export async function advanceToProjects(clientId: string): Promise<ActionResult> {

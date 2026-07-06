@@ -12,7 +12,7 @@ export type FinanceiroInstallment = {
   notes: string | null
   status: 'pendente' | 'confirmada'
   confirmed_at: string | null
-  receipt_url: string | null
+  payment_proof_url: string | null
 }
 
 export type FinanceiroPainel = {
@@ -58,7 +58,7 @@ export async function getFinanceiroPainel(params: {
   const { data } = await supabase
     .from('client_installments')
     .select(`
-      id, client_id, position, due_date, amount, notes, status, confirmed_at, receipt_url,
+      id, client_id, position, due_date, amount, notes, status, confirmed_at, payment_proof_url,
       client:clients!client_id(id, name)
     `)
     .eq('organization_id', orgId)
@@ -101,7 +101,7 @@ export async function getFinanceiroPainel(params: {
     notes: i.notes ?? null,
     status: i.status as 'pendente' | 'confirmada',
     confirmed_at: i.confirmed_at ?? null,
-    receipt_url: i.receipt_url ?? null,
+    payment_proof_url: i.payment_proof_url ?? null,
   }))
 
   return {
@@ -122,7 +122,7 @@ export async function getParcelasByClient(clientId: string): Promise<FinanceiroI
   const supabase = await createClient()
   const { data } = await supabase
     .from('client_installments')
-    .select('id, client_id, position, due_date, amount, notes, status, confirmed_at, receipt_url')
+    .select('id, client_id, position, due_date, amount, notes, status, confirmed_at, payment_proof_url')
     .eq('client_id', clientId)
     .eq('organization_id', user.membership.organization.id)
     .order('position', { ascending: true })
@@ -145,6 +145,6 @@ export async function getParcelasByClient(clientId: string): Promise<FinanceiroI
     notes: i.notes ?? null,
     status: i.status as 'pendente' | 'confirmada',
     confirmed_at: i.confirmed_at ?? null,
-    receipt_url: i.receipt_url ?? null,
+    payment_proof_url: i.payment_proof_url ?? null,
   }))
 }

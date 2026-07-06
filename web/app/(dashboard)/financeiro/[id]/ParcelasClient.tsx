@@ -25,7 +25,7 @@ function ParcelaRow({
 }) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
-  const [localReceiptUrl, setLocalReceiptUrl] = useState<string | null>(p.receipt_url)
+  const [localReceiptUrl, setLocalReceiptUrl] = useState<string | null>(p.payment_proof_url)
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -38,7 +38,7 @@ function ParcelaRow({
       onMessage({ type: 'error', text: result.error })
     } else {
       onMessage({ type: 'success', text: result.success! })
-      if (result.receipt_url) setLocalReceiptUrl(result.receipt_url)
+      if (result.payment_proof_url) setLocalReceiptUrl(result.payment_proof_url)
     }
     setUploading(false)
     if (fileRef.current) fileRef.current.value = ''
