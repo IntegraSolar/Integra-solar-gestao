@@ -113,77 +113,13 @@ export async function registerCompany(
 
   const userId = authData.user.id
 
-  // 2. Criar profile
-  await (adminClient as any).from('profiles').upsert({
-    id: userId,
-    email,
-    full_name,
-  })
-
-  // 3. Criar organização
-  const { data: org, error: orgError } = await (adminClient as any)
-    .from('organizations')
-    .insert({ name: company_name, plan: 'professional', status: 'active' })
-    .select('id')
-    .single()
-
-  if (orgError || !org) {
+  // 2–5. Criar organização e todos os recursos associados
+  const { createOrganizationResources } = await import('@/lib/org/createOrganization')
+  try {
+    await createOrganizationResources({ userId, email, full_name, company_name, phone })
+  } catch (err) {
     await adminClient.auth.admin.deleteUser(userId)
-    return { error: 'Erro ao criar empresa: ' + (orgError?.message ?? 'desconhecido') }
-  }
-
-  // 4. Vincular user como owner
-  const { error: memberError } = await (adminClient as any)
-    .from('organization_members')
-    .insert({
-      organization_id: org.id,
-      user_id: userId,
-      role: 'owner',
-      permissions: {},
-    })
-
-  if (memberError) {
-    await (adminClient as any).from('organizations').delete().eq('id', org.id)
-    await adminClient.auth.admin.deleteUser(userId)
-    return { error: 'Erro ao vincular usuário: ' + memberError.message }
-  }
-
-  // 5. Criar org_config padrão
-  await (adminClient as any).from('org_config').insert({
-    organization_id: org.id,
-    telefone: phone ?? null,
-  })
-
-  // 5b. Criar etapas padrão do funil
-  const defaultStages = [
-    { name: 'Chegada de Leads', order: 1, color: '#6B7A90' },
-    { name: 'Follow-up', order: 2, color: '#3B82F6' },
-    { name: 'Visita Agendada', order: 3, color: '#F59E0B' },
-    { name: 'Contrato Assinado', order: 4, color: '#10B981', is_terminal_won: true },
-  ]
-  await (adminClient as any).from('pipeline_stages').insert(
-    defaultStages.map((d) => ({ ...d, organization_id: org.id }))
-  )
-
-  // 5c. Criar template padrão de proposta (se existir o arquivo global)
-  const { data: globalTemplate } = await (adminClient as any).storage
-    .from('proposal-templates')
-    .download('global/template-padrao.docx')
-  if (globalTemplate) {
-    const filePath = `${org.id}/template-padrao.docx`
-    await (adminClient as any).storage
-      .from('proposal-templates')
-      .upload(filePath, globalTemplate, {
-        contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      })
-    await (adminClient as any).from('proposal_templates').insert({
-      org_id: org.id,
-      name: 'Template Padrão',
-      category: 'Residencial e comercial',
-      file_path: filePath,
-      is_default: true,
-      is_active: true,
-    })
+    return { error: err instanceof Error ? err.message : 'Erro ao configurar empresa.' }
   }
 
   // 6. Fazer login automático

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import crypto from 'crypto'
-import type { AsaasWebhookPayload } from '@/lib/webhooks/asaas'
-import { dispatchAsaasEvent } from '@/lib/webhooks/asaas'
+import type { AsaasWebhookPayload } from '@/lib/integrations/asaas/webhooks'
+import { dispatchAsaasEvent } from '@/lib/integrations/asaas/webhooks'
 
 function verifyAsaasSignature(
   body: string,

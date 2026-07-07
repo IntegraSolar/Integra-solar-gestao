@@ -51,30 +51,16 @@ export async function processCheckout(
 
   const userId = authData.user.id
 
-  // 2. Create profile
-  await (adminClient as any).from('profiles').upsert({ id: userId, email, full_name })
-
-  // 3. Create organization
-  const { data: org, error: orgError } = await (adminClient as any)
-    .from('organizations')
-    .insert({ name: company_name, plan: 'professional', status: 'active' })
-    .select('id')
-    .single()
-
-  if (orgError || !org) {
+  // 2–5. Criar organização e todos os recursos associados
+  const { createOrganizationResources } = await import('@/lib/org/createOrganization')
+  let orgId = ''
+  try {
+    const result = await createOrganizationResources({ userId, email, full_name, company_name, phone })
+    orgId = result.orgId
+  } catch (err) {
     await adminClient.auth.admin.deleteUser(userId)
-    return { error: 'Erro ao criar empresa.' }
+    return { error: err instanceof Error ? err.message : 'Erro ao configurar empresa.' }
   }
-
-  // 4. Create member
-  await (adminClient as any).from('organization_members').insert({
-    organization_id: org.id, user_id: userId, role: 'owner', permissions: {},
-  })
-
-  // 5. Create org_config
-  await (adminClient as any).from('org_config').insert({
-    organization_id: org.id, telefone: phone ?? null,
-  })
 
   // 6. Create subscription
   const now = new Date()
@@ -85,7 +71,7 @@ export async function processCheckout(
 
   await (adminClient as any).from('subscriptions').insert({
     user_id: userId,
-    organization_id: org.id,
+    organization_id: orgId,
     plan: plan,
     billing_cycle: planInfo.cycle,
     payment_method: payment_method,

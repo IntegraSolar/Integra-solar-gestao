@@ -27,6 +27,28 @@ export async function createColaborador(data: CreateColaboradorData): Promise<Ac
 
   const adminClient = createAdminClient()
 
+  // 0. Verificar conflito de e-mail entre organizações
+  // Buscar se já existe um auth user com este e-mail
+  const { data: { users: existingUsers } } = await adminClient.auth.admin.listUsers()
+  const existingUser = existingUsers.find((u) => u.email === data.email)
+
+  if (existingUser) {
+    // Verificar se já é membro desta mesma organização
+    const { data: sameMember } = await (adminClient as any)
+      .from('organization_members')
+      .select('id')
+      .eq('user_id', existingUser.id)
+      .eq('organization_id', orgId)
+      .maybeSingle()
+
+    if (sameMember) {
+      return { error: 'Este colaborador já está cadastrado. Para reativá-lo, utilize a opção de reativação.' }
+    }
+
+    // Existe em outra organização
+    return { error: 'Este e-mail já está vinculado a outra empresa na plataforma.' }
+  }
+
   // 1. Criar auth user
   const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
     email: data.email,
