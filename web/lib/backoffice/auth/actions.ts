@@ -3,7 +3,7 @@
 import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
 import { z } from 'zod'
-import { createAdminClient } from '@/lib/supabase/admin'
+import { createClient } from '@supabase/supabase-js'
 import { signSession, SESSION_COOKIE, SESSION_MAX_AGE } from './session'
 
 const loginSchema = z.object({
@@ -24,40 +24,35 @@ export async function signInBackoffice(
   if (!parsed.success) return { error: parsed.error.issues[0].message }
 
   const { email, password } = parsed.data
-  // 1. Verificar credenciais com o client anon (funciona corretamente para signIn)
-  const { createClient } = await import('@supabase/supabase-js')
+
+  // 1. Autenticar via Supabase Auth (anon key)
   const anonClient = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     { auth: { autoRefreshToken: false, persistSession: false } }
   )
+
   const { data: authData, error: authError } = await anonClient.auth.signInWithPassword({
     email: email.toLowerCase(),
     password,
   })
 
   if (authError || !authData.user) {
-    return { error: `[auth] ${authError?.message ?? 'sem usuário'}` }
+    return { error: 'E-mail ou senha incorretos.' }
   }
 
-  // 2. Confirmar que o usuário está autorizado no backoffice (platform_users)
-  const admin = createAdminClient()
-  const { data: platformUser, error: platformError } = await admin
-    .from('platform_users_public')
-    .select('id, email, name, role, is_active')
-    .eq('email', email.toLowerCase())
-    .single()
-
-  if (platformError || !platformUser || !platformUser.is_active) {
-    return { error: `[platform] ${platformError?.message ?? 'não encontrado ou inativo'}` }
+  // 2. Verificar autorização via app_metadata (sem query ao DB)
+  const meta = authData.user.app_metadata ?? {}
+  if (!meta.is_backoffice) {
+    return { error: 'Acesso não autorizado ao backoffice.' }
   }
 
-  // 3. Criar sessão JWT própria (independente da sessão Supabase)
+  // 3. Criar sessão JWT própria
   const token = await signSession({
-    id: platformUser.id,
-    email: platformUser.email,
-    name: platformUser.name,
-    role: platformUser.role as 'super_admin' | 'admin' | 'support',
+    id: authData.user.id,
+    email: authData.user.email!,
+    name: (meta.backoffice_name as string) ?? authData.user.email!,
+    role: (meta.backoffice_role as 'super_admin' | 'admin' | 'support') ?? 'support',
   })
 
   const cookieStore = await cookies()
