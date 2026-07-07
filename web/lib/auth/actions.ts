@@ -157,10 +157,9 @@ export async function registerCompany(
   // 5b. Criar etapas padrão do funil
   const defaultStages = [
     { name: 'Chegada de Leads', order: 1, color: '#6B7A90' },
-    { name: 'Proposta Enviada', order: 2, color: '#F59E0B' },
-    { name: 'Follow-up', order: 3, color: '#3B82F6' },
-    { name: 'Próximos de Fechamento', order: 4, color: '#8B5CF6' },
-    { name: 'Contrato Assinado', order: 5, color: '#10B981', is_terminal_won: true },
+    { name: 'Follow-up', order: 2, color: '#3B82F6' },
+    { name: 'Visita Agendada', order: 3, color: '#F59E0B' },
+    { name: 'Contrato Assinado', order: 4, color: '#10B981', is_terminal_won: true },
   ]
   await (adminClient as any).from('pipeline_stages').insert(
     defaultStages.map((d) => ({ ...d, organization_id: org.id }))
