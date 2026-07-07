@@ -61,7 +61,7 @@ export function Tab2EquVendidos({ client }: { client: Client }) {
         <Input name="inverter_brand" label="Marca do inversor" defaultValue={client.inverter_brand ?? ''} placeholder="Ex: Growatt" />
         <Input
           name="inverter_power_w"
-          label="Potência inversor (W)"
+          label="Potência inversor (kW)"
           type="number"
           step="0.01"
           defaultValue={client.inverter_power_w?.toString() ?? ''}

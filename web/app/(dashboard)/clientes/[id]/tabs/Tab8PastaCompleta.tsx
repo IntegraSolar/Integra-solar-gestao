@@ -104,7 +104,7 @@ export function Tab8PastaCompleta({ client }: { client: Client }) {
         <Row label="kWh prometido/mês" value={client.promised_kwh} />
         <Row label="Potência do sistema" value={client.system_power_kwp ? `${client.system_power_kwp} kWp` : null} />
         <Row label="Painel" value={[client.panel_brand, client.panel_power_w ? `${client.panel_power_w}W` : null].filter(Boolean).join(' ')} />
-        <Row label="Inversor" value={[client.inverter_brand, client.inverter_power_w ? `${client.inverter_power_w}W` : null].filter(Boolean).join(' ')} />
+        <Row label="Inversor" value={[client.inverter_brand, client.inverter_power_w ? `${client.inverter_power_w}kW` : null].filter(Boolean).join(' ')} />
       </Section>
 
       {/* 2. Vistoria */}

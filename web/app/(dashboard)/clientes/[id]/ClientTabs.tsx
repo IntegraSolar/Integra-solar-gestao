@@ -4,7 +4,6 @@
 import { useState } from 'react'
 import type { Client } from '@/lib/clients/types'
 import { Tab1DadosPessoais } from './tabs/Tab1DadosPessoais'
-import { Tab2EquVendidos } from './tabs/Tab2EquVendidos'
 import { Tab3VendaFat } from './tabs/Tab3VendaFat'
 import { Tab4Vistoria } from './tabs/Tab4Vistoria'
 import { Tab5Prazos } from './tabs/Tab5Prazos'
@@ -14,8 +13,7 @@ import { Tab8PastaCompleta } from './tabs/Tab8PastaCompleta'
 
 const TABS = [
   { key: 'tab1', label: 'Dados Pessoais' },
-  { key: 'tab2', label: 'Equ. Vendidos' },
-  { key: 'tab3', label: 'Venda e Fat.' },
+  { key: 'tab3', label: 'Vendas e Faturamento' },
   { key: 'tab4', label: 'Vistoria' },
   { key: 'tab5', label: 'Prazos' },
   { key: 'tab6', label: 'Anexos' },
@@ -61,7 +59,6 @@ export function ClientTabs({ client }: { client: Client }) {
       {/* Tab content */}
       <div className="flex-1 overflow-auto px-6 py-5">
         {active === 'tab1' && <Tab1DadosPessoais client={client} />}
-        {active === 'tab2' && <Tab2EquVendidos client={client} />}
         {active === 'tab3' && <Tab3VendaFat client={client} />}
         {active === 'tab4' && <Tab4Vistoria client={client} />}
         {active === 'tab5' && <Tab5Prazos client={client} />}
