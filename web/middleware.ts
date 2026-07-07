@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { SUBSCRIPTION_BLOCKED_STATUSES } from '@/lib/constants/status'
+import { verifySession } from '@/lib/backoffice/auth/session'
 
 const COOKIE_SECRET = process.env.COOKIE_SECRET ?? ''
 
@@ -68,7 +69,34 @@ function isPublicRoute(pathname: string): boolean {
 }
 
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+
+  // ── Branch 1: Backoffice — auth independente do Supabase ──────────
+  if (pathname.startsWith('/backoffice')) {
+    const isPublic = pathname === '/backoffice/login' || pathname === '/backoffice'
+    const token = request.cookies.get('__bo_session')?.value
+    const session = token ? await verifySession(token) : null
+
+    if (!session && !isPublic) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/backoffice/login'
+      return NextResponse.redirect(url)
+    }
+    if (session && pathname === '/backoffice/login') {
+      const url = request.nextUrl.clone()
+      url.pathname = '/backoffice/dashboard'
+      return NextResponse.redirect(url)
+    }
+    if (!session && pathname === '/backoffice') {
+      const url = request.nextUrl.clone()
+      url.pathname = '/backoffice/login'
+      return NextResponse.redirect(url)
+    }
+    return NextResponse.next()
+  }
+
   let supabaseResponse = NextResponse.next({ request })
+  const { pathname } = request.nextUrl
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -94,8 +122,6 @@ export async function middleware(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser()
-
-  const { pathname } = request.nextUrl
 
   // Rota raiz → only redirect if authenticated
   if (pathname === '/') {
