@@ -24,10 +24,14 @@ export async function signInBackoffice(
   if (!parsed.success) return { error: parsed.error.issues[0].message }
 
   const { email, password } = parsed.data
-  const admin = createAdminClient()
-
-  // 1. Verificar credenciais via Supabase Auth (sem depender de RPC/PostgREST)
-  const { data: authData, error: authError } = await admin.auth.signInWithPassword({
+  // 1. Verificar credenciais com o client anon (funciona corretamente para signIn)
+  const { createClient } = await import('@supabase/supabase-js')
+  const anonClient = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  )
+  const { data: authData, error: authError } = await anonClient.auth.signInWithPassword({
     email: email.toLowerCase(),
     password,
   })
@@ -37,6 +41,7 @@ export async function signInBackoffice(
   }
 
   // 2. Confirmar que o usuário está autorizado no backoffice (platform_users)
+  const admin = createAdminClient()
   const { data: platformUser, error: platformError } = await admin
     .from('platform_users_public')
     .select('id, email, name, role, is_active')
