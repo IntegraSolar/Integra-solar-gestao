@@ -49,6 +49,11 @@ export function LeadsClient({ initialLeads, stages, sources, members }: LeadsCli
   const handleDrawerClose = useCallback(() => {
     setSelectedLead(null)
     setCreatingNew(false)
+  }, [])
+
+  const handleLeadSaved = useCallback(() => {
+    setSelectedLead(null)
+    setCreatingNew(false)
     refreshLeads()
   }, [refreshLeads])
 
@@ -122,6 +127,7 @@ export function LeadsClient({ initialLeads, stages, sources, members }: LeadsCli
         sources={sources}
         members={members}
         onClose={handleDrawerClose}
+        onSaved={handleLeadSaved}
       />
     </div>
   )

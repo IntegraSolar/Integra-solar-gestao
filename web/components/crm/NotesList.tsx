@@ -20,6 +20,11 @@ export function NotesList({ lead }: { lead: Lead }) {
       .then((data) => { if (data.notes) setNotes(data.notes) })
   }
 
+  useEffect(() => {
+    refreshNotes()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lead.id])
+
   function handleAdd() {
     if (!content.trim()) return
     startTransition(async () => {

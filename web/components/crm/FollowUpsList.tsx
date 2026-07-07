@@ -25,6 +25,11 @@ export function FollowUpsList({ lead }: { lead: Lead }) {
       .then((data) => { if (data.followups) setFollowups(data.followups) })
   }
 
+  useEffect(() => {
+    refreshFollowups()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lead.id])
+
   const boundCreate = createFollowUp.bind(null, lead.id)
   const [state, formAction] = useFormState(
     async (prev: ActionResult, formData: FormData) => {

@@ -19,9 +19,10 @@ interface LeadDrawerProps {
   sources: LeadSource[]
   members: LeadUser[]
   onClose: () => void
+  onSaved?: () => void
 }
 
-export function LeadDrawer({ lead, isNew, stages, sources, members, onClose }: LeadDrawerProps) {
+export function LeadDrawer({ lead, isNew, stages, sources, members, onClose, onSaved }: LeadDrawerProps) {
   const [tab, setTab] = useState<Tab>('dados')
   const [converting, setConverting] = useState(false)
 
@@ -103,7 +104,7 @@ export function LeadDrawer({ lead, isNew, stages, sources, members, onClose }: L
               stages={stages}
               sources={sources}
               members={members}
-              onSuccess={onClose}
+              onSuccess={onSaved ?? onClose}
             />
           )}
 
@@ -118,7 +119,7 @@ export function LeadDrawer({ lead, isNew, stages, sources, members, onClose }: L
           stages={stages}
           sources={sources}
           members={members}
-          onSuccess={onClose}
+          onSuccess={onSaved ?? onClose}
         />
       )}
     </Drawer>

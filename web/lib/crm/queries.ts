@@ -52,15 +52,13 @@ export async function getLeads(): Promise<Lead[]> {
       *,
       stage:pipeline_stages(id, name, color, is_final_stage, is_terminal_won, is_terminal_lost, order),
       assigned_user:profiles!assigned_to_user_id(id, full_name, email),
-      lead_source:lead_sources(id, name),
-      notes:lead_notes(id, content, created_at, created_by, author:profiles!created_by(full_name, email)),
-      followups:tasks!related_to_lead_id(id, title, description, due_date, completed_at, assigned_to_user_id)
+      lead_source:lead_sources(id, name)
     `)
     .eq('organization_id', user.membership.organization.id)
     .order('created_at', { ascending: false })
     .limit(200)
   const leads = (data ?? []) as any[]
-  return leads.map((l) => ({ ...l, notes: l.notes ?? [], followups: l.followups ?? [] })) as Lead[]
+  return leads.map((l) => ({ ...l, notes: [], followups: [] })) as Lead[]
 }
 
 export async function getLeadById(id: string): Promise<Lead | null> {
