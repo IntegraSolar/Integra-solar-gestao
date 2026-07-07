@@ -304,7 +304,6 @@ export async function deleteFunnelStage(stageId: string, moveTo: string): Promis
   await supabase.from('leads').update({ current_stage_id: moveTo }).eq('current_stage_id', stageId)
   const { error } = await supabase.from('pipeline_stages').delete().eq('id', stageId)
   if (error) return { error: error.message }
-  revalidatePath('/leads')
   return { success: 'Etapa excluída.' }
 }
 

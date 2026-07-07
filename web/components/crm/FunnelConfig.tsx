@@ -26,7 +26,7 @@ import type { FunnelStage } from '@/lib/crm/types'
 
 const COLORS = ['#6B7A90', '#3B82F6', '#8B5CF6', '#F59E0B', '#10B981', '#EF4444', '#EC4899', '#14B8A6']
 
-function StageRow({ stage, stages, onUpdate }: { stage: FunnelStage; stages: FunnelStage[]; onUpdate: () => void }) {
+function StageRow({ stage, stages, onUpdate, onDelete }: { stage: FunnelStage; stages: FunnelStage[]; onUpdate: () => void; onDelete: (id: string) => void }) {
   const [editing, setEditing] = useState(false)
   const [name, setName] = useState(stage.name)
   const [color, setColor] = useState(stage.color)
@@ -48,9 +48,12 @@ function StageRow({ stage, stages, onUpdate }: { stage: FunnelStage; stages: Fun
     if (others.length === 0) { alert('Não é possível excluir a única etapa.'); return }
     const moveTo = others[0].id
     if (!confirm(`Excluir "${stage.name}"? Os leads serão movidos para "${others[0].name}".`)) return
+    onDelete(stage.id)
     startTransition(async () => {
-      await deleteFunnelStage(stage.id, moveTo)
-      onUpdate()
+      const result = await deleteFunnelStage(stage.id, moveTo)
+      if (result.error) {
+        onUpdate()
+      }
     })
   }
 
@@ -165,7 +168,13 @@ export function FunnelConfig({ initialStages }: { initialStages: FunnelStage[] }
       <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
         <SortableContext items={stages.map((s) => s.id)} strategy={verticalListSortingStrategy}>
           {stages.map((stage) => (
-            <StageRow key={`${stage.id}-${version}`} stage={stage} stages={stages} onUpdate={refresh} />
+            <StageRow
+              key={`${stage.id}-${version}`}
+              stage={stage}
+              stages={stages}
+              onUpdate={refresh}
+              onDelete={(id) => setStages((prev) => prev.filter((s) => s.id !== id))}
+            />
           ))}
         </SortableContext>
       </DndContext>
