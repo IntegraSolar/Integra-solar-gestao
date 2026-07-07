@@ -19,9 +19,10 @@ function b64url(buf: ArrayBuffer | Uint8Array): string {
     .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
 }
 
-function b64urlToBytes(s: string): Uint8Array {
+function b64urlToBytes(s: string): ArrayBuffer {
   const b64 = s.replace(/-/g, '+').replace(/_/g, '/')
-  return Uint8Array.from(atob(b64), (c) => c.charCodeAt(0))
+  const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0))
+  return bytes.buffer as ArrayBuffer
 }
 
 async function getKey(): Promise<CryptoKey> {
