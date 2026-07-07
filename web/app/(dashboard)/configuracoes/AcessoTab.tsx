@@ -243,7 +243,7 @@ export default function AcessoTab({ colaboradores: initial }: { colaboradores: C
           </div>
           <div>
             <label className={labelCls}>E-mail</label>
-            <input className={inputCls} type="email" value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} />
+            <input className={inputCls} type="email" autoComplete="new-password" value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} />
           </div>
           <div>
             <label className={labelCls}>Senha</label>
@@ -251,6 +251,7 @@ export default function AcessoTab({ colaboradores: initial }: { colaboradores: C
               <input
                 className={inputCls}
                 type={showPassword ? 'text' : 'password'}
+                autoComplete="new-password"
                 value={form.password}
                 onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
                 style={{ paddingRight: 36 }}
