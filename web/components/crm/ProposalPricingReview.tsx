@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import { X, Plus, Trash2, Settings2 } from 'lucide-react'
 import type { Proposal, ProposalTemplate } from '@/lib/crm/types'
 import { formatCurrency } from '@/lib/format'
@@ -180,7 +181,7 @@ export function ProposalPricingReview({
   const inputSmCls = 'w-full px-2 py-1.5 rounded-lg text-xs text-white outline-none border border-white/10 focus:border-white/30 bg-white/5'
   const varInputCls = 'w-full px-3 py-2 rounded-xl text-sm text-white outline-none border border-white/10 focus:border-white/30 bg-white/5'
 
-  return (
+  return createPortal(
     <>
       <div
         className="fixed inset-0 z-[70]"
@@ -425,6 +426,7 @@ export function ProposalPricingReview({
           </button>
         </div>
       </div>
-    </>
+    </>,
+    document.body
   )
 }
