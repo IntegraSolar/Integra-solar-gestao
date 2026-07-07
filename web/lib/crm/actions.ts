@@ -264,19 +264,21 @@ export async function deleteProposal(proposalId: string): Promise<ActionResult> 
 
 // ── Funnel Stage Actions ──────────────────────────────────────────
 
-export async function createFunnelStage(name: string, order: number): Promise<ActionResult> {
+export async function createFunnelStage(
+  name: string,
+  order: number
+): Promise<ActionResult & { stage?: { id: string; name: string; color: string; order: number; is_terminal_won: boolean; is_terminal_lost: boolean; is_final_stage: boolean; organization_id: string } }> {
   const orgId = await getOrgId()
   if (!orgId) return { error: 'Sem organização ativa.' }
   const supabase = await createClient()
-  const { error } = await supabase.from('pipeline_stages').insert({
-    organization_id: orgId,
-    name,
-    order,
-    color: '#6B7A90',
-  })
+  const { data, error } = await supabase
+    .from('pipeline_stages')
+    .insert({ organization_id: orgId, name, order, color: '#6B7A90' })
+    .select('id, name, color, order, is_terminal_won, is_terminal_lost, is_final_stage, organization_id')
+    .single()
   if (error) return { error: error.message }
   revalidatePath('/leads')
-  return { success: 'Etapa criada.' }
+  return { success: 'Etapa criada.', stage: data }
 }
 
 export async function updateFunnelStage(

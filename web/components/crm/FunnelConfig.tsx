@@ -146,9 +146,11 @@ export function FunnelConfig({ initialStages }: { initialStages: FunnelStage[] }
   function addStage() {
     if (!newName.trim()) return
     startTransition(async () => {
-      await createFunnelStage(newName.trim(), stages.length + 1)
+      const result = await createFunnelStage(newName.trim(), stages.length + 1)
+      if (result.stage) {
+        setStages((prev) => [...prev, result.stage!])
+      }
       setNewName('')
-      refresh()
     })
   }
 
