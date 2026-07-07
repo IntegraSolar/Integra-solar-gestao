@@ -48,7 +48,7 @@ CREATE OR REPLACE FUNCTION public.verify_platform_user(p_email text, p_password 
 RETURNS TABLE(id uuid, email text, name text, role text)
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = platform, public
+SET search_path = extensions, platform, public
 AS $$
 DECLARE
   v_user platform.platform_users%ROWTYPE;
@@ -78,7 +78,7 @@ $$;
 INSERT INTO platform.platform_users (email, password_hash, name, role)
 VALUES (
   'admin@integrasolar.app.br',
-  crypt('Admin@Integra2026', gen_salt('bf', 12)),
+  extensions.crypt('Admin@Integra2026', extensions.gen_salt('bf', 12)),
   'Administrador',
   'super_admin'
 )
