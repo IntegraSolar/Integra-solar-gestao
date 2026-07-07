@@ -37,7 +37,7 @@ export async function signInBackoffice(
   })
 
   if (authError || !authData.user) {
-    return { error: 'E-mail ou senha incorretos.' }
+    return { error: `[auth] ${authError?.message ?? 'sem usuário'}` }
   }
 
   // 2. Confirmar que o usuário está autorizado no backoffice (platform_users)
@@ -49,7 +49,7 @@ export async function signInBackoffice(
     .single()
 
   if (platformError || !platformUser || !platformUser.is_active) {
-    return { error: 'Acesso não autorizado ao backoffice.' }
+    return { error: `[platform] ${platformError?.message ?? 'não encontrado ou inativo'}` }
   }
 
   // 3. Criar sessão JWT própria (independente da sessão Supabase)
