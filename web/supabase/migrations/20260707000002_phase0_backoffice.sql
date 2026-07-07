@@ -3,27 +3,15 @@
 -- Migração: Estrutura de suporte ao painel administrativo
 -- ═══════════════════════════════════════════════════════════════════
 
--- 1. Soft-delete de colaboradores
-ALTER TABLE public.organization_members
+-- 1. Soft-delete de colaboradores (tabela real: app_users)
+ALTER TABLE public.app_users
   ADD COLUMN IF NOT EXISTS is_active boolean NOT NULL DEFAULT true;
 
-COMMENT ON COLUMN public.organization_members.is_active IS 'false = colaborador desativado (soft delete)';
+COMMENT ON COLUMN public.app_users.is_active IS 'false = colaborador desativado (soft delete)';
 
--- 2. Referência direta de subscription para organização
-ALTER TABLE public.subscriptions
-  ADD COLUMN IF NOT EXISTS organization_id uuid REFERENCES public.organizations(id);
+-- Nota: tabela `assinaturas` já possui organization_id e trial_ends_at nativamente.
 
--- Migrar dados existentes: preencher organization_id pelo owner da org
-UPDATE public.subscriptions s
-  SET organization_id = om.organization_id
-  FROM public.organization_members om
-  WHERE om.user_id = s.user_id
-    AND om.role = 'owner'
-    AND s.organization_id IS NULL;
-
-COMMENT ON COLUMN public.subscriptions.organization_id IS 'Referência direta à organização — substitui a referência por user_id';
-
--- 3. Campos de bloqueio em organizations (para uso do backoffice futuramente)
+-- 2. Campos de bloqueio em organizations (para uso do backoffice)
 ALTER TABLE public.organizations
   ADD COLUMN IF NOT EXISTS trial_ends_at  timestamptz,
   ADD COLUMN IF NOT EXISTS blocked_reason text,
