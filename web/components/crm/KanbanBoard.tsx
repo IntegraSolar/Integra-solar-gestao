@@ -25,6 +25,8 @@ export function KanbanBoard({ leads: externalLeads, stages, onLeadClick }: Kanba
   const [leads, setLeads] = useState(externalLeads)
   const [activeLead, setActiveLead] = useState<Lead | null>(null)
   const isDragging = useRef(false)
+  // Tracks in-flight server calls per lead to prevent concurrent updates
+  const pendingMoves = useRef<Set<string>>(new Set())
 
   useEffect(() => {
     if (!isDragging.current) {
@@ -51,7 +53,6 @@ export function KanbanBoard({ leads: externalLeads, stages, onLeadClick }: Kanba
     const overStage = stages.find((s) => s.id === overId)
     const overLead = leads.find((l) => l.id === overId)
     const targetStageId = overStage?.id ?? overLead?.current_stage_id
-
     if (!targetStageId) return
     const activeId = active.id as string
     setLeads((prev) =>
@@ -59,16 +60,47 @@ export function KanbanBoard({ leads: externalLeads, stages, onLeadClick }: Kanba
     )
   }
 
-  async function handleDragEnd({ active, over }: DragEndEvent) {
+  function handleDragEnd({ active, over }: DragEndEvent) {
     isDragging.current = false
     setActiveLead(null)
     if (!over) return
+
+    const leadId = active.id as string
+
+    // Skip if this lead already has a pending server call
+    if (pendingMoves.current.has(leadId)) return
+
     const overId = over.id as string
     const overStage = stages.find((s) => s.id === overId)
     const overLead = leads.find((l) => l.id === overId)
     const targetStageId = overStage?.id ?? overLead?.current_stage_id
     if (!targetStageId) return
-    await moveLeadStage(active.id as string, targetStageId)
+
+    // Snapshot the current stage before the optimistic update for potential revert
+    const previousStageId = leads.find((l) => l.id === leadId)?.current_stage_id
+
+    pendingMoves.current.add(leadId)
+
+    moveLeadStage(leadId, targetStageId)
+      .then((result) => {
+        if (result.error && previousStageId) {
+          // Revert optimistic update on error
+          setLeads((prev) =>
+            prev.map((l) => (l.id === leadId ? { ...l, current_stage_id: previousStageId } : l))
+          )
+        }
+      })
+      .catch(() => {
+        // Revert on unexpected error
+        if (previousStageId) {
+          setLeads((prev) =>
+            prev.map((l) => (l.id === leadId ? { ...l, current_stage_id: previousStageId } : l))
+          )
+        }
+      })
+      .finally(() => {
+        pendingMoves.current.delete(leadId)
+      })
   }
 
   return (

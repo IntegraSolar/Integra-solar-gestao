@@ -109,7 +109,8 @@ export async function moveLeadStage(leadId: string, stageId: string): Promise<Ac
     .eq('id', leadId)
     .eq('organization_id', orgId)
   if (error) return { error: error.message }
-  revalidatePath('/leads')
+  // No revalidatePath: the client manages state optimistically.
+  // revalidatePath here caused cascading ISR rebuilds on rapid drags, crashing the page.
   return { success: 'Etapa atualizada.' }
 }
 
