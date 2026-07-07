@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Figtree, DM_Sans, Sora } from 'next/font/google'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 import './globals.css'
 
 const figtree = Figtree({
@@ -40,7 +41,10 @@ export default function RootLayout({
           (function(){var ALLOWED=['green','navy','dark','light'];var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',ALLOWED.indexOf(t)!==-1?t:'green')})()
         `}} />
       </head>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        {children}
+        <SpeedInsights />
+      </body>
     </html>
   )
 }
