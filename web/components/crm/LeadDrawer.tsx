@@ -51,7 +51,7 @@ export function LeadDrawer({ lead, isNew, stages, sources, members, onClose, onS
   ]
 
   return (
-    <Drawer open={isOpen} onClose={onClose} title={title} width="min(90vw, 900px)">
+    <Drawer open={isOpen} onClose={onClose} title={title} width="clamp(480px, 65vw, 1000px)">
       {!isNew && lead && (
         <>
           {/* Header actions — Converter + Excluir */}
