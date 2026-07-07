@@ -141,12 +141,16 @@ export async function uploadPurchaseDoc(
   docType: 'nf_equipamentos' | 'romaneio' | 'comprovante',
   formData: FormData
 ): Promise<ActionResult & { url?: string }> {
+  const user = await getCurrentUserData()
+  const orgId = user?.membership?.organization.id
+  if (!orgId) return { error: 'Sem organização ativa.' }
+
   const file = formData.get('file') as File | null
   if (!file || file.size === 0) return { error: 'Selecione um arquivo.' }
 
   const supabase = await createClient()
   const ext = file.name.split('.').pop() ?? 'pdf'
-  const filePath = `${clientId}/${docType}.${ext}`
+  const filePath = `${orgId}/${clientId}/${docType}.${ext}`
 
   const { error: uploadError } = await supabase.storage
     .from('client-files')
@@ -154,8 +158,7 @@ export async function uploadPurchaseDoc(
 
   if (uploadError) return { error: 'Erro ao enviar: ' + uploadError.message }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
-  const url = `${supabaseUrl}/storage/v1/object/public/client-files/${filePath}`
+  const url = `/api/storage/download?bucket=client-files&path=${encodeURIComponent(filePath)}`
 
   await supabase
     .from('client_purchases')

@@ -26,8 +26,24 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Bucket não permitido' }, { status: 403 })
   }
 
-  // Verificar que o path pertence à organização do usuário
-  if (!path.startsWith(orgId) && !path.startsWith(`entrega-material/${orgId}`)) {
+  // Verificar que o path pertence à organização do usuário.
+  // Paths novos: sempre começam com orgId (ou entrega-material/orgId).
+  // Paths legados: começam com clientId — verificamos via DB se esse cliente
+  // pertence à org do usuário (backward compat com arquivos antigos).
+  const pathBelongsToOrg = async (): Promise<boolean> => {
+    if (path.startsWith(orgId) || path.startsWith(`entrega-material/${orgId}`)) return true
+    const segments = path.split('/')
+    const uuidCandidate = segments[0] === 'entrega-material' ? segments[1] : segments[0]
+    if (!uuidCandidate) return false
+    const { count } = await supabase
+      .from('clients')
+      .select('id', { count: 'exact', head: true })
+      .eq('id', uuidCandidate)
+      .eq('organization_id', orgId)
+    return (count ?? 0) > 0
+  }
+
+  if (!(await pathBelongsToOrg())) {
     return NextResponse.json({ error: 'Acesso negado' }, { status: 403 })
   }
 

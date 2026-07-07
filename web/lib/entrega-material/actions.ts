@@ -92,13 +92,17 @@ export async function uploadDeliveryMedia(
   clientId: string,
   formData: FormData
 ): Promise<ActionResult & { url?: string; fileName?: string }> {
+  const user = await getCurrentUserData()
+  const orgId = user?.membership?.organization.id
+  if (!orgId) return { error: 'Sem organização ativa.' }
+
   const file = formData.get('file') as File | null
   if (!file || file.size === 0) return { error: 'Selecione um arquivo.' }
 
   const supabase = await createClient()
   const ext = file.name.split('.').pop() ?? 'jpg'
   const timestamp = Date.now()
-  const filePath = `entrega-material/${clientId}/${timestamp}.${ext}`
+  const filePath = `entrega-material/${orgId}/${clientId}/${timestamp}.${ext}`
 
   const { error: uploadError } = await supabase.storage
     .from('client-files')
@@ -106,8 +110,7 @@ export async function uploadDeliveryMedia(
 
   if (uploadError) return { error: 'Erro ao enviar: ' + uploadError.message }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
-  const url = `${supabaseUrl}/storage/v1/object/public/client-files/${filePath}`
+  const url = `/api/storage/download?bucket=client-files&path=${encodeURIComponent(filePath)}`
 
   // Append to media_urls JSON array
   const { data: delivery } = await supabase
