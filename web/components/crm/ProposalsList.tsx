@@ -145,6 +145,25 @@ export function ProposalsList({ lead }: { lead: Lead }) {
               </p>
             </div>
           </div>
+          {/* Equipamentos */}
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-3">
+            {p.panel_qty > 0 && (
+              <div>
+                <p className="text-xs" style={{ color: 'var(--theme-text-subtle)' }}>Placas</p>
+                <p className="text-xs font-medium" style={{ color: 'var(--theme-text-muted)' }}>
+                  {p.panel_qty}x {p.panel_brand_model ?? `${p.panel_power_w}W`}
+                </p>
+              </div>
+            )}
+            {p.inverter_qty > 0 && (
+              <div>
+                <p className="text-xs" style={{ color: 'var(--theme-text-subtle)' }}>Inversores</p>
+                <p className="text-xs font-medium" style={{ color: 'var(--theme-text-muted)' }}>
+                  {p.inverter_qty}x {p.inverter_brand_model ?? `${(p.inverter_power_w / 1000).toFixed(1)}kW`}
+                </p>
+              </div>
+            )}
+          </div>
           {p.supplier && (
             <p className="text-xs mt-2" style={{ color: 'var(--theme-text-subtle)' }}>
               Fornecedor: {p.supplier.name}

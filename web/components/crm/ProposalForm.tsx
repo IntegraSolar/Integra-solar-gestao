@@ -21,6 +21,7 @@ interface ProposalFormProps {
 export function ProposalForm({ leadId, generationFactor, onSuccess, onCancel }: ProposalFormProps) {
   const [panelQty, setPanelQty] = useState(0)
   const [panelPower, setPanelPower] = useState(0)
+  const [inverterPowerKw, setInverterPowerKw] = useState(0)
 
   const systemKwp = (panelQty * panelPower) / 1000
   const monthlyGen = systemKwp * generationFactor
@@ -30,6 +31,8 @@ export function ProposalForm({ leadId, generationFactor, onSuccess, onCancel }: 
     async (prev: ActionResult, formData: FormData) => {
       formData.set('total_power_kwp', systemKwp.toFixed(3))
       formData.set('monthly_generation_kwh', monthlyGen.toFixed(1))
+      // converte kW → W antes de salvar
+      formData.set('inverter_power_w', (inverterPowerKw * 1000).toString())
       const result = await boundAction(prev, formData)
       if (result.success) onSuccess()
       return result
@@ -66,7 +69,15 @@ export function ProposalForm({ leadId, generationFactor, onSuccess, onCancel }: 
         </div>
 
         <Input name="inverter_qty" label="Qtd. inversores" type="number" min="0" defaultValue="1" />
-        <Input name="inverter_power_w" label="Potência inversor (W)" type="number" min="0" step="0.01" />
+        <Input
+          name="inverter_power_kw_display"
+          label="Potência inversor (kW)"
+          type="number"
+          min="0"
+          step="0.01"
+          value={inverterPowerKw.toString()}
+          onChange={(e) => setInverterPowerKw(Number(e.target.value))}
+        />
         <div className="col-span-2">
           <Input name="inverter_brand_model" label="Marca/Modelo do inversor" placeholder="Ex: Growatt 5kW" />
         </div>

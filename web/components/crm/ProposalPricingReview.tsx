@@ -348,6 +348,41 @@ export function ProposalPricingReview({
             </div>
           </div>
 
+          {/* Equipamentos da proposta */}
+          {(proposal.panel_qty > 0 || proposal.inverter_qty > 0) && (
+            <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--theme-card-border)' }}>
+              <div className="px-4 py-3" style={{ background: 'var(--theme-surface)' }}>
+                <p className="text-xs font-semibold text-white/50 uppercase tracking-wide">Equipamentos</p>
+              </div>
+              <div className="p-4 grid grid-cols-2 gap-4">
+                {proposal.panel_qty > 0 && (
+                  <div>
+                    <p className="text-[10px] text-white/40 uppercase tracking-wide mb-1">Placas</p>
+                    <p className="text-sm font-semibold text-white/80">{proposal.panel_qty}x unidades</p>
+                    {proposal.panel_brand_model && (
+                      <p className="text-xs text-white/50 mt-0.5">{proposal.panel_brand_model}</p>
+                    )}
+                    {proposal.panel_power_w > 0 && (
+                      <p className="text-xs text-white/40">{proposal.panel_power_w}W / placa</p>
+                    )}
+                  </div>
+                )}
+                {proposal.inverter_qty > 0 && (
+                  <div>
+                    <p className="text-[10px] text-white/40 uppercase tracking-wide mb-1">Inversores</p>
+                    <p className="text-sm font-semibold text-white/80">{proposal.inverter_qty}x unidades</p>
+                    {proposal.inverter_brand_model && (
+                      <p className="text-xs text-white/50 mt-0.5">{proposal.inverter_brand_model}</p>
+                    )}
+                    {proposal.inverter_power_w > 0 && (
+                      <p className="text-xs text-white/40">{(proposal.inverter_power_w / 1000).toFixed(1)} kW / inversor</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Seleção de template */}
           <div>
             <label className={labelCls}>Template do Orçamento *</label>
