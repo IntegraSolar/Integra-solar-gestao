@@ -190,7 +190,7 @@ export function ProposalPricingReview({
       <div
         className="fixed right-0 top-0 bottom-0 z-[71] flex flex-col"
         style={{
-          width: 'clamp(560px, 70vw, 1300px)',
+          width: 'calc(100vw - 180px)',
           background: 'var(--theme-drawer-bg)',
           borderLeft: '1px solid var(--theme-card-border)',
           boxShadow: '-8px 0 32px rgba(0,0,0,0.4)',
