@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { getCurrentUserData } from '@/lib/org/queries'
 import type { ActionResult } from '@/lib/crm/types'
 
 export async function markCommissionPaid(
@@ -48,4 +49,33 @@ export async function markCommissionPaid(
 
   revalidatePath('/comissoes')
   return { success: 'Comissão marcada como paga.' }
+}
+
+export async function uploadComprovanteComissao(
+  commissionId: string,
+  formData: FormData
+): Promise<ActionResult & { url?: string }> {
+  const user = await getCurrentUserData()
+  const orgId = user?.membership?.organization.id
+  if (!orgId) return { error: 'Não autenticado.' }
+
+  const file = formData.get('file') as File | null
+  if (!file || file.size === 0) return { error: 'Nenhum arquivo selecionado.' }
+
+  const allowed = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
+  if (!allowed.includes(file.type)) return { error: 'Tipo de arquivo não permitido. Use PDF, JPG ou PNG.' }
+  if (file.size > 10 * 1024 * 1024) return { error: 'Arquivo muito grande. Máximo 10 MB.' }
+
+  const ext = file.name.split('.').pop() ?? 'pdf'
+  const filePath = `${orgId}/comissoes/${commissionId}.${ext}`
+
+  const supabase = await createClient()
+  const { error: uploadError } = await supabase.storage
+    .from('receipts')
+    .upload(filePath, file, { upsert: true, contentType: file.type })
+
+  if (uploadError) return { error: 'Erro ao enviar arquivo: ' + uploadError.message }
+
+  const url = `/api/storage/download?bucket=receipts&path=${encodeURIComponent(filePath)}`
+  return { success: 'Arquivo enviado.', url }
 }
