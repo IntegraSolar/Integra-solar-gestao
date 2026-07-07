@@ -32,7 +32,9 @@ export async function signInBackoffice(
   })
 
   if (error || !data || (data as unknown[]).length === 0) {
-    return { error: 'E-mail ou senha incorretos.' }
+    const msg = error?.message ?? 'sem dados'
+    console.error('[backoffice:signIn] falha RPC:', msg)
+    return { error: `Erro: ${msg}` }
   }
 
   const user = (data as Array<{ id: string; email: string; name: string; role: string }>)[0]
