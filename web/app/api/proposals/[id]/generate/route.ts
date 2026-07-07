@@ -130,7 +130,24 @@ export async function POST(
         qtd: number
         custo_unit: number
       }>
+      ajuste_comercial?: {
+        ajuste_tipo: string
+        ajuste_valor: number
+        ajuste_percentual: number
+        ajuste_motivo: string
+        preco_calculado: number
+        preco_final: number
+      } | null
     }
+
+    const ajuste_comercial: {
+      ajuste_tipo: string
+      ajuste_valor: number
+      ajuste_percentual: number
+      ajuste_motivo: string
+      preco_calculado: number
+      preco_final: number
+    } | null = body.ajuste_comercial ?? null
 
     const { proposalId, templateId, valor_entrada, valor_parcelas, num_parcelas, overrides, extras } = body
 
@@ -191,6 +208,11 @@ export async function POST(
     const extrasVenda = (extras ?? []).reduce((sum, ec) => sum + (ec.qtd * ec.custo_unit) / d, 0)
     const preco_total_final = pricing.preco_total + extrasVenda
 
+    // preco_total_final é o valor calculado ANTES do ajuste comercial
+    const preco_calculado_final = preco_total_final
+    // Se há ajuste comercial, usa o preco_final negociado; caso contrário usa o calculado
+    const preco_final = ajuste_comercial ? ajuste_comercial.preco_final : preco_calculado_final
+
     const { data: templateMeta } = await (supabase as any)
       .from('proposal_templates')
       .select('file_path')
@@ -231,7 +253,11 @@ export async function POST(
           inverter_brand_model: p.inverter_brand_model ?? null,
           total_power_kwp: p.total_power_kwp ?? 0,
           monthly_generation_kwh: p.monthly_generation_kwh ?? 0,
-          preco_total: preco_total_final,
+          preco_total: preco_final,
+          preco_calculado: preco_calculado_final,
+          ajuste_valor: ajuste_comercial?.ajuste_valor ?? null,
+          ajuste_percentual: ajuste_comercial?.ajuste_percentual ?? null,
+          preco_final,
           valor_entrada: valor_entrada ?? 0,
           num_parcelas: num_parcelas ?? 0,
           valor_parcelas: valor_parcelas ?? 0,
@@ -314,6 +340,8 @@ export async function POST(
     await supabase.from('proposals').update({
       template_id: templateId,
       preco_total: preco_total_final,
+      preco_calculado: preco_calculado_final,
+      preco_final: preco_final,
       custo_kit: pricing.custo_kit,
       custo_projeto: pricing.custo_projeto,
       custo_instalacao: pricing.custo_instalacao,
@@ -325,6 +353,12 @@ export async function POST(
       pdf_url: pdfUrl,
       docx_url: docxUrl,
       gerado_em: new Date().toISOString(),
+      ...(ajuste_comercial ? {
+        ajuste_tipo:       ajuste_comercial.ajuste_tipo,
+        ajuste_valor:      ajuste_comercial.ajuste_valor,
+        ajuste_percentual: ajuste_comercial.ajuste_percentual,
+        ajuste_motivo:     ajuste_comercial.ajuste_motivo || null,
+      } : {}),
     } as any).eq('id', proposalId)
 
     return NextResponse.json({ pdf_url: pdfUrl, pdf_filename: `${proposalName}.pdf` })

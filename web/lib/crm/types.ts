@@ -114,6 +114,15 @@ export type Proposal = {
   pdf_url: string | null
   docx_url: string | null
   gerado_em: string | null
+  // Ajuste Comercial
+  preco_calculado:      number | null
+  ajuste_tipo:          'percentual' | 'valor' | 'valor_final' | null
+  ajuste_valor:         number | null
+  ajuste_percentual:    number | null
+  ajuste_motivo:        string | null
+  ajuste_aplicado_por:  string | null
+  ajuste_aplicado_em:   string | null
+  preco_final:          number | null
 }
 
 export type ActionResult = {

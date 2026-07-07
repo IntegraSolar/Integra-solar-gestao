@@ -18,6 +18,10 @@ export type PlaceholderData = {
   total_kwp: string
   geracao_mensal: string
   preco_total: string
+  preco_calculado: string
+  ajuste_valor: string
+  ajuste_pct: string
+  preco_final: string
   valor_entrada: string
   num_parcelas: string
   valor_parcelas: string
@@ -48,6 +52,10 @@ type ProposalData = {
   total_power_kwp: number
   monthly_generation_kwh: number
   preco_total: number
+  preco_calculado: number
+  ajuste_valor: number | null
+  ajuste_percentual: number | null
+  preco_final: number
   valor_entrada: number
   num_parcelas: number
   valor_parcelas: number
@@ -76,7 +84,15 @@ export function buildPlaceholders(
     inversor_marca:    proposal.inverter_brand_model ?? '',
     total_kwp:         `${proposal.total_power_kwp.toFixed(2)} kWp`,
     geracao_mensal:    `${Math.round(proposal.monthly_generation_kwh)} kWh`,
-    preco_total:       formatCurrency(proposal.preco_total),
+    preco_total:       formatCurrency(proposal.preco_final),
+    preco_calculado:   formatCurrency(proposal.preco_calculado),
+    ajuste_valor:      proposal.ajuste_valor != null
+      ? `${proposal.ajuste_valor >= 0 ? '+' : ''}${formatCurrency(proposal.ajuste_valor)}`
+      : '',
+    ajuste_pct:        proposal.ajuste_percentual != null
+      ? `${proposal.ajuste_percentual >= 0 ? '+' : ''}${(proposal.ajuste_percentual * 100).toFixed(2)}%`
+      : '',
+    preco_final:       formatCurrency(proposal.preco_final),
     valor_entrada:     formatCurrency(proposal.valor_entrada),
     num_parcelas:      String(proposal.num_parcelas),
     valor_parcelas:    formatCurrency(proposal.valor_parcelas),

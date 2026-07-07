@@ -335,6 +335,70 @@ export async function reorderFunnelStages(stages: { id: string; order: number }[
   return { success: 'Ordem salva.' }
 }
 
+// ── Ajuste Comercial ──────────────────────────────────────────────
+
+export async function applyCommercialAdjustment(
+  proposalId: string,
+  payload: {
+    ajuste_tipo: 'percentual' | 'valor' | 'valor_final'
+    ajuste_valor: number
+    ajuste_percentual: number
+    preco_calculado: number
+    preco_final: number
+    ajuste_motivo: string
+  }
+): Promise<ActionResult> {
+  const user = await getCurrentUserData()
+  const orgId = user?.membership?.organization.id ?? null
+  const userId = user?.profile.id ?? null
+  if (!orgId) return { error: 'Sem organização ativa.' }
+
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('proposals')
+    .update({
+      preco_calculado:     payload.preco_calculado,
+      ajuste_tipo:         payload.ajuste_tipo,
+      ajuste_valor:        payload.ajuste_valor,
+      ajuste_percentual:   payload.ajuste_percentual,
+      ajuste_motivo:       payload.ajuste_motivo || null,
+      ajuste_aplicado_por: userId,
+      ajuste_aplicado_em:  new Date().toISOString(),
+      preco_final:         payload.preco_final,
+    } as any)
+    .eq('id', proposalId)
+    .eq('organization_id', orgId)
+
+  if (error) return { error: error.message }
+  await logAction('Ajuste comercial aplicado', `Proposta: ${proposalId} | Ajuste: ${payload.ajuste_valor >= 0 ? '+' : ''}R$ ${payload.ajuste_valor.toFixed(2)} (${payload.ajuste_percentual >= 0 ? '+' : ''}${payload.ajuste_percentual.toFixed(2)}%) | Motivo: ${payload.ajuste_motivo}`)
+  return { success: 'Ajuste aplicado.' }
+}
+
+export async function removeCommercialAdjustment(proposalId: string): Promise<ActionResult> {
+  const user = await getCurrentUserData()
+  const orgId = user?.membership?.organization.id ?? null
+  if (!orgId) return { error: 'Sem organização ativa.' }
+
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('proposals')
+    .update({
+      ajuste_tipo:         null,
+      ajuste_valor:        null,
+      ajuste_percentual:   null,
+      ajuste_motivo:       null,
+      ajuste_aplicado_por: null,
+      ajuste_aplicado_em:  null,
+      preco_final:         null,
+    } as any)
+    .eq('id', proposalId)
+    .eq('organization_id', orgId)
+
+  if (error) return { error: error.message }
+  await logAction('Ajuste comercial removido', `Proposta: ${proposalId}`)
+  return { success: 'Ajuste removido.' }
+}
+
 // ── Convert Lead to Client ────────────────────────────────────────
 
 export async function convertLeadToClient(leadId: string): Promise<{ clientId?: string; error?: string }> {

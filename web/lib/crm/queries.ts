@@ -123,6 +123,14 @@ export async function getProposalsByLead(leadId: string): Promise<Proposal[]> {
     pdf_url: p.pdf_url ?? null,
     docx_url: p.docx_url ?? null,
     gerado_em: p.gerado_em ?? null,
+    preco_calculado: p.preco_calculado ?? null,
+    ajuste_tipo: p.ajuste_tipo ?? null,
+    ajuste_valor: p.ajuste_valor ?? null,
+    ajuste_percentual: p.ajuste_percentual ?? null,
+    ajuste_motivo: p.ajuste_motivo ?? null,
+    ajuste_aplicado_por: p.ajuste_aplicado_por ?? null,
+    ajuste_aplicado_em: p.ajuste_aplicado_em ?? null,
+    preco_final: p.preco_final ?? null,
   })) as Proposal[]
 }
 

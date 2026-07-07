@@ -2,10 +2,12 @@
 
 import { useState, useTransition, useMemo } from 'react'
 import { createPortal } from 'react-dom'
-import { X, Plus, Trash2, Settings2 } from 'lucide-react'
+import { X, Plus, Trash2, Settings2, Pencil, XCircle } from 'lucide-react'
 import type { Proposal, ProposalTemplate } from '@/lib/crm/types'
 import { formatCurrency } from '@/lib/format'
 import type { OrgConfig } from '@/lib/configuracoes/queries'
+import { CommercialAdjustmentModal } from './CommercialAdjustmentModal'
+import { applyCommercialAdjustment, removeCommercialAdjustment } from '@/lib/crm/actions'
 
 interface ProposalPricingReviewProps {
   proposal: Proposal
@@ -40,6 +42,25 @@ export function ProposalPricingReview({
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const [progressMsg, setProgressMsg] = useState('')
+
+  // Ajuste Comercial
+  const [ajusteComercial, setAjusteComercial] = useState<{
+    ajuste_tipo: string
+    ajuste_valor: number
+    ajuste_percentual: number
+    preco_final: number
+    ajuste_motivo: string
+  } | null>(
+    proposal.ajuste_valor != null ? {
+      ajuste_tipo: proposal.ajuste_tipo!,
+      ajuste_valor: proposal.ajuste_valor,
+      ajuste_percentual: proposal.ajuste_percentual!,
+      preco_final: proposal.preco_final!,
+      ajuste_motivo: proposal.ajuste_motivo ?? '',
+    } : null
+  )
+  const [showAdjustModal, setShowAdjustModal] = useState(false)
+  const [isSavingAdjust, startSavingAdjust] = useTransition()
 
   // Variáveis editáveis — inicializadas com valores das configurações
   const [vInstalacao, setVInstalacao] = useState(orgConfig.valor_instalacao_por_placa ?? 0)
@@ -103,6 +124,36 @@ export function ProposalPricingReview({
     return { rows: computed, totals }
   }, [vInstalacao, vProjeto, vMaterialCa, vKm, vComissao, vImposto, vMargem, extraCosts, proposal])
 
+  // Preço exibido no resumo: valor final negociado (com ajuste) ou valor calculado
+  const precoExibido = ajusteComercial?.preco_final ?? totals.venda
+
+  async function handleApplyAdjustment(data: {
+    ajuste_tipo: string
+    ajuste_valor: number
+    ajuste_percentual: number
+    preco_final: number
+    ajuste_motivo: string
+  }) {
+    startSavingAdjust(async () => {
+      const result = await applyCommercialAdjustment(proposal.id, {
+        ajuste_tipo: data.ajuste_tipo as 'percentual' | 'valor' | 'valor_final',
+        ajuste_valor: data.ajuste_valor,
+        ajuste_percentual: data.ajuste_percentual,
+        preco_calculado: totals.venda,
+        preco_final: data.preco_final,
+        ajuste_motivo: data.ajuste_motivo,
+      })
+      if (!result.error) setAjusteComercial(data)
+    })
+  }
+
+  async function handleRemoveAdjustment() {
+    startSavingAdjust(async () => {
+      const result = await removeCommercialAdjustment(proposal.id)
+      if (!result.error) setAjusteComercial(null)
+    })
+  }
+
   function addExtraCost() {
     setExtraCosts((prev) => [...prev, { id: crypto.randomUUID(), categoria: '', item: '', qtd: 1, custo_unit: 0 }])
   }
@@ -151,6 +202,7 @@ export function ProposalPricingReview({
               qtd: ec.qtd,
               custo_unit: ec.custo_unit,
             })),
+            ajuste_comercial: ajusteComercial ?? null,
           }),
         })
 
@@ -293,21 +345,83 @@ export function ProposalPricingReview({
                 </tbody>
                 <tfoot>
                   <tr style={{ borderTop: '2px solid var(--theme-input-border)' }}>
-                    <td colSpan={4} className={`${tdCls} font-semibold text-white`}>Total</td>
+                    <td colSpan={4} className={`${tdCls} font-semibold text-white`}>
+                      {ajusteComercial ? 'Valor Calculado' : 'Total'}
+                    </td>
                     <td className={`${tdCls} text-right font-semibold text-white`}>{formatCurrency(totals.custo)}</td>
                     <td className={`${tdCls} text-right font-semibold text-white`}>{formatCurrency(totals.imposto)}</td>
                     <td className={`${tdCls} text-right font-semibold text-white`}>{formatCurrency(totals.lucro)}</td>
-                    <td className={`${tdCls} text-right font-bold text-base`} style={{ color: 'var(--theme-accent)' }}>{formatCurrency(totals.venda)}</td>
+                    <td className={`${tdCls} text-right font-bold text-base`} style={{ color: ajusteComercial ? 'var(--theme-text-muted)' : 'var(--theme-accent)' }}>
+                      {formatCurrency(totals.venda)}
+                    </td>
                     <td></td>
                   </tr>
+                  {ajusteComercial && (
+                    <>
+                      <tr>
+                        <td colSpan={7} className={`${tdCls}`}>
+                          <span className="text-white/40">Ajuste Comercial</span>
+                          <span
+                            className="ml-2 text-xs font-medium"
+                            style={{ color: ajusteComercial.ajuste_valor < 0 ? 'rgba(248,113,113,0.9)' : 'rgba(52,211,153,0.9)' }}
+                          >
+                            {ajusteComercial.ajuste_valor >= 0 ? '+' : ''}
+                            {formatCurrency(ajusteComercial.ajuste_valor)}
+                            {' '}
+                            ({ajusteComercial.ajuste_percentual >= 0 ? '+' : ''}{(ajusteComercial.ajuste_percentual * 100).toFixed(2)}%)
+                          </span>
+                          {ajusteComercial.ajuste_motivo && (
+                            <span className="ml-2 text-white/30 text-[10px]">— {ajusteComercial.ajuste_motivo}</span>
+                          )}
+                        </td>
+                        <td className={`${tdCls} text-right`}>
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => setShowAdjustModal(true)}
+                              disabled={isSavingAdjust}
+                              className="p-1 rounded hover:bg-white/10 transition-colors"
+                              title="Editar ajuste"
+                            >
+                              <Pencil size={11} style={{ color: 'var(--theme-text-muted)' }} />
+                            </button>
+                            <button
+                              onClick={handleRemoveAdjustment}
+                              disabled={isSavingAdjust}
+                              className="p-1 rounded hover:bg-white/10 transition-colors"
+                              title="Remover ajuste"
+                            >
+                              <XCircle size={11} style={{ color: 'rgba(248,113,113,0.6)' }} />
+                            </button>
+                          </div>
+                        </td>
+                        <td></td>
+                      </tr>
+                      <tr style={{ borderTop: '1px solid var(--theme-input-border)' }}>
+                        <td colSpan={7} className={`${tdCls} font-bold text-white`}>Valor Final</td>
+                        <td className={`${tdCls} text-right font-bold text-base`} style={{ color: 'var(--theme-accent)' }}>
+                          {formatCurrency(precoExibido)}
+                        </td>
+                        <td></td>
+                      </tr>
+                    </>
+                  )}
                 </tfoot>
               </table>
             </div>
 
-            <div className="px-4 py-3" style={{ borderTop: '1px solid var(--theme-border)' }}>
+            <div className="px-4 py-3 flex items-center justify-between" style={{ borderTop: '1px solid var(--theme-border)' }}>
               <button onClick={addExtraCost} className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/70 transition-colors">
                 <Plus size={13} /> Adicionar custo extra
               </button>
+              {!ajusteComercial && (
+                <button
+                  onClick={() => setShowAdjustModal(true)}
+                  className="flex items-center gap-1.5 text-xs transition-colors"
+                  style={{ color: 'var(--theme-accent)', opacity: 0.8 }}
+                >
+                  <Pencil size={11} /> Ajuste Comercial
+                </button>
+              )}
             </div>
           </div>
 
@@ -406,7 +520,7 @@ export function ProposalPricingReview({
             )}
           </div>
 
-          {error && (
+            {error && (
             <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2">{error}</p>
           )}
         </div>
@@ -426,6 +540,20 @@ export function ProposalPricingReview({
           </button>
         </div>
       </div>
+      {showAdjustModal && (
+        <CommercialAdjustmentModal
+          precoCalculado={totals.venda}
+          ajusteAtual={ajusteComercial ? {
+            valor: ajusteComercial.ajuste_valor,
+            percentual: ajusteComercial.ajuste_percentual,
+            motivo: ajusteComercial.ajuste_motivo,
+            tipo: ajusteComercial.ajuste_tipo,
+          } : null}
+          onApply={handleApplyAdjustment}
+          onRemove={handleRemoveAdjustment}
+          onClose={() => setShowAdjustModal(false)}
+        />
+      )}
     </>,
     document.body
   )
