@@ -144,13 +144,19 @@ export function FunnelConfig({ initialStages }: { initialStages: FunnelStage[] }
   }
 
   function addStage() {
-    if (!newName.trim()) return
+    const name = newName.trim()
+    if (!name) return
+    const tempId = `temp-${Date.now()}`
+    const optimistic = { id: tempId, name, color: '#6B7A90', order: stages.length + 1, is_terminal_won: false, is_terminal_lost: false, is_final_stage: false, organization_id: '' }
+    setStages((prev) => [...prev, optimistic])
+    setNewName('')
     startTransition(async () => {
-      const result = await createFunnelStage(newName.trim(), stages.length + 1)
+      const result = await createFunnelStage(name, stages.length + 1)
       if (result.stage) {
-        setStages((prev) => [...prev, result.stage!])
+        setStages((prev) => prev.map((s) => s.id === tempId ? result.stage! : s))
+      } else {
+        setStages((prev) => prev.filter((s) => s.id !== tempId))
       }
-      setNewName('')
     })
   }
 

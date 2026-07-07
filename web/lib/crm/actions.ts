@@ -277,7 +277,6 @@ export async function createFunnelStage(
     .select('id, name, color, order, is_terminal_won, is_terminal_lost, is_final_stage, organization_id')
     .single()
   if (error) return { error: error.message }
-  revalidatePath('/leads')
   return { success: 'Etapa criada.', stage: data }
 }
 
