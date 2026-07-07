@@ -41,7 +41,7 @@ export function DashboardShell({
         onLeadClick={handleLeadClick}
         onCompleted={handleCompleted}
       />
-      <div className="flex-1 ml-56 overflow-y-auto pt-14 relative z-10">
+      <div className="flex-1 min-w-0 ml-56 overflow-y-auto pt-14 relative z-10">
         {children}
       </div>
     </>

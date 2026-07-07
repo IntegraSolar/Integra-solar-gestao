@@ -26,7 +26,7 @@ export default function EntregaMaterialClientComponent({ entregas }: { entregas:
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-white">Entrega do Material</h1>
           <p className="text-white/50 text-sm mt-1">Confirmação de entrega dos materiais ao cliente</p>
@@ -34,7 +34,8 @@ export default function EntregaMaterialClientComponent({ entregas }: { entregas:
         <SearchBar value={search} onChange={setSearch} placeholder="Buscar cliente ou cidade..." />
       </div>
       <div className="rounded-2xl border border-white/10 overflow-hidden" style={{ background: 'var(--theme-surface)' }}>
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full text-sm min-w-[480px]">
           <thead>
             <tr className="border-b border-white/10 text-white/50">
               <th className="text-left px-4 py-3 font-medium">Cliente</th>
@@ -73,6 +74,7 @@ export default function EntregaMaterialClientComponent({ entregas }: { entregas:
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   )

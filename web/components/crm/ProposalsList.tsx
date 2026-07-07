@@ -121,7 +121,7 @@ export function ProposalsList({ lead }: { lead: Lead }) {
               {STATUS_LABELS[p.status]}
             </span>
           </div>
-          <div className="grid grid-cols-3 gap-2 mt-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-3">
             <div>
               <p className="text-xs" style={{ color: 'var(--theme-text-subtle)' }}>Sistema</p>
               <p className="text-sm font-medium" style={{ color: 'var(--theme-accent)' }}>

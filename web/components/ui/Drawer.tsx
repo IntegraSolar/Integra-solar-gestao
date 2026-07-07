@@ -27,13 +27,13 @@ export function Drawer({ open, onClose, title, width = '50vw', children }: Drawe
     <>
       {/* Overlay */}
       <div
-        className="fixed inset-0 z-40"
+        className="fixed inset-0 z-[60]"
         style={{ background: 'var(--theme-overlay)' }}
         onClick={onClose}
       />
       {/* Panel */}
       <div
-        className="fixed top-0 right-0 bottom-0 z-50 flex flex-col overflow-hidden"
+        className="fixed top-0 right-0 bottom-0 z-[70] flex flex-col overflow-hidden max-w-full"
         style={{
           width,
           background: 'var(--theme-drawer-bg)',

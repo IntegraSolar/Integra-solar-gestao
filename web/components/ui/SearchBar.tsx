@@ -26,7 +26,7 @@ export function SearchBar({ value, onChange, placeholder = 'Buscar cliente...' }
   }
 
   return (
-    <div className="relative" style={{ minWidth: 240, maxWidth: 360 }}>
+    <div className="relative w-full max-w-[360px] min-w-[160px]">
       <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--theme-text-subtle)' }} />
       <input
         type="text"

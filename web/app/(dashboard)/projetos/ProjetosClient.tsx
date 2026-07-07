@@ -32,7 +32,7 @@ export default function ProjetosClient({ projetos }: { projetos: ProjetoClient[]
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-white">Projetos</h1>
           <p className="text-white/50 text-sm mt-1">Homologação junto à concessionária</p>
@@ -41,7 +41,8 @@ export default function ProjetosClient({ projetos }: { projetos: ProjetoClient[]
       </div>
 
       <div className="rounded-2xl border border-white/10 overflow-hidden" style={{ background: 'var(--theme-surface)' }}>
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full text-sm min-w-[560px]">
           <thead>
             <tr className="border-b border-white/10 text-white/50">
               <th className="text-left px-4 py-3 font-medium">Cliente</th>
@@ -84,6 +85,7 @@ export default function ProjetosClient({ projetos }: { projetos: ProjetoClient[]
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   )

@@ -61,7 +61,7 @@ export function LeadsClient({ initialLeads, stages, sources, members }: LeadsCli
     <div className="flex flex-col flex-1 overflow-hidden">
       {/* Toolbar */}
       <div
-        className="flex items-center gap-3 px-6 py-3 flex-shrink-0"
+        className="flex items-center gap-3 px-6 py-3 flex-shrink-0 flex-wrap"
         style={{ borderBottom: '1px solid var(--theme-border)' }}
       >
         {/* Toggle kanban/list */}

@@ -93,7 +93,7 @@ export default function ComissoesPainelClient({
       </div>
 
       {/* Cards */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="rounded-2xl border border-white/10 p-5" style={cardStyle}>
           <p className="text-xs text-white/50 mb-1">Total Pendente</p>
           <p className="text-2xl font-bold" style={{ color: 'var(--theme-accent)' }}>
@@ -110,7 +110,8 @@ export default function ComissoesPainelClient({
 
       {/* Lista */}
       <div className="rounded-2xl border border-white/10 overflow-hidden" style={cardStyle}>
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full text-sm min-w-[500px]">
           <thead>
             <tr className="border-b border-white/10 text-white/50">
               <th className="text-left px-4 py-3 font-medium">Cliente</th>
@@ -149,6 +150,7 @@ export default function ComissoesPainelClient({
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   )

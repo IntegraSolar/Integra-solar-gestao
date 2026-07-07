@@ -89,7 +89,7 @@ export default function EstoqueClient({ initialItems }: { initialItems: StockIte
 
   return (
     <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-white">Estoque</h1>
           <p className="text-sm text-white/40 mt-0.5">
@@ -106,7 +106,8 @@ export default function EstoqueClient({ initialItems }: { initialItems: StockIte
       </div>
 
       <div className="rounded-2xl border border-white/10 overflow-hidden" style={{ background: 'var(--theme-surface)' }}>
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full text-sm min-w-[580px]">
           <thead>
             <tr style={{ borderBottom: '1px solid var(--theme-border)' }}>
               {['Nome', 'Descrição', 'Quantidade', 'Valor Unit.', 'Valor Total', ''].map((h) => (
@@ -168,6 +169,7 @@ export default function EstoqueClient({ initialItems }: { initialItems: StockIte
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       {showModal && (

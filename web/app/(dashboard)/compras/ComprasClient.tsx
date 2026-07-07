@@ -31,7 +31,7 @@ export default function ComprasClient({ compras }: { compras: CompraClient[] }) 
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-white">Compras</h1>
           <p className="text-white/50 text-sm mt-1">Pedidos de material e equipamento</p>
@@ -40,7 +40,8 @@ export default function ComprasClient({ compras }: { compras: CompraClient[] }) 
       </div>
 
       <div className="rounded-2xl border border-white/10 overflow-hidden" style={{ background: 'var(--theme-surface)' }}>
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full text-sm min-w-[640px]">
           <thead>
             <tr className="border-b border-white/10 text-white/50">
               <th className="text-left px-4 py-3 font-medium">Cliente</th>
@@ -87,6 +88,7 @@ export default function ComprasClient({ compras }: { compras: CompraClient[] }) 
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   )

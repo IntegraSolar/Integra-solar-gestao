@@ -49,7 +49,7 @@ export default function ConfiguracoesClient({
 
       {/* Tab bar */}
       <div
-        className="flex gap-1 rounded-xl p-1 w-fit"
+        className="flex gap-1 rounded-xl p-1 overflow-x-auto max-w-full"
         style={{ background: 'var(--theme-input-bg)' }}
       >
         {TABS.map((t) => (

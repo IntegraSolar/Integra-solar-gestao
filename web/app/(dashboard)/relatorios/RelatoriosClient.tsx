@@ -22,9 +22,9 @@ function FilterBar({ dateFrom, dateTo, onChange, onApply, isPending }: {
   dateFrom: string; dateTo: string; onChange: (f: string, t: string) => void; onApply: () => void; isPending: boolean
 }) {
   return (
-    <div className="no-print flex items-center gap-3 mb-6">
-      <div style={{ minWidth: 160 }}><DatePicker label="De" value={dateFrom} onChange={(iso) => onChange(iso, dateTo)} /></div>
-      <div style={{ minWidth: 160 }}><DatePicker label="Até" value={dateTo} onChange={(iso) => onChange(dateFrom, iso)} /></div>
+    <div className="no-print flex flex-wrap items-end gap-3 mb-6">
+      <div className="min-w-[140px]"><DatePicker label="De" value={dateFrom} onChange={(iso) => onChange(iso, dateTo)} /></div>
+      <div className="min-w-[140px]"><DatePicker label="Até" value={dateTo} onChange={(iso) => onChange(dateFrom, iso)} /></div>
       <button onClick={onApply} disabled={isPending} className="mt-5 px-4 py-2 rounded-xl text-sm font-semibold border border-white/20 text-white/70 hover:text-white transition-colors disabled:opacity-50">
         {isPending ? 'Buscando...' : 'Aplicar'}
       </button>
@@ -35,7 +35,7 @@ function FilterBar({ dateFrom, dateTo, onChange, onApply, isPending }: {
 function EmptyState() { return <p className="text-white/30 py-12 text-center">Aplique um filtro para ver os dados.</p> }
 
 function TableWrapper({ children }: { children: React.ReactNode }) {
-  return <div className="rounded-xl overflow-hidden border border-white/[0.08]"><table className="w-full text-sm">{children}</table></div>
+  return <div className="rounded-xl overflow-hidden border border-white/[0.08] overflow-x-auto"><table className="w-full text-sm min-w-[400px]">{children}</table></div>
 }
 function Th({ children }: { children: React.ReactNode }) {
   return <th className="px-4 py-2.5 text-left text-xs font-semibold text-white/40" style={{ background: 'var(--theme-input-bg)' }}>{children}</th>
@@ -67,7 +67,7 @@ function AbaComercial({ data }: { data: ComercialSummary | null }) {
   return (
     <div id="print-area">
       <h2 className="text-white font-bold text-lg mb-4">Relatório Comercial</h2>
-      <div className="grid grid-cols-2 gap-3 mb-6 md:grid-cols-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         <KpiCard label="Clientes Cadastrados" value={fmtNum(data.qtd_propostas)} />
         <KpiCard label="Contratos Fechados" value={fmtNum(data.qtd_contratos)} />
         <KpiCard label="Valor Vendido" value={fmt(data.valor_total)} />
@@ -125,7 +125,7 @@ function AbaFinanceiro({ data }: { data: FinanceiroSummary | null }) {
       <h2 className="text-white font-bold text-lg">Relatório Financeiro</h2>
 
       {/* KPIs principais */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <KpiCard label="Ticket Médio (mês atual)" value={fmt(data.ticket_medio_mes)} />
         <KpiCard label="Ticket Médio (anual)" value={fmt(data.ticket_medio_anual)} />
         <KpiCard label="Faturamento Mês Atual" value={fmt(data.valor_mes_atual)} sub={data.variacao_mensal !== null ? `${data.variacao_mensal >= 0 ? '+' : ''}${data.variacao_mensal.toFixed(1)}% vs mês anterior` : undefined} />
@@ -133,7 +133,7 @@ function AbaFinanceiro({ data }: { data: FinanceiroSummary | null }) {
       </div>
 
       {/* Comparativos */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="rounded-xl p-4 border border-white/10" style={{ background: 'var(--theme-surface)' }}>
           <p className="text-xs text-white/40 mb-1">Média últimos 3 meses</p>
           <p className="text-base font-bold text-white">{fmt(data.media_3m)}</p>
@@ -149,7 +149,7 @@ function AbaFinanceiro({ data }: { data: FinanceiroSummary | null }) {
       </div>
 
       {/* Crescimento */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="rounded-xl p-4 border border-white/10" style={{ background: 'var(--theme-surface)' }}>
           <p className="text-xs text-white/40 mb-1">Crescimento Mensal</p>
           <VariacaoTag value={data.crescimento_mensal} />
@@ -212,11 +212,11 @@ function AbaTecnico({ data }: { data: TecnicoSummary | null }) {
   return (
     <div id="print-area">
       <h2 className="text-white font-bold text-lg mb-4">Relatório Técnico</h2>
-      <div className="grid grid-cols-2 gap-3 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
         <KpiCard label="Tempo Médio de Implantação" value={data.tempo_medio_implantacao != null ? `${data.tempo_medio_implantacao} dias` : '—'} />
         <KpiCard label="Total kWh Projetados" value={fmtNum(data.total_kwh_projetados, 0) + ' kWh'} />
       </div>
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <div>
           <h3 className="text-sm font-semibold text-white/70 mb-2">Painéis por Fabricante</h3>
           <TableWrapper>
@@ -281,14 +281,14 @@ export default function RelatoriosClient() {
 
   return (
     <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <h1 className="text-2xl font-bold text-white">Relatórios</h1>
         <button className="no-print px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-90 transition-all" style={{ background: 'var(--theme-accent)', color: 'var(--theme-accent-text)' }} onClick={() => window.print()}>
           Baixar PDF
         </button>
       </div>
 
-      <div className="no-print flex gap-1 mb-6 p-1 rounded-xl" style={{ background: 'var(--theme-surface)', width: 'fit-content' }}>
+      <div className="no-print flex gap-1 mb-6 p-1 rounded-xl overflow-x-auto max-w-full" style={{ background: 'var(--theme-surface)' }}>
         {TABS.map((t) => (
           <button key={t.key} onClick={() => setTab(t.key)} className="px-4 py-2 rounded-lg text-sm font-medium transition-all"
             style={tab === t.key ? { background: 'rgba(255,200,100,0.12)', color: 'var(--theme-accent)', fontWeight: 600 } : { color: 'var(--theme-text-muted)' }}>
@@ -317,7 +317,7 @@ function AbaPosVenda({ data }: { data: PosVendaSummary | null }) {
   return (
     <div id="print-area" className="space-y-6">
       <h2 className="text-white font-bold text-lg">Relatório Pós-Venda</h2>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <KpiCard label="NPS Médio" value={data.nps_medio != null ? `${data.nps_medio.toFixed(1)} / 10` : '—'} />
         <KpiCard label="Pós-Obras Realizadas" value={`${data.concluidos} / ${data.total_pos_obra}`} />
         <KpiCard label="Clientes com Expansão" value={String(data.clientes_expansao.length)} />

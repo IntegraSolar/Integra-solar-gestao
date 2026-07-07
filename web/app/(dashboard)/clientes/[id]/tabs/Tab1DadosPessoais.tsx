@@ -49,17 +49,17 @@ export function Tab1DadosPessoais({ client }: { client: Client }) {
       <Input name="email" label="Email" type="email" defaultValue={client.email ?? ''} />
       <PhoneInput name="phone" label="Telefone" value={client.phone ?? ''} />
 
-      <div className="grid grid-cols-3 gap-3">
-        <div className="col-span-2">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="sm:col-span-2">
           <Input name="street" label="Rua" defaultValue={client.street ?? ''} />
         </div>
         <Input name="number" label="Número" defaultValue={client.number ?? ''} />
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Input name="neighborhood" label="Bairro" defaultValue={client.neighborhood ?? ''} />
         <CepInput name="zip" label="CEP" value={client.zip ?? ''} />
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Input name="city" label="Cidade" defaultValue={client.city ?? ''} />
         <Input name="state" label="Estado" defaultValue={client.state ?? ''} placeholder="SP" />
       </div>

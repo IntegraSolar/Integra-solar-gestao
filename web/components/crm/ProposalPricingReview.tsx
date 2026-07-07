@@ -210,7 +210,7 @@ export function ProposalPricingReview({
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-5">
           {/* Info do sistema */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="rounded-xl p-3" style={{ background: 'rgba(255,200,100,0.04)', border: '1px solid rgba(255,200,100,0.10)' }}>
               <p className="text-[10px] text-white/35 uppercase tracking-wide">Sistema</p>
               <p className="text-sm font-semibold" style={{ color: 'var(--theme-accent)' }}>{proposal.total_power_kwp.toFixed(2)} kWp</p>
@@ -316,7 +316,7 @@ export function ProposalPricingReview({
               <Settings2 size={13} style={{ color: 'var(--theme-text-subtle)' }} />
               <p className="text-xs font-semibold text-white/50 uppercase tracking-wide">Variáveis desta Proposta</p>
             </div>
-            <div className="p-4 grid grid-cols-4 gap-4">
+            <div className="p-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div>
                 <label className={labelCls}>Instalação (R$/placa)</label>
                 <input type="number" min="0" step="0.01" value={vInstalacao} onChange={(e) => setVInstalacao(parseFloat(e.target.value) || 0)} className={varInputCls} />

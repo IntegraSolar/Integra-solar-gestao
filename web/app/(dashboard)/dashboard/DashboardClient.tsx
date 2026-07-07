@@ -86,11 +86,11 @@ export default function DashboardClient({
         </div>
         <div className="flex items-center gap-3 flex-wrap">
           <span className="text-white/50 text-sm">Período:</span>
-          <div style={{ minWidth: 150 }}>
+          <div className="min-w-[130px]">
             <DatePicker value={dateFrom} onChange={(iso) => setDateFrom(iso)} />
           </div>
           <span className="text-white/30 text-sm">até</span>
-          <div style={{ minWidth: 150 }}>
+          <div className="min-w-[130px]">
             <DatePicker value={dateTo} onChange={(iso) => setDateTo(iso)} />
           </div>
           <button

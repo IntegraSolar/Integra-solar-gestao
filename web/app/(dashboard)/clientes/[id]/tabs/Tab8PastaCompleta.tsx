@@ -227,7 +227,7 @@ export function Tab8PastaCompleta({ client }: { client: Client }) {
                   return (
                     <div className="mt-2">
                       <span className="text-xs" style={{ color: 'var(--theme-text-subtle)' }}>Fotos / Vídeos</span>
-                      <div className="grid grid-cols-4 gap-2 mt-1.5">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-1.5">
                         {urls.map((url, i) => (
                           <a key={i} href={secureStorageUrl(url) ?? '#'} target="_blank" rel="noopener noreferrer" className="rounded-lg overflow-hidden" style={{ aspectRatio: '1', background: 'var(--theme-surface)', border: '1px solid var(--theme-card-border)', position: 'relative', display: 'block' }}>
                             {/\.(mp4|mov|webm)$/i.test(url) ? (
