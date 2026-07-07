@@ -24,26 +24,35 @@ export async function signInBackoffice(
   if (!parsed.success) return { error: parsed.error.issues[0].message }
 
   const { email, password } = parsed.data
-
   const admin = createAdminClient()
-  const { data, error } = await admin.rpc('verify_platform_user', {
-    p_email: email.toLowerCase(),
-    p_password: password,
+
+  // 1. Verificar credenciais via Supabase Auth (sem depender de RPC/PostgREST)
+  const { data: authData, error: authError } = await admin.auth.signInWithPassword({
+    email: email.toLowerCase(),
+    password,
   })
 
-  if (error || !data || (data as unknown[]).length === 0) {
-    const msg = error?.message ?? 'sem dados'
-    console.error('[backoffice:signIn] falha RPC:', msg)
-    return { error: `Erro: ${msg}` }
+  if (authError || !authData.user) {
+    return { error: 'E-mail ou senha incorretos.' }
   }
 
-  const user = (data as Array<{ id: string; email: string; name: string; role: string }>)[0]
+  // 2. Confirmar que o usuário está autorizado no backoffice (platform_users)
+  const { data: platformUser, error: platformError } = await admin
+    .from('platform_users_public')
+    .select('id, email, name, role, is_active')
+    .eq('email', email.toLowerCase())
+    .single()
 
+  if (platformError || !platformUser || !platformUser.is_active) {
+    return { error: 'Acesso não autorizado ao backoffice.' }
+  }
+
+  // 3. Criar sessão JWT própria (independente da sessão Supabase)
   const token = await signSession({
-    id: user.id,
-    email: user.email,
-    name: user.name,
-    role: user.role as 'super_admin' | 'admin' | 'support',
+    id: platformUser.id,
+    email: platformUser.email,
+    name: platformUser.name,
+    role: platformUser.role as 'super_admin' | 'admin' | 'support',
   })
 
   const cookieStore = await cookies()
