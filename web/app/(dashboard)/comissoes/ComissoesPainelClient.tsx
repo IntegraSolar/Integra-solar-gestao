@@ -7,6 +7,8 @@ import Link from 'next/link'
 import type { ComissoesPainel, ComissaoMember } from '@/lib/comissoes/queries'
 import { formatCurrency } from '@/lib/format'
 import { SearchBar, filterBySearch } from '@/components/ui/SearchBar'
+import { MonthYearFilter } from '@/components/ui/filters/MonthYearFilter'
+import { SelectFilter } from '@/components/ui/filters/SelectFilter'
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
@@ -22,31 +24,34 @@ function StatusBadge({ status }: { status: string }) {
   )
 }
 
-const MONTHS = [
-  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
-]
-
 export default function ComissoesPainelClient({
   painel,
   members,
   month,
   year,
   vendedorId,
+  dateField,
 }: {
   painel: ComissoesPainel
   members: ComissaoMember[]
   month: number
   year: number
   vendedorId: string
+  dateField: 'created_at' | 'paid_at'
 }) {
   const router = useRouter()
   const pathname = usePathname()
   const [search, setSearch] = useState('')
   const filteredItems = filterBySearch(painel.items, search, ['client_name'])
 
-  function navigate(params: Record<string, string>) {
-    const sp = new URLSearchParams({ month: String(month), year: String(year), vendedorId, ...params })
+  function applyFilter(patch: { month?: number; year?: number; vendedorId?: string; dateField?: 'created_at' | 'paid_at' }) {
+    const sp = new URLSearchParams()
+    sp.set('month', String(patch.month ?? month))
+    sp.set('year', String(patch.year ?? year))
+    const nv = patch.vendedorId !== undefined ? patch.vendedorId : vendedorId
+    if (nv) sp.set('vendedorId', nv)
+    const nd = patch.dateField ?? dateField
+    if (nd !== 'created_at') sp.set('dateField', nd)
     router.push(`${pathname}?${sp.toString()}`)
   }
 
@@ -61,34 +66,26 @@ export default function ComissoesPainelClient({
 
       {/* Filtros */}
       <div className="flex flex-wrap gap-3">
-        <select
-          value={month}
-          onChange={(e) => navigate({ month: e.target.value })}
-          className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm"
-        >
-          {MONTHS.map((m, i) => (
-            <option key={i + 1} value={i + 1}>{m}</option>
-          ))}
-        </select>
-        <select
-          value={year}
-          onChange={(e) => navigate({ year: e.target.value })}
-          className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm"
-        >
-          {[2024, 2025, 2026, 2027].map((y) => (
-            <option key={y} value={y}>{y}</option>
-          ))}
-        </select>
-        <select
+        <MonthYearFilter
+          month={month}
+          year={year}
+          onChange={({ month: m, year: y }) => applyFilter({ month: m, year: y })}
+        />
+        <SelectFilter
+          value={dateField}
+          onChange={(v) => applyFilter({ dateField: v as 'created_at' | 'paid_at' })}
+          options={[
+            { value: 'created_at', label: 'Por data de criação' },
+            { value: 'paid_at', label: 'Por data de pagamento' },
+          ]}
+          placeholder="Data por"
+        />
+        <SelectFilter
           value={vendedorId}
-          onChange={(e) => navigate({ vendedorId: e.target.value })}
-          className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm"
-        >
-          <option value="">Todos os vendedores</option>
-          {members.map((m) => (
-            <option key={m.id} value={m.id}>{m.name}</option>
-          ))}
-        </select>
+          onChange={(v) => applyFilter({ vendedorId: v })}
+          options={members.map((m) => ({ value: m.id, label: m.name }))}
+          placeholder="Todos os vendedores"
+        />
         <SearchBar value={search} onChange={setSearch} placeholder="Buscar cliente..." />
       </div>
 

@@ -7,11 +7,8 @@ import Link from 'next/link'
 import type { FinanceiroPainel, FinanceiroMember, FinanceiroInstallment } from '@/lib/financeiro/queries'
 import { formatCurrency, formatDate } from '@/lib/format'
 import { SearchBar, filterBySearch } from '@/components/ui/SearchBar'
-
-const MONTHS = [
-  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
-]
+import { MonthYearFilter } from '@/components/ui/filters/MonthYearFilter'
+import { SelectFilter } from '@/components/ui/filters/SelectFilter'
 
 function StatusBadge({ status }: { status: 'pendente' | 'confirmada' }) {
   const isConfirmed = status === 'confirmada'
@@ -81,71 +78,54 @@ export function FinanceiroPainelClient({
   month,
   year,
   vendedorId,
+  dateField,
 }: {
   painel: FinanceiroPainel
   members: FinanceiroMember[]
   month: number
   year: number
   vendedorId: string
+  dateField: 'due_date' | 'payment_date'
 }) {
   const router = useRouter()
   const [search, setSearch] = useState('')
   const filteredInstallments = filterBySearch(painel.installments, search, ['client_name'])
 
-  const selectStyle: React.CSSProperties = {
-    background: 'var(--theme-input-bg)',
-    border: '1px solid var(--theme-input-border)',
-    color: 'var(--theme-input-text)',
-    borderRadius: 10,
-    padding: '7px 12px',
-    fontSize: 13,
-    outline: 'none',
-  }
-
-  function applyFilter(params: { month?: number; year?: number; vendedor?: string }) {
-    const newMonth = params.month ?? month
-    const newYear = params.year ?? year
-    const newVendedor = params.vendedor !== undefined ? params.vendedor : vendedorId
-    const qs = new URLSearchParams({ month: String(newMonth), year: String(newYear) })
-    if (newVendedor) qs.set('vendedor', newVendedor)
+  function applyFilter(patch: { month?: number; year?: number; vendedor?: string; dateField?: 'due_date' | 'payment_date' }) {
+    const qs = new URLSearchParams()
+    qs.set('month', String(patch.month ?? month))
+    qs.set('year', String(patch.year ?? year))
+    const nv = patch.vendedor !== undefined ? patch.vendedor : vendedorId
+    if (nv) qs.set('vendedor', nv)
+    const nd = patch.dateField ?? dateField
+    if (nd !== 'due_date') qs.set('dateField', nd)
     router.push(`/financeiro?${qs.toString()}`)
   }
-
-  const currentYear = new Date().getFullYear()
-  const years = [currentYear - 1, currentYear, currentYear + 1]
 
   return (
     <div className="flex flex-col flex-1 overflow-auto px-6 py-5 gap-5">
       {/* Filtros */}
       <div className="flex items-center gap-3 flex-wrap">
-        <select
-          value={month}
-          onChange={(e) => applyFilter({ month: Number(e.target.value) })}
-          style={selectStyle}
-        >
-          {MONTHS.map((m, i) => (
-            <option key={i + 1} value={i + 1}>{m}</option>
-          ))}
-        </select>
-        <select
-          value={year}
-          onChange={(e) => applyFilter({ year: Number(e.target.value) })}
-          style={selectStyle}
-        >
-          {years.map((y) => (
-            <option key={y} value={y}>{y}</option>
-          ))}
-        </select>
-        <select
+        <MonthYearFilter
+          month={month}
+          year={year}
+          onChange={({ month: m, year: y }) => applyFilter({ month: m, year: y })}
+        />
+        <SelectFilter
+          value={dateField}
+          onChange={(v) => applyFilter({ dateField: v as 'due_date' | 'payment_date' })}
+          options={[
+            { value: 'due_date', label: 'Por vencimento' },
+            { value: 'payment_date', label: 'Por pagamento' },
+          ]}
+          placeholder="Data por"
+        />
+        <SelectFilter
           value={vendedorId}
-          onChange={(e) => applyFilter({ vendedor: e.target.value })}
-          style={selectStyle}
-        >
-          <option value="">Todos os vendedores</option>
-          {members.map((m) => (
-            <option key={m.id} value={m.id}>{m.full_name ?? m.email}</option>
-          ))}
-        </select>
+          onChange={(v) => applyFilter({ vendedor: v })}
+          options={members.map((m) => ({ value: m.id, label: m.full_name ?? m.email }))}
+          placeholder="Todos os vendedores"
+        />
         <SearchBar value={search} onChange={setSearch} placeholder="Buscar cliente..." />
       </div>
 
@@ -154,7 +134,6 @@ export function FinanceiroPainelClient({
         <Card label="Faturamento total" value={painel.faturamento_total} accent="#10B981" />
         <Card label="A receber" value={painel.a_receber} accent="#3B82F6" />
         <Card label="Em atraso" value={painel.em_atraso} accent="#EF4444" />
-
       </div>
 
       {/* Lista de parcelas */}

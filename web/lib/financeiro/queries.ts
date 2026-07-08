@@ -1,6 +1,7 @@
-﻿// web/lib/financeiro/queries.ts
+// web/lib/financeiro/queries.ts
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
+import { getMonthDateRange, getMonthRangeBRT } from '@/lib/utils/date-range'
 
 export type FinanceiroInstallment = {
   id: string
@@ -43,32 +44,38 @@ export async function getFinanceiroPainel(params: {
   month: number
   year: number
   vendedorId?: string
+  dateField?: 'due_date' | 'payment_date'
 }): Promise<FinanceiroPainel> {
   const user = await getCurrentUserData()
   if (!user?.membership) return { faturamento_total: 0, a_receber: 0, em_atraso: 0, installments: [] }
 
   const supabase = await createClient()
   const orgId = user.membership.organization.id
+  const dateField = params.dateField ?? 'due_date'
 
-  // Date range for the month
-  const startDate = `${params.year}-${String(params.month).padStart(2, '0')}-01`
-  const lastDay = new Date(params.year, params.month, 0).getDate()
-  const endDate = `${params.year}-${String(params.month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
-
-  const { data } = await supabase
+  let query = supabase
     .from('client_installments')
     .select(`
       id, client_id, position, due_date, amount, notes, status, confirmed_at, payment_proof_url,
       client:clients!client_id(id, name)
     `)
     .eq('organization_id', orgId)
-    .gte('due_date', startDate)
-    .lte('due_date', endDate)
     .order('due_date', { ascending: true })
 
+  if (dateField === 'payment_date') {
+    // confirmed_at é timestamptz — usa intervalo BRT em UTC
+    const { startISO, endISO } = getMonthRangeBRT(params.month, params.year)
+    query = query.gte('confirmed_at', startISO).lte('confirmed_at', endISO)
+  } else {
+    // due_date é date — string comparison funciona corretamente
+    const { startDate, endDate } = getMonthDateRange(params.month, params.year)
+    query = query.gte('due_date', startDate).lte('due_date', endDate)
+  }
+
+  const { data } = await query
   let installments = (data ?? []) as any[]
 
-  // Filter by vendedor in JS (join clients → leads)
+  // Filter by vendedor (JOIN via clients.lead_id → leads.assigned_to_user_id)
   if (params.vendedorId) {
     const { data: leads } = await supabase
       .from('leads')

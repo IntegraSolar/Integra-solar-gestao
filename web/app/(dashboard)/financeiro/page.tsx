@@ -7,18 +7,20 @@ import { FinanceiroPainelClient } from './FinanceiroPainelClient'
 export default async function FinanceiroPage({
   searchParams,
 }: {
-  searchParams: { month?: string; year?: string; vendedor?: string }
+  searchParams: Promise<{ month?: string; year?: string; vendedor?: string; dateField?: string }>
 }) {
   const user = await getCurrentUserData()
   if (!user?.membership) redirect('/login')
 
+  const params = await searchParams
   const now = new Date()
-  const month = Number(searchParams.month ?? now.getMonth() + 1)
-  const year = Number(searchParams.year ?? now.getFullYear())
-  const vendedorId = searchParams.vendedor || undefined
+  const month = Number(params.month ?? now.getMonth() + 1)
+  const year = Number(params.year ?? now.getFullYear())
+  const vendedorId = params.vendedor || undefined
+  const dateField = (params.dateField === 'payment_date' ? 'payment_date' : 'due_date') as 'due_date' | 'payment_date'
 
   const [painel, members] = await Promise.all([
-    getFinanceiroPainel({ month, year, vendedorId }),
+    getFinanceiroPainel({ month, year, vendedorId, dateField }),
     getFinanceiroMembers(),
   ])
 
@@ -43,6 +45,7 @@ export default async function FinanceiroPage({
         month={month}
         year={year}
         vendedorId={vendedorId ?? ''}
+        dateField={dateField}
       />
     </div>
   )

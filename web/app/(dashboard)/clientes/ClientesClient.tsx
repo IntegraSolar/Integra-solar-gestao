@@ -1,10 +1,14 @@
 'use client'
 
-import { useState, useMemo, memo } from 'react'
+import { useState, useMemo, memo, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type { Client } from '@/lib/clients/types'
+import type { ClientsFilters, ClientsFilterOptions } from '@/lib/clients/queries'
 import { SearchBar, filterBySearch } from '@/components/ui/SearchBar'
+import { FilterBar, FilterField } from '@/components/ui/filters/FilterBar'
+import { SelectFilter } from '@/components/ui/filters/SelectFilter'
+import { RangeSlider } from '@/components/ui/filters/RangeSlider'
 
 const PrazoBadge = memo(function PrazoBadge({ client }: { client: Client }) {
   const start = client.delivery_start_date ? new Date(client.delivery_start_date) : null
@@ -66,37 +70,155 @@ export default function ClientesClient({
   total,
   page,
   pageSize,
+  filterOptions,
+  filters,
 }: {
   clients: Client[]
   total: number
   page: number
   pageSize: number
+  filterOptions: ClientsFilterOptions
+  filters: ClientsFilters
 }) {
   const [search, setSearch] = useState('')
   const router = useRouter()
+
   const filtered = useMemo(
     () => filterBySearch(clients, search, ['name', 'phone', 'city', 'cpf_cnpj', 'email']),
     [clients, search]
   )
   const totalPages = Math.ceil(total / pageSize)
 
+  const kwpValue: [number, number] = [
+    filters.kwpMin ?? filterOptions.kwpBounds[0],
+    filters.kwpMax ?? filterOptions.kwpBounds[1],
+  ]
+  const invPowerValue: [number, number] = [
+    filters.inverterPowerMin ?? filterOptions.inverterPowerBounds[0],
+    filters.inverterPowerMax ?? filterOptions.inverterPowerBounds[1],
+  ]
+
+  const applyFilter = useCallback((patch: Partial<ClientsFilters>) => {
+    const next: ClientsFilters = { ...filters, ...patch }
+    const sp = new URLSearchParams()
+    if (next.city)              sp.set('city', next.city)
+    if (next.inverterBrand)     sp.set('inverterBrand', next.inverterBrand)
+    if (next.panelBrand)        sp.set('panelBrand', next.panelBrand)
+    if (next.origemId)          sp.set('origem', next.origemId)
+    if (next.paymentMethod)     sp.set('paymentMethod', next.paymentMethod)
+    if (next.kwpMin !== undefined && next.kwpMin !== filterOptions.kwpBounds[0]) sp.set('kwpMin', String(next.kwpMin))
+    if (next.kwpMax !== undefined && next.kwpMax !== filterOptions.kwpBounds[1]) sp.set('kwpMax', String(next.kwpMax))
+    if (next.inverterPowerMin !== undefined && next.inverterPowerMin !== filterOptions.inverterPowerBounds[0]) sp.set('inverterPowerMin', String(next.inverterPowerMin))
+    if (next.inverterPowerMax !== undefined && next.inverterPowerMax !== filterOptions.inverterPowerBounds[1]) sp.set('inverterPowerMax', String(next.inverterPowerMax))
+    router.push(`/clientes${sp.toString() ? `?${sp.toString()}` : ''}`)
+  }, [filters, filterOptions, router])
+
+  const clearAll = useCallback(() => {
+    router.push('/clientes')
+  }, [router])
+
+  // Contagem de filtros ativos (para o badge)
+  const activeCount = [
+    filters.city, filters.inverterBrand, filters.panelBrand, filters.origemId, filters.paymentMethod,
+    filters.kwpMin !== undefined && filters.kwpMin !== filterOptions.kwpBounds[0],
+    filters.kwpMax !== undefined && filters.kwpMax !== filterOptions.kwpBounds[1],
+    filters.inverterPowerMin !== undefined && filters.inverterPowerMin !== filterOptions.inverterPowerBounds[0],
+    filters.inverterPowerMax !== undefined && filters.inverterPowerMax !== filterOptions.inverterPowerBounds[1],
+  ].filter(Boolean).length
+
+  const advanced = (
+    <>
+      <FilterField label="Cidade">
+        <SelectFilter
+          value={filters.city ?? ''}
+          onChange={(v) => applyFilter({ city: v || undefined })}
+          options={filterOptions.cities.map((c) => ({ value: c, label: c }))}
+          placeholder="Todas"
+        />
+      </FilterField>
+
+      <FilterField label="Origem do cliente">
+        <SelectFilter
+          value={filters.origemId ?? ''}
+          onChange={(v) => applyFilter({ origemId: v || undefined })}
+          options={filterOptions.origens.map((o) => ({ value: o.id, label: o.name }))}
+          placeholder="Todas"
+        />
+      </FilterField>
+
+      <FilterField label="Forma de pagamento">
+        <SelectFilter
+          value={filters.paymentMethod ?? ''}
+          onChange={(v) => applyFilter({ paymentMethod: v || undefined })}
+          options={filterOptions.paymentMethods.map((p) => ({ value: p, label: p }))}
+          placeholder="Todas"
+        />
+      </FilterField>
+
+      <FilterField label="Marca do inversor">
+        <SelectFilter
+          value={filters.inverterBrand ?? ''}
+          onChange={(v) => applyFilter({ inverterBrand: v || undefined })}
+          options={filterOptions.inverterBrands.map((b) => ({ value: b, label: b }))}
+          placeholder="Todas"
+        />
+      </FilterField>
+
+      <FilterField label="Marca dos módulos">
+        <SelectFilter
+          value={filters.panelBrand ?? ''}
+          onChange={(v) => applyFilter({ panelBrand: v || undefined })}
+          options={filterOptions.panelBrands.map((b) => ({ value: b, label: b }))}
+          placeholder="Todas"
+        />
+      </FilterField>
+
+      <FilterField label={`Potência do sistema (kWp) — ${kwpValue[0]} a ${kwpValue[1]}`}>
+        <RangeSlider
+          min={filterOptions.kwpBounds[0]}
+          max={filterOptions.kwpBounds[1]}
+          step={1}
+          value={kwpValue}
+          onChange={([lo, hi]) => applyFilter({ kwpMin: lo, kwpMax: hi })}
+          unit=" kWp"
+        />
+      </FilterField>
+
+      <FilterField label={`Potência do inversor (W) — ${invPowerValue[0]} a ${invPowerValue[1]}`}>
+        <RangeSlider
+          min={filterOptions.inverterPowerBounds[0]}
+          max={filterOptions.inverterPowerBounds[1]}
+          step={100}
+          value={invPowerValue}
+          onChange={([lo, hi]) => applyFilter({ inverterPowerMin: lo, inverterPowerMax: hi })}
+          unit=" W"
+        />
+      </FilterField>
+    </>
+  )
+
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-6 py-4 flex-shrink-0" style={{ borderBottom: '1px solid var(--theme-border)' }}>
-        <div>
-          <h1 className="text-lg font-semibold" style={{ color: 'var(--theme-text)' }}>Clientes</h1>
-          <p className="text-xs mt-0.5" style={{ color: 'var(--theme-text-subtle)' }}>
-            {total} clientes {totalPages > 1 ? `· página ${page + 1} de ${totalPages}` : ''}
-          </p>
+      <div className="px-6 py-4 flex-shrink-0 flex flex-col gap-3" style={{ borderBottom: '1px solid var(--theme-border)' }}>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-lg font-semibold" style={{ color: 'var(--theme-text)' }}>Clientes</h1>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--theme-text-subtle)' }}>
+              {total} clientes {totalPages > 1 ? `· página ${page + 1} de ${totalPages}` : ''}
+            </p>
+          </div>
         </div>
-        <SearchBar value={search} onChange={setSearch} placeholder="Buscar cliente..." />
+
+        <FilterBar activeCount={activeCount} onClear={clearAll} advanced={advanced}>
+          <SearchBar value={search} onChange={setSearch} placeholder="Buscar cliente..." />
+        </FilterBar>
       </div>
 
       <div className="flex-1 overflow-auto px-6 py-4">
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full gap-3">
             <p className="text-sm" style={{ color: 'var(--theme-text-subtle)' }}>
-              {search ? 'Nenhum cliente encontrado.' : 'Nenhum cliente com cadastro completo ainda.'}
+              {search || activeCount > 0 ? 'Nenhum cliente encontrado com os filtros aplicados.' : 'Nenhum cliente com cadastro completo ainda.'}
             </p>
           </div>
         ) : (
@@ -109,7 +231,11 @@ export default function ClientesClient({
       {!search && totalPages > 1 && (
         <div className="flex items-center justify-center gap-2 px-6 py-3 flex-shrink-0" style={{ borderTop: '1px solid var(--theme-border)' }}>
           <button
-            onClick={() => router.push(`/clientes?page=${page - 1}`)}
+            onClick={() => {
+              const sp = new URLSearchParams(window.location.search)
+              sp.set('page', String(page - 1))
+              router.push(`/clientes?${sp.toString()}`)
+            }}
             disabled={page === 0}
             className="px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-30 transition-colors"
             style={{ background: 'var(--theme-surface)', color: 'var(--theme-text)' }}
@@ -120,7 +246,11 @@ export default function ClientesClient({
             {page + 1} / {totalPages}
           </span>
           <button
-            onClick={() => router.push(`/clientes?page=${page + 1}`)}
+            onClick={() => {
+              const sp = new URLSearchParams(window.location.search)
+              sp.set('page', String(page + 1))
+              router.push(`/clientes?${sp.toString()}`)
+            }}
             disabled={page >= totalPages - 1}
             className="px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-30 transition-colors"
             style={{ background: 'var(--theme-surface)', color: 'var(--theme-text)' }}

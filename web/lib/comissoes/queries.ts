@@ -1,5 +1,6 @@
-﻿// web/lib/comissoes/queries.ts
+// web/lib/comissoes/queries.ts
 import { createClient } from '@/lib/supabase/server'
+import { getMonthRangeBRT } from '@/lib/utils/date-range'
 
 export type ComissaoItem = {
   id: string
@@ -29,11 +30,12 @@ export async function getComissoesPainel(params: {
   month: number
   year: number
   vendedorId?: string
+  dateField?: 'created_at' | 'paid_at'
 }): Promise<ComissoesPainel> {
   const supabase = await createClient()
+  const dateField = params.dateField ?? 'created_at'
 
-  const startDate = new Date(params.year, params.month - 1, 1).toISOString()
-  const endDate = new Date(params.year, params.month, 1).toISOString()
+  const { startISO, endISO } = getMonthRangeBRT(params.month, params.year)
 
   let query = supabase
     .from('client_commissions')
@@ -49,8 +51,8 @@ export async function getComissoesPainel(params: {
       clients!inner ( name ),
       vendedor:profiles!vendedor_id ( full_name )
     `)
-    .gte('created_at', startDate)
-    .lt('created_at', endDate)
+    .gte(dateField, startISO)
+    .lte(dateField, endISO)
 
   if (params.vendedorId) {
     query = query.eq('vendedor_id', params.vendedorId)
@@ -77,11 +79,7 @@ export async function getComissoesPainel(params: {
     .reduce((sum, i) => sum + i.valor_comissao, 0)
 
   const total_pago = items
-    .filter((i) => {
-      if (i.status !== 'paga' || !i.paid_at) return false
-      const paid = new Date(i.paid_at)
-      return paid >= new Date(startDate) && paid < new Date(endDate)
-    })
+    .filter((i) => i.status === 'paga')
     .reduce((sum, i) => sum + i.valor_comissao, 0)
 
   return { items, total_pendente, total_pago }
