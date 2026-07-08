@@ -7,10 +7,12 @@ import { motion } from 'framer-motion'
 import {
   Users, FileText, DollarSign, Wrench, FolderOpen, BarChart2,
   Check, ChevronDown, ArrowRight, X as XIcon,
-  Calendar, AlertTriangle, TrendingUp, Clock, Shield,
+  Calendar, AlertTriangle, TrendingUp, Clock, Shield, MessageCircle,
 } from 'lucide-react'
 
-const WHATSAPP_URL = 'https://wa.me/5563992217642?text=' + encodeURIComponent('Gostaria de agendar uma apresentação da plataforma Integra Solar!')
+const WHATSAPP_NUMBER = '5563992217642'
+const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=` + encodeURIComponent('Gostaria de agendar uma apresentação da plataforma Integra Solar!')
+const WHATSAPP_FLOAT_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=` + encodeURIComponent('Olá! Vim pelo site da Integra Solar e gostaria de conhecer a plataforma.')
 
 // ── Animation variants ──────────────────────────────────────────
 const fadeUp = {
@@ -77,25 +79,25 @@ const METRICS = [
 const FAQ = [
   { q: 'Preciso de treinamento para usar?', a: 'O sistema foi feito para quem não tem tempo de aprender ferramentas complexas. A interface é intuitiva e os planos semestrais e anuais incluem onboarding.' },
   { q: 'Funciona para empresas pequenas?', a: 'Sim. O Integra Solar atende desde o integrador solo até empresas com dezenas de instalações por mês. Você usa o que precisa.' },
-  { q: 'Posso cancelar a qualquer momento?', a: 'Sim. Não há fidelidade nos planos mensais. Planos semestrais e anuais podem ter a renovação cancelada a qualquer momento.' },
+  { q: 'Como funciona a renovação dos planos?', a: 'Planos mensais não têm fidelidade. Planos semestrais e anuais podem ter a renovação interrompida antes do próximo ciclo.' },
   { q: 'Meus dados ficam seguros?', a: 'Os dados ficam em infraestrutura de nível bancário (Supabase/AWS) com criptografia, backups automáticos e isolamento por organização.' },
   { q: 'Consigo migrar meus dados atuais?', a: 'Sim. Oferecemos suporte para importação de dados nos planos com onboarding. Você não precisa começar do zero.' },
 ]
 
 const PLANS = [
   {
-    id: 'mensal', name: 'Mensal', price: 'R$ 99,90', period: '/mês', tag: 'Sem fidelidade', highlight: false,
+    id: 'mensal', name: 'Mensal', price: 'R$ 149,90', period: '/mês', tag: 'Sem fidelidade', highlight: false,
     features: ['CRM completo', 'Propostas ilimitadas', 'Gestão financeira', 'Controle de obras', 'Gestão documental', 'Relatórios', 'Suporte por chat'],
     cta: 'Começar agora',
   },
   {
-    id: 'semestral', name: 'Semestral', price: 'R$ 539', period: '/semestre', tag: 'Mais vendido', saving: 'Economia de R$ 60', highlight: false,
-    features: ['Tudo do mensal', 'Economia de ~10%', 'Suporte prioritário', 'Treinamento incluso', 'Integrações avançadas'],
+    id: 'semestral', name: 'Semestral', price: 'R$ 779,90', period: '/semestre', tag: 'Mais vendido', saving: 'Economia de ~R$ 120 (13%)', highlight: false,
+    features: ['Tudo do mensal', 'Economia de ~13%', 'Suporte prioritário', 'Treinamento incluso', 'Integrações avançadas'],
     cta: 'Escolher semestral',
   },
   {
-    id: 'anual', name: 'Anual', price: 'R$ 998', period: '/ano', tag: 'Melhor custo-benefício', saving: 'Economia de R$ 200', highlight: true,
-    features: ['Tudo do semestral', 'Economia de ~17%', 'Suporte dedicado', 'Consultoria de setup', 'Onboarding guiado'],
+    id: 'anual', name: 'Anual', price: 'R$ 1.199,90', period: '/ano', tag: 'Melhor custo-benefício', saving: 'Economia de ~R$ 599 (33%)', highlight: true,
+    features: ['Tudo do semestral', 'Economia de ~33%', 'Suporte dedicado', 'Consultoria de setup', 'Onboarding guiado'],
     cta: 'Escolher anual',
   },
 ]
@@ -154,12 +156,34 @@ export default function LandingPage() {
             Ver planos
           </a>
         </motion.div>
-        <motion.div variants={fadeUp} className="mt-12 flex items-center justify-center gap-8 text-sm text-[#57534e]">
-          <span className="flex items-center gap-1.5"><Check className="w-4 h-4 text-[#28944a]" /> 7 dias grátis</span>
-          <span className="flex items-center gap-1.5"><Check className="w-4 h-4 text-[#28944a]" /> Sem cartão</span>
-          <span className="flex items-center gap-1.5"><Check className="w-4 h-4 text-[#28944a]" /> Cancele quando quiser</span>
-        </motion.div>
       </motion.section>
+
+      {/* ── Construída com integradores (150+) ──────────────────── */}
+      <Section className="max-w-4xl mx-auto !pt-10 !pb-14">
+        <motion.div
+          variants={fadeUp}
+          className="relative overflow-hidden bg-white rounded-2xl border border-gray-100 p-8 sm:p-10 flex flex-col sm:flex-row items-center gap-6 sm:gap-10"
+        >
+          <div className="flex-shrink-0 flex flex-col items-center text-center sm:border-r sm:border-gray-100 sm:pr-10">
+            <span style={{ fontFamily: "'Sora', sans-serif" }} className="text-5xl sm:text-6xl font-bold text-[#28944a] leading-none">
+              150+
+            </span>
+            <span className="mt-2 text-xs font-semibold uppercase tracking-wide text-[#57534e]">
+              Integradores ouvidos
+            </span>
+          </div>
+          <div className="flex-1 text-center sm:text-left">
+            <h2 style={{ fontFamily: "'Sora', sans-serif" }} className="text-xl sm:text-2xl font-bold text-[#0d3019] mb-2 leading-snug">
+              Construída com quem já vive a rotina do setor solar
+            </h2>
+            <p className="text-[#57534e] leading-relaxed">
+              Mais de 150 integradores foram entrevistados para chegarmos ao produto ideal —
+              cada funcionalidade nasceu de uma necessidade real do dia a dia de uma empresa
+              integradora de energia solar.
+            </p>
+          </div>
+        </motion.div>
+      </Section>
 
       {/* ── Problema ────────────────────────────────────────────── */}
       <Section className="max-w-5xl mx-auto">
@@ -247,7 +271,8 @@ export default function LandingPage() {
           </h2>
           <div className="space-y-4">
             {[
-              { bad: 'ERPs genéricos exigem consultoria de R$ 10k+ para configurar', good: 'Integra Solar já vem configurado para o fluxo solar' },
+              { bad: 'ERPs genéricos costumam exigir alto investimento para implantação e configuração', good: 'Integra Solar já vem configurada para o fluxo de uma empresa integradora, com vídeos de treinamento inclusos — qualquer pessoa da equipe aprende a usar em pouco tempo' },
+              { bad: 'Utilizar diversos softwares e planilhas para controlar a empresa', good: 'Tudo centralizado em um único lugar dentro da Integra Solar' },
               { bad: 'Planilhas dependem da memória de quem preencheu', good: 'Dados estruturados e acessíveis por qualquer membro da equipe' },
               { bad: 'WhatsApp não tem histórico, nem rastreabilidade', good: 'Cada interação, documento e pagamento registrado por cliente' },
               { bad: 'Sistemas de CRM não entendem obra, projeto e homologação', good: 'Pipeline completo: do lead ao pós-venda com cada etapa do setor solar' },
@@ -278,7 +303,7 @@ export default function LandingPage() {
             Agende uma demonstração de 20 minutos. Sem compromisso, sem pressão. Você decide se faz sentido para sua operação.
           </p>
           <button onClick={() => setShowDemo(true)} className="inline-flex items-center gap-2 bg-[#28944a] text-white font-semibold px-7 py-3.5 rounded-lg hover:bg-[#1d7035] transition-colors">
-            <Calendar className="w-4 h-4" /> Agendar demonstração gratuita
+            <Calendar className="w-4 h-4" /> Agendar demonstração
           </button>
         </motion.div>
       </Section>
@@ -291,7 +316,7 @@ export default function LandingPage() {
         <motion.h2 variants={fadeUp} style={{ fontFamily: "'Sora', sans-serif" }} className="text-3xl sm:text-4xl font-bold text-center text-[#0d3019] mb-4">
           Escolha o plano ideal
         </motion.h2>
-        <motion.p variants={fadeUp} className="text-center text-[#57534e] mb-14">7 dias grátis em qualquer plano. Sem cartão para começar.</motion.p>
+        <motion.p variants={fadeUp} className="text-center text-[#57534e] mb-14">Escolha o modelo que melhor se encaixa na sua operação. Onboarding e suporte inclusos em todos os planos.</motion.p>
         <motion.div variants={stagger} className="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch">
           {PLANS.map((plan) => (
             <motion.div
@@ -358,7 +383,7 @@ export default function LandingPage() {
             Pronto para profissionalizar sua operação?
           </h2>
           <p className="text-[#57534e] mb-8 max-w-xl mx-auto">
-            Comece em minutos. 7 dias grátis. Sem compromisso. Se não fizer sentido, cancele sem burocracia.
+            Fale com nosso time, veja a plataforma funcionando e comece a estruturar sua operação com quem entende do setor solar.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <a href="#planos" className="inline-flex items-center gap-2 bg-[#28944a] text-white font-semibold px-7 py-3.5 rounded-lg hover:bg-[#1d7035] transition-colors">
@@ -384,6 +409,19 @@ export default function LandingPage() {
           <p className="text-xs text-[#57534e]">&copy; {new Date().getFullYear()} Integra Solar</p>
         </div>
       </footer>
+
+      {/* ── Botão flutuante do WhatsApp ─────────────────────────── */}
+      <a
+        href={WHATSAPP_FLOAT_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Falar com a Integra Solar no WhatsApp"
+        className="fixed bottom-5 right-5 z-[60] flex items-center gap-2 rounded-full shadow-lg transition-all hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2"
+        style={{ background: '#25D366', color: '#fff', padding: '12px 16px', boxShadow: '0 10px 24px rgba(37,211,102,0.35)' }}
+      >
+        <MessageCircle className="w-5 h-5" fill="currentColor" strokeWidth={0} />
+        <span className="hidden sm:inline text-sm font-semibold pr-1">Fale conosco</span>
+      </a>
 
       {/* ── Modal Demonstração ──────────────────────────────────── */}
       {showDemo && (
