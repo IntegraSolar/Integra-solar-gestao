@@ -2,29 +2,19 @@ import { createAdminClient } from '@/lib/supabase/admin'
 
 export type EmpresaRow = {
   id: string
-  corporate_name: string
-  fantasy_name: string | null
-  cnpj: string | null
-  email: string | null
-  phone: string | null
-  city: string | null
-  state: string | null
+  name: string
+  plan: string | null
+  status: string | null
   created_at: string
   blocked_at: string | null
   blocked_reason: string | null
   trial_ends_at: string | null
-  assinatura: { plano: string | null; status: string | null; data_fim: string | null } | null
+  assinatura: { plan: string | null; status: string | null; expires_at: string | null } | null
   total_users: number
 }
 
 export type EmpresaDetalhe = EmpresaRow & {
-  logo_url: string | null
-  street: string | null
-  number: string | null
-  complement: string | null
-  neighborhood: string | null
-  zip_code: string | null
-  usuarios: Array<{ id: string; name: string; email: string; is_active: boolean; is_super_admin: boolean; created_at: string }>
+  usuarios: Array<{ id: string; full_name: string; email: string; role: string; created_at: string }>
 }
 
 export async function listarEmpresas(search?: string): Promise<EmpresaRow[]> {
@@ -32,13 +22,11 @@ export async function listarEmpresas(search?: string): Promise<EmpresaRow[]> {
 
   let query = admin
     .from('organizations')
-    .select('id, corporate_name, fantasy_name, cnpj, email, phone, city, state, created_at, blocked_at, blocked_reason, trial_ends_at')
+    .select('id, name, plan, status, created_at, blocked_at, blocked_reason, trial_ends_at')
     .order('created_at', { ascending: false })
 
   if (search) {
-    query = query.or(
-      `corporate_name.ilike.%${search}%,fantasy_name.ilike.%${search}%,cnpj.ilike.%${search}%,email.ilike.%${search}%`
-    )
+    query = query.ilike('name', `%${search}%`)
   }
 
   const { data, error } = await query
@@ -46,30 +34,30 @@ export async function listarEmpresas(search?: string): Promise<EmpresaRow[]> {
 
   const orgIds = data.map((o) => o.id)
 
-  const [{ data: assinaturas }, { data: userCounts }] = await Promise.all([
+  const [{ data: subscriptions }, { data: memberCounts }] = await Promise.all([
     admin
-      .from('assinaturas')
-      .select('organization_id, plano, status, data_fim')
+      .from('subscriptions')
+      .select('organization_id, plan, status, expires_at')
       .in('organization_id', orgIds),
     admin
-      .from('app_users')
+      .from('organization_members')
       .select('organization_id')
       .in('organization_id', orgIds),
   ])
 
-  const assinaturaMap: Record<string, { plano: string | null; status: string | null; data_fim: string | null }> = {}
-  for (const a of assinaturas ?? []) {
-    if (!assinaturaMap[a.organization_id]) assinaturaMap[a.organization_id] = a
+  const subMap: Record<string, { plan: string | null; status: string | null; expires_at: string | null }> = {}
+  for (const s of subscriptions ?? []) {
+    if (!subMap[s.organization_id]) subMap[s.organization_id] = s
   }
 
   const countMap: Record<string, number> = {}
-  for (const u of userCounts ?? []) {
-    countMap[u.organization_id] = (countMap[u.organization_id] ?? 0) + 1
+  for (const m of memberCounts ?? []) {
+    countMap[m.organization_id] = (countMap[m.organization_id] ?? 0) + 1
   }
 
   return data.map((o) => ({
     ...o,
-    assinatura: assinaturaMap[o.id] ?? null,
+    assinatura: subMap[o.id] ?? null,
     total_users: countMap[o.id] ?? 0,
   }))
 }
@@ -77,31 +65,48 @@ export async function listarEmpresas(search?: string): Promise<EmpresaRow[]> {
 export async function buscarEmpresa(id: string): Promise<EmpresaDetalhe | null> {
   const admin = createAdminClient()
 
-  const [{ data: org }, { data: assinaturas }, { data: users }] = await Promise.all([
+  const [{ data: org }, { data: subscriptions }, { data: members }] = await Promise.all([
     admin
       .from('organizations')
-      .select('id, corporate_name, fantasy_name, cnpj, email, phone, logo_url, street, number, complement, neighborhood, city, state, zip_code, created_at, blocked_at, blocked_reason, trial_ends_at')
+      .select('id, name, plan, status, created_at, blocked_at, blocked_reason, trial_ends_at')
       .eq('id', id)
       .single(),
     admin
-      .from('assinaturas')
-      .select('plano, status, data_fim')
+      .from('subscriptions')
+      .select('plan, status, expires_at')
       .eq('organization_id', id)
       .limit(1),
     admin
-      .from('app_users')
-      .select('id, name, email, is_active, is_super_admin, created_at')
+      .from('organization_members')
+      .select('id, role, created_at, user_id')
       .eq('organization_id', id)
       .order('created_at'),
   ])
 
   if (!org) return null
 
+  // Buscar profiles dos membros
+  const userIds = (members ?? []).map((m) => m.user_id)
+  const { data: profiles } = userIds.length
+    ? await admin.from('profiles').select('id, full_name, email').in('id', userIds)
+    : { data: [] }
+
+  const profileMap: Record<string, { full_name: string; email: string }> = {}
+  for (const p of profiles ?? []) profileMap[p.id] = p
+
+  const usuarios = (members ?? []).map((m) => ({
+    id: m.id,
+    full_name: profileMap[m.user_id]?.full_name ?? '—',
+    email: profileMap[m.user_id]?.email ?? '—',
+    role: m.role ?? 'member',
+    created_at: m.created_at,
+  }))
+
   return {
     ...org,
-    assinatura: assinaturas?.[0] ?? null,
-    total_users: users?.length ?? 0,
-    usuarios: users ?? [],
+    assinatura: subscriptions?.[0] ?? null,
+    total_users: usuarios.length,
+    usuarios,
   }
 }
 

@@ -10,6 +10,7 @@ const STATUS_BADGE: Record<string, { label: string; color: string }> = {
   trial:    { label: 'Trial',     color: '#d97706' },
   inactive: { label: 'Inativa',   color: '#6b7280' },
   blocked:  { label: 'Bloqueada', color: '#dc2626' },
+  canceled: { label: 'Cancelada', color: '#6b7280' },
 }
 
 function StatusBadge({ status, bloqueada }: { status: string | null; bloqueada: boolean }) {
@@ -49,7 +50,7 @@ export default async function EmpresasPage({
           <input
             name="q"
             defaultValue={q}
-            placeholder="Buscar por nome, CNPJ ou e-mail..."
+            placeholder="Buscar por nome..."
             className="flex-1 rounded-xl border border-[#D0DCE8] px-4 py-2.5 text-sm text-[#1A3A5C] outline-none focus:border-[#1A3A5C] focus:ring-2 focus:ring-[#1A3A5C]/10"
           />
           <button type="submit"
@@ -70,7 +71,7 @@ export default async function EmpresasPage({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-[#E2ECF4]">
-              {['Empresa', 'CNPJ', 'Cidade/UF', 'Plano', 'Status', 'Usuários', 'Cadastro', ''].map((h) => (
+              {['Empresa', 'Plano', 'Status', 'Usuários', 'Cadastro', ''].map((h) => (
                 <th key={h} className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#9BAEBF]">
                   {h}
                 </th>
@@ -80,7 +81,7 @@ export default async function EmpresasPage({
           <tbody>
             {empresas.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-5 py-10 text-center text-sm text-[#9BAEBF]">
+                <td colSpan={6} className="px-5 py-10 text-center text-sm text-[#9BAEBF]">
                   Nenhuma empresa encontrada.
                 </td>
               </tr>
@@ -88,19 +89,11 @@ export default async function EmpresasPage({
             {empresas.map((e) => (
               <tr key={e.id} className="border-b border-[#F0F4F8] hover:bg-[#F8FAFC] transition-colors">
                 <td className="px-5 py-3.5">
-                  <p className="font-semibold text-[#1A3A5C]">{e.fantasy_name || e.corporate_name}</p>
-                  {e.fantasy_name && e.corporate_name !== e.fantasy_name && (
-                    <p className="text-xs text-[#9BAEBF]">{e.corporate_name}</p>
-                  )}
-                  <p className="text-xs text-[#9BAEBF]">{e.email}</p>
+                  <p className="font-semibold text-[#1A3A5C]">{e.name}</p>
                 </td>
-                <td className="px-5 py-3.5 text-[#4A6580] font-mono text-xs">{e.cnpj ?? '—'}</td>
-                <td className="px-5 py-3.5 text-[#4A6580]">
-                  {e.city ? `${e.city}${e.state ? `/${e.state.toUpperCase()}` : ''}` : '—'}
-                </td>
-                <td className="px-5 py-3.5 text-[#4A6580] capitalize">{e.assinatura?.plano ?? '—'}</td>
+                <td className="px-5 py-3.5 text-[#4A6580] capitalize">{e.assinatura?.plan ?? e.plan ?? '—'}</td>
                 <td className="px-5 py-3.5">
-                  <StatusBadge status={e.assinatura?.status ?? null} bloqueada={!!e.blocked_at} />
+                  <StatusBadge status={e.assinatura?.status ?? e.status ?? null} bloqueada={!!e.blocked_at} />
                 </td>
                 <td className="px-5 py-3.5 text-center text-[#4A6580]">{e.total_users}</td>
                 <td className="px-5 py-3.5 text-[#9BAEBF] text-xs">
