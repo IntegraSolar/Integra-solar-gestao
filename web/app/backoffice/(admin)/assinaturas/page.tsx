@@ -37,10 +37,6 @@ const TABS = [
   { value: 'blocked',  label: 'Bloqueadas' },
 ]
 
-function formatBRL(value: number | null) {
-  if (value == null) return '—'
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
-}
 
 export default async function AssinaturasPage({
   searchParams,
@@ -80,7 +76,7 @@ export default async function AssinaturasPage({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-[#E2ECF4]">
-              {['Empresa', 'Plano', 'Status', 'Valor', 'Trial até', 'Cadastro', ''].map((h) => (
+              {['Empresa', 'Plano', 'Status', 'Trial até', 'Cadastro', ''].map((h) => (
                 <th key={h} className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#9BAEBF]">
                   {h}
                 </th>
@@ -90,7 +86,7 @@ export default async function AssinaturasPage({
           <tbody>
             {assinaturas.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-5 py-10 text-center text-sm text-[#9BAEBF]">
+                <td colSpan={6} className="px-5 py-10 text-center text-sm text-[#9BAEBF]">
                   Nenhuma empresa encontrada.
                 </td>
               </tr>
@@ -102,7 +98,6 @@ export default async function AssinaturasPage({
                 <td className="px-5 py-3.5">
                   <StatusBadge status={a.status} bloqueada={!!a.blocked_at} />
                 </td>
-                <td className="px-5 py-3.5 text-[#4A6580]">{formatBRL(a.amount)}</td>
                 <td className="px-5 py-3.5 text-xs">
                   {a.trial_ends_at ? (
                     <span className={new Date(a.trial_ends_at) < new Date() ? 'text-red-500 font-semibold' : 'text-[#9BAEBF]'}>

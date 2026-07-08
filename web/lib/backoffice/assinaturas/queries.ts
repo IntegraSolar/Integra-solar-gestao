@@ -5,7 +5,6 @@ export type AssinaturaRow = {
   name: string
   plan: string | null
   status: string | null
-  amount: number | null
   created_at: string
   trial_ends_at: string | null
   blocked_at: string | null
@@ -16,7 +15,7 @@ export async function listarAssinaturas(status?: string): Promise<AssinaturaRow[
 
   let query = admin
     .from('organizations')
-    .select('id, name, plan, status, amount, created_at, trial_ends_at, blocked_at')
+    .select('id, name, plan, status, created_at, trial_ends_at, blocked_at')
     .order('created_at', { ascending: false })
 
   if (status && status !== 'all') {
@@ -35,7 +34,6 @@ export async function listarAssinaturas(status?: string): Promise<AssinaturaRow[
     name: o.name,
     plan: o.plan,
     status: o.status,
-    amount: o.amount,
     created_at: o.created_at,
     trial_ends_at: o.trial_ends_at,
     blocked_at: o.blocked_at,
