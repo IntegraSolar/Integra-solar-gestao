@@ -8,6 +8,7 @@ import {
   Users, FileText, DollarSign, Wrench, FolderOpen, BarChart2,
   Check, ChevronDown, ArrowRight, X as XIcon,
   Calendar, AlertTriangle, TrendingUp, Clock, Shield, MessageCircle,
+  Headphones, RefreshCw, Zap, GitBranch,
 } from 'lucide-react'
 
 const WHATSAPP_NUMBER = '5563992217642'
@@ -117,14 +118,14 @@ export default function LandingPage() {
           backgroundRepeat: 'no-repeat',
           backgroundPosition: 'center center',
           backgroundSize: '90%',
-          opacity: 0.04,
+          opacity: 0.07,
         }}
       />
 
       {/* ── Header ──────────────────────────────────────────────── */}
       <header className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-b border-gray-100 z-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <Image src="/Logo integra solar - Com nome.png" alt="Integra Solar" width={130} height={38} className="h-8 w-auto" />
+          <Image src="/Logo integra solar - Com nome.png" alt="Integra Solar" width={180} height={52} className="h-10 sm:h-11 w-auto" />
           <div className="flex items-center gap-2">
             <Link href="/login" className="text-sm font-medium text-[#57534e] hover:text-[#1c1917] px-4 py-2 hidden sm:block">Entrar</Link>
             <button onClick={() => setShowDemo(true)} className="text-sm font-semibold bg-[#28944a] text-white px-5 py-2.5 rounded-lg hover:bg-[#1d7035] transition-colors">
@@ -208,6 +209,9 @@ export default function LandingPage() {
 
       {/* ── Solução ─────────────────────────────────────────────── */}
       <Section className="max-w-5xl mx-auto">
+        <motion.div variants={fadeUp} className="flex justify-center mb-5">
+          <Image src="/Logo integra solar - sem nome.png" alt="Integra Solar" width={64} height={64} className="w-14 h-14 sm:w-16 sm:h-16" />
+        </motion.div>
         <motion.p variants={fadeUp} className="text-sm font-semibold text-[#28944a] tracking-wide uppercase text-center mb-3">
           A solução
         </motion.p>
@@ -225,6 +229,26 @@ export default function LandingPage() {
               </div>
               <h3 style={{ fontFamily: "'Sora', sans-serif" }} className="font-semibold text-[#0d3019] mb-1">{f.title}</h3>
               <p className="text-sm text-[#57534e] leading-relaxed">{f.desc}</p>
+            </motion.div>
+          ))}
+        </motion.div>
+      </Section>
+
+      {/* ── Diferenciais extras ───────────────────────────────── */}
+      <Section className="max-w-5xl mx-auto !pt-4 !pb-16">
+        <motion.div variants={stagger} className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          {[
+            { icon: Headphones, title: 'Suporte técnico ágil e especializado', desc: 'Atendimento rápido com quem entende do setor solar — sem filas, sem respostas genéricas.' },
+            { icon: RefreshCw, title: 'Plataforma que evolui com o integrador', desc: 'Estamos sempre melhorando com base no seu feedback. Mande suas sugestões pelo suporte!' },
+            { icon: Zap, title: 'Propostas rápidas em PDF', desc: 'Cálculos automáticos e configuráveis — gere orçamentos profissionais em segundos, não em horas.' },
+            { icon: GitBranch, title: 'Fluxo automático do cliente', desc: 'Do lead ao pós-venda, o cliente avança pelas etapas da plataforma de forma automática e organizada.' },
+          ].map((item) => (
+            <motion.div key={item.title} variants={fadeUp} className="bg-[#28944a]/5 rounded-xl p-6 border border-[#28944a]/10">
+              <div className="w-10 h-10 rounded-lg bg-[#28944a]/10 flex items-center justify-center mb-3">
+                <item.icon className="w-5 h-5 text-[#28944a]" />
+              </div>
+              <h3 style={{ fontFamily: "'Sora', sans-serif" }} className="font-semibold text-[#0d3019] mb-1">{item.title}</h3>
+              <p className="text-sm text-[#57534e] leading-relaxed">{item.desc}</p>
             </motion.div>
           ))}
         </motion.div>
