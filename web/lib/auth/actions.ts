@@ -202,9 +202,16 @@ export async function registerCompany(
     return { error: err instanceof Error ? err.message : 'Erro ao configurar empresa.' }
   }
 
-  // Login automático mesmo sem confirmar e-mail (confirmação será exigida no próximo acesso)
+  // Login automático após registro
   const supabase = await createClient()
-  await supabase.auth.signInWithPassword({ email, password })
+  const { error: loginError } = await supabase.auth.signInWithPassword({ email, password })
+
+  if (loginError) {
+    // Se não conseguiu logar automaticamente (ex: email confirmation habilitado no Supabase),
+    // redireciona para login com mensagem de sucesso
+    revalidatePath('/', 'layout')
+    redirect('/login?registered=1')
+  }
 
   revalidatePath('/', 'layout')
   redirect('/dashboard')
