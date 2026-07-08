@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect } from 'react'
+import { createPortal } from 'react-dom'
 
 interface Props {
   /** Texto de ajuda que aparece no tooltip. */
@@ -14,16 +15,20 @@ interface Props {
 }
 
 /**
- * Ícone circular "?" que exibe um tooltip explicativo ao passar o mouse.
- * Use ao lado de títulos de coluna, siglas ou termos técnicos.
- *
- * Exemplo: <HelpTooltip content="Cliente aguardando aprovação de crédito" />
+ * Ícone circular "?" com tooltip explicativo ao passar o mouse.
+ * Usa React Portal para não ser cortado por containers com overflow: hidden.
  */
 export function HelpTooltip({ content, size = 14, position = 'top', ariaLabel = 'Ajuda' }: Props) {
   const [visible, setVisible] = useState(false)
-  const wrapRef = useRef<HTMLSpanElement>(null)
+  const [coords, setCoords] = useState<{ top: number; left: number } | null>(null)
+  const [mounted, setMounted] = useState(false)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const tooltipRef = useRef<HTMLDivElement>(null)
 
-  // Fechar em ESC (para acessibilidade quando aberto via foco)
+  // Só habilita portal após montar (evita SSR mismatch)
+  useEffect(() => { setMounted(true) }, [])
+
+  // Fecha em ESC
   useEffect(() => {
     if (!visible) return
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setVisible(false) }
@@ -31,68 +36,95 @@ export function HelpTooltip({ content, size = 14, position = 'top', ariaLabel = 
     return () => window.removeEventListener('keydown', handler)
   }, [visible])
 
-  const positionClasses: Record<string, string> = {
-    top:    'bottom-full left-1/2 -translate-x-1/2 mb-1.5',
-    bottom: 'top-full left-1/2 -translate-x-1/2 mt-1.5',
-    left:   'right-full top-1/2 -translate-y-1/2 mr-1.5',
-    right:  'left-full top-1/2 -translate-y-1/2 ml-1.5',
-  }
+  // Calcula posição sempre que ficar visível
+  useLayoutEffect(() => {
+    if (!visible || !buttonRef.current) return
+    const btn = buttonRef.current.getBoundingClientRect()
+    const tooltip = tooltipRef.current?.getBoundingClientRect()
+    const gap = 8
+    const tw = tooltip?.width ?? 240
+    const th = tooltip?.height ?? 40
 
-  const arrowClasses: Record<string, string> = {
-    top:    'top-full left-1/2 -translate-x-1/2 border-t-[6px] border-l-[5px] border-r-[5px] border-l-transparent border-r-transparent',
-    bottom: 'bottom-full left-1/2 -translate-x-1/2 border-b-[6px] border-l-[5px] border-r-[5px] border-l-transparent border-r-transparent',
-    left:   'left-full top-1/2 -translate-y-1/2 border-l-[6px] border-t-[5px] border-b-[5px] border-t-transparent border-b-transparent',
-    right:  'right-full top-1/2 -translate-y-1/2 border-r-[6px] border-t-[5px] border-b-[5px] border-t-transparent border-b-transparent',
-  }
+    let top = 0
+    let left = 0
+    switch (position) {
+      case 'top':
+        top = btn.top - th - gap
+        left = btn.left + btn.width / 2 - tw / 2
+        break
+      case 'bottom':
+        top = btn.bottom + gap
+        left = btn.left + btn.width / 2 - tw / 2
+        break
+      case 'left':
+        top = btn.top + btn.height / 2 - th / 2
+        left = btn.left - tw - gap
+        break
+      case 'right':
+        top = btn.top + btn.height / 2 - th / 2
+        left = btn.right + gap
+        break
+    }
+
+    // Clamp na viewport (padding de 8px)
+    const vw = window.innerWidth
+    if (left < 8) left = 8
+    if (left + tw > vw - 8) left = vw - 8 - tw
+    if (top < 8) top = 8
+
+    setCoords({ top, left })
+  }, [visible, position, content])
+
+  const tooltipEl = visible && coords && mounted ? (
+    createPortal(
+      <div
+        ref={tooltipRef}
+        role="tooltip"
+        className="fixed z-[9999] rounded-lg px-3 py-2 text-xs font-normal shadow-lg pointer-events-none"
+        style={{
+          top: coords.top,
+          left: coords.left,
+          background: 'var(--theme-surface, #ffffff)',
+          color: 'var(--theme-text, #1A2B3C)',
+          border: '1px solid var(--theme-border, #E2ECF4)',
+          minWidth: 180,
+          maxWidth: 280,
+          lineHeight: 1.5,
+          whiteSpace: 'normal',
+          boxShadow: '0 8px 24px rgba(10, 22, 34, 0.18)',
+        }}
+      >
+        {content}
+      </div>,
+      document.body
+    )
+  ) : null
 
   return (
-    <span
-      ref={wrapRef}
-      className="relative inline-flex items-center align-middle ml-1"
-      onMouseEnter={() => setVisible(true)}
-      onMouseLeave={() => setVisible(false)}
-    >
+    <>
       <button
+        ref={buttonRef}
         type="button"
         aria-label={ariaLabel}
+        onMouseEnter={() => setVisible(true)}
+        onMouseLeave={() => setVisible(false)}
         onFocus={() => setVisible(true)}
         onBlur={() => setVisible(false)}
         onClick={(e) => { e.preventDefault(); setVisible((v) => !v) }}
-        className="inline-flex items-center justify-center rounded-full transition-colors cursor-help focus:outline-none focus:ring-2 focus:ring-offset-1"
+        className="inline-flex items-center justify-center align-middle rounded-full transition-colors cursor-help focus:outline-none focus:ring-2 focus:ring-offset-1 ml-1"
         style={{
           width: size, height: size,
-          background: 'rgba(107, 140, 164, 0.15)',
+          background: 'rgba(107, 140, 164, 0.18)',
           color: 'var(--theme-text-subtle, #6B8CA4)',
           fontSize: Math.max(9, size - 5),
           fontWeight: 700,
           lineHeight: 1,
+          verticalAlign: 'middle',
         }}
       >
         ?
       </button>
-
-      {visible && (
-        <span
-          role="tooltip"
-          className={`absolute z-50 whitespace-normal rounded-lg px-2.5 py-1.5 text-xs font-normal shadow-lg pointer-events-none ${positionClasses[position]}`}
-          style={{
-            background: '#0E2236',
-            color: '#fff',
-            minWidth: 180,
-            maxWidth: 280,
-            lineHeight: 1.4,
-          }}
-        >
-          {content}
-          <span
-            className={`absolute w-0 h-0 ${arrowClasses[position]}`}
-            style={{ borderTopColor: position === 'top' ? '#0E2236' : undefined,
-                     borderBottomColor: position === 'bottom' ? '#0E2236' : undefined,
-                     borderLeftColor: position === 'left' ? '#0E2236' : undefined,
-                     borderRightColor: position === 'right' ? '#0E2236' : undefined }}
-          />
-        </span>
-      )}
-    </span>
+      {tooltipEl}
+    </>
   )
 }
