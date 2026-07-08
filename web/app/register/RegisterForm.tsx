@@ -1,17 +1,20 @@
 'use client'
 
-import { useFormState } from 'react-dom'
+import { useActionState, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { registerCompany } from '@/lib/auth/actions'
 import { Input } from '@/components/ui/Input'
+import { PasswordInput } from '@/components/auth/PasswordInput'
+import { PasswordStrengthBar, PasswordRequirements } from '@/components/auth/PasswordStrengthBar'
 import { FormError } from '@/components/ui/FormError'
 import { SubmitButton } from '@/components/ui/SubmitButton'
 
 const initialState = { error: undefined, success: undefined }
 
 export function RegisterForm() {
-  const [state, action] = useFormState(registerCompany, initialState)
+  const [state, action] = useActionState(registerCompany, initialState)
+  const [password, setPassword] = useState('')
 
   return (
     <div className="w-full max-w-md rounded-2xl bg-white p-10 shadow-[0_32px_80px_rgba(10,22,34,.15)]">
@@ -58,14 +61,19 @@ export function RegisterForm() {
           placeholder="(00) 00000-0000"
         />
 
-        <Input
-          name="password"
-          type="password"
-          label="Senha *"
-          placeholder="Mínimo 6 caracteres"
-          autoComplete="new-password"
-          required
-        />
+        <div className="flex flex-col gap-2">
+          <PasswordInput
+            name="password"
+            label="Senha *"
+            placeholder="Mínimo 8 caracteres"
+            autoComplete="new-password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <PasswordStrengthBar password={password} />
+          <PasswordRequirements password={password} />
+        </div>
 
         <FormError message={state?.error} />
 

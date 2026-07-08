@@ -1,15 +1,17 @@
 'use client'
 
-import { useFormState } from 'react-dom'
+import { useActionState, useState } from 'react'
 import { updatePassword } from '@/lib/auth/actions'
-import { Input } from '@/components/ui/Input'
+import { PasswordInput } from '@/components/auth/PasswordInput'
+import { PasswordStrengthBar, PasswordRequirements } from '@/components/auth/PasswordStrengthBar'
 import { FormError } from '@/components/ui/FormError'
 import { SubmitButton } from '@/components/ui/SubmitButton'
 
 const initialState = { error: undefined, success: undefined }
 
 export function UpdatePasswordForm() {
-  const [state, action] = useFormState(updatePassword, initialState)
+  const [state, action] = useActionState(updatePassword, initialState)
+  const [password, setPassword] = useState('')
 
   return (
     <div className="w-full max-w-md rounded-2xl bg-white p-10 shadow-[0_32px_80px_rgba(10,22,34,.35)]">
@@ -19,21 +21,25 @@ export function UpdatePasswordForm() {
       </p>
 
       <form action={action} className="flex flex-col gap-4">
-        <Input
-          id="password"
-          name="password"
-          type="password"
-          label="Nova senha"
-          placeholder="••••••••"
-          autoComplete="new-password"
-          required
-          minLength={8}
-        />
+        <div className="flex flex-col gap-2">
+          <PasswordInput
+            id="password"
+            name="password"
+            label="Nova senha"
+            placeholder="••••••••"
+            autoComplete="new-password"
+            required
+            minLength={8}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <PasswordStrengthBar password={password} />
+          <PasswordRequirements password={password} />
+        </div>
 
-        <Input
+        <PasswordInput
           id="confirmPassword"
           name="confirmPassword"
-          type="password"
           label="Confirmar senha"
           placeholder="••••••••"
           autoComplete="new-password"

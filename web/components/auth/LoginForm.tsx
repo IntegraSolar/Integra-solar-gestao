@@ -1,17 +1,18 @@
 'use client'
 
-import { useFormState } from 'react-dom'
+import { useActionState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { signIn } from '@/lib/auth/actions'
-import { Input } from '@/components/ui/Input'
+import { PasswordInput } from '@/components/auth/PasswordInput'
 import { FormError } from '@/components/ui/FormError'
 import { SubmitButton } from '@/components/ui/SubmitButton'
+import { Input } from '@/components/ui/Input'
 
 const initialState = { error: undefined, success: undefined }
 
 export function LoginForm() {
-  const [state, action] = useFormState(signIn, initialState)
+  const [state, action] = useActionState(signIn, initialState)
 
   return (
     <div className="w-full max-w-md rounded-2xl bg-white p-10 shadow-[0_32px_80px_rgba(10,22,34,.35)]">
@@ -40,10 +41,9 @@ export function LoginForm() {
         />
 
         <div className="flex flex-col gap-1.5">
-          <Input
+          <PasswordInput
             id="password"
             name="password"
-            type="password"
             label="Senha"
             placeholder="••••••••"
             autoComplete="current-password"
@@ -58,6 +58,18 @@ export function LoginForm() {
             </Link>
           </div>
         </div>
+
+        {/* Manter conectado */}
+        <label className="flex items-center gap-2 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            name="remember_me"
+            value="1"
+            defaultChecked
+            className="h-4 w-4 rounded border-[#D0DCE8] text-[#1A3A5C] accent-[#1A3A5C]"
+          />
+          <span className="text-sm text-[#4A6580]">Manter conectado por 30 dias</span>
+        </label>
 
         <FormError message={state?.error} />
 
