@@ -32,11 +32,7 @@ export async function listarEmpresas(search?: string): Promise<EmpresaRow[]> {
 
   let query = admin
     .from('organizations')
-    .select(`
-      id, corporate_name, fantasy_name, cnpj, email, phone,
-      city, state, created_at, blocked_at, blocked_reason, trial_ends_at,
-      assinaturas(plano, status, data_fim)
-    `)
+    .select('id, corporate_name, fantasy_name, cnpj, email, phone, city, state, created_at, blocked_at, blocked_reason, trial_ends_at')
     .order('created_at', { ascending: false })
 
   if (search) {
@@ -48,12 +44,23 @@ export async function listarEmpresas(search?: string): Promise<EmpresaRow[]> {
   const { data, error } = await query
   if (error || !data) return []
 
-  // Buscar contagem de usuários por org
   const orgIds = data.map((o) => o.id)
-  const { data: userCounts } = await admin
-    .from('app_users')
-    .select('organization_id')
-    .in('organization_id', orgIds)
+
+  const [{ data: assinaturas }, { data: userCounts }] = await Promise.all([
+    admin
+      .from('assinaturas')
+      .select('organization_id, plano, status, data_fim')
+      .in('organization_id', orgIds),
+    admin
+      .from('app_users')
+      .select('organization_id')
+      .in('organization_id', orgIds),
+  ])
+
+  const assinaturaMap: Record<string, { plano: string | null; status: string | null; data_fim: string | null }> = {}
+  for (const a of assinaturas ?? []) {
+    if (!assinaturaMap[a.organization_id]) assinaturaMap[a.organization_id] = a
+  }
 
   const countMap: Record<string, number> = {}
   for (const u of userCounts ?? []) {
@@ -62,7 +69,7 @@ export async function listarEmpresas(search?: string): Promise<EmpresaRow[]> {
 
   return data.map((o) => ({
     ...o,
-    assinatura: Array.isArray(o.assinaturas) ? (o.assinaturas[0] ?? null) : null,
+    assinatura: assinaturaMap[o.id] ?? null,
     total_users: countMap[o.id] ?? 0,
   }))
 }
@@ -70,17 +77,17 @@ export async function listarEmpresas(search?: string): Promise<EmpresaRow[]> {
 export async function buscarEmpresa(id: string): Promise<EmpresaDetalhe | null> {
   const admin = createAdminClient()
 
-  const [{ data: org }, { data: users }] = await Promise.all([
+  const [{ data: org }, { data: assinaturas }, { data: users }] = await Promise.all([
     admin
       .from('organizations')
-      .select(`
-        id, corporate_name, fantasy_name, cnpj, email, phone, logo_url,
-        street, number, complement, neighborhood, city, state, zip_code,
-        created_at, blocked_at, blocked_reason, trial_ends_at,
-        assinaturas(plano, status, data_fim)
-      `)
+      .select('id, corporate_name, fantasy_name, cnpj, email, phone, logo_url, street, number, complement, neighborhood, city, state, zip_code, created_at, blocked_at, blocked_reason, trial_ends_at')
       .eq('id', id)
       .single(),
+    admin
+      .from('assinaturas')
+      .select('plano, status, data_fim')
+      .eq('organization_id', id)
+      .limit(1),
     admin
       .from('app_users')
       .select('id, name, email, is_active, is_super_admin, created_at')
@@ -92,7 +99,7 @@ export async function buscarEmpresa(id: string): Promise<EmpresaDetalhe | null> 
 
   return {
     ...org,
-    assinatura: Array.isArray(org.assinaturas) ? (org.assinaturas[0] ?? null) : null,
+    assinatura: assinaturas?.[0] ?? null,
     total_users: users?.length ?? 0,
     usuarios: users ?? [],
   }
