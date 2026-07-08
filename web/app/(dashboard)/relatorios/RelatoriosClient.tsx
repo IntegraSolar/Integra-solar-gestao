@@ -11,6 +11,7 @@ import type {
   FinanceiroSummary, TecnicoSummary, PosVendaSummary, SlaSummary, RelatorioFilter,
 } from '@/lib/relatorios/queries'
 import { formatPhone } from '@/lib/format'
+import { HelpTooltip } from '@/components/ui/HelpTooltip'
 
 type Tab = 'comercial' | 'leads' | 'financeiro' | 'tecnico' | 'posvenda' | 'sla'
 
@@ -44,10 +45,13 @@ function Td({ children, highlight }: { children: React.ReactNode; highlight?: bo
   return <td className="px-4 py-2.5 font-medium" style={{ borderBottom: '1px solid var(--theme-border)', color: highlight ? 'var(--theme-accent)' : 'var(--theme-text)' }}>{children}</td>
 }
 
-function KpiCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function KpiCard({ label, value, sub, help }: { label: string; value: string; sub?: string; help?: string }) {
   return (
     <div className="rounded-xl p-4 border border-white/10" style={{ background: 'var(--theme-surface)' }}>
-      <p className="text-xs text-white/40 mb-1">{label}</p>
+      <p className="text-xs text-white/40 mb-1">
+        {label}
+        {help && <HelpTooltip content={help} />}
+      </p>
       <p className="text-lg font-bold text-white">{value}</p>
       {sub && <p className="text-xs mt-1" style={{ color: sub.startsWith('-') ? '#EF4444' : '#10B981' }}>{sub}</p>}
     </div>
@@ -68,14 +72,14 @@ function AbaComercial({ data }: { data: ComercialSummary | null }) {
     <div id="print-area">
       <h2 className="text-white font-bold text-lg mb-4">Relatório Comercial</h2>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <KpiCard label="Clientes Cadastrados" value={fmtNum(data.qtd_propostas)} />
-        <KpiCard label="Contratos Fechados" value={fmtNum(data.qtd_contratos)} />
-        <KpiCard label="Valor Vendido" value={fmt(data.valor_total)} />
-        <KpiCard label="Ticket Médio" value={fmt(data.ticket_medio)} />
-        <KpiCard label="Taxa de Conversão" value={fmtPct(data.taxa_conversao)} />
-        <KpiCard label="Margem Configurada" value={fmtPct(data.margem_media)} />
-        <KpiCard label="Pessoa Física" value={fmtNum(data.pf)} />
-        <KpiCard label="Pessoa Jurídica" value={fmtNum(data.pj)} />
+        <KpiCard label="Clientes Cadastrados" value={fmtNum(data.qtd_propostas)} help="Total de clientes cadastrados no período (propostas geradas)." />
+        <KpiCard label="Contratos Fechados" value={fmtNum(data.qtd_contratos)} help="Número de contratos efetivamente assinados no período." />
+        <KpiCard label="Valor Vendido" value={fmt(data.valor_total)} help="Soma total dos valores dos contratos fechados no período." />
+        <KpiCard label="Ticket Médio" value={fmt(data.ticket_medio)} help="Valor médio de cada contrato. Calculado como valor total ÷ número de contratos." />
+        <KpiCard label="Taxa de Conversão" value={fmtPct(data.taxa_conversao)} help="Percentual de clientes cadastrados que viraram contratos fechados." />
+        <KpiCard label="Margem Configurada" value={fmtPct(data.margem_media)} help="Margem de lucro média por projeto (configurada nas propostas)." />
+        <KpiCard label="Pessoa Física" value={fmtNum(data.pf)} help="Quantidade de contratos com clientes pessoa física (CPF)." />
+        <KpiCard label="Pessoa Jurídica" value={fmtNum(data.pj)} help="Quantidade de contratos com clientes pessoa jurídica (CNPJ)." />
       </div>
       <h3 className="text-sm font-semibold text-white/70 mb-2">Vendas por Período</h3>
       <TableWrapper>
@@ -99,7 +103,7 @@ function AbaLeads({ origens, ranking }: { origens: LeadOrigemRow[] | null; ranki
       <h2 className="text-white font-bold text-lg mb-4">Relatório de Leads</h2>
       <h3 className="text-sm font-semibold text-white/70 mb-2">Leads por Origem</h3>
       <TableWrapper>
-        <thead><tr><Th>Origem</Th><Th>Total</Th><Th>Convertidos</Th><Th>Taxa de Conversão</Th></tr></thead>
+        <thead><tr><Th>Origem<HelpTooltip content="Canal por onde o lead chegou (indicação, tráfego pago, site, etc.)." /></Th><Th>Total<HelpTooltip content="Total de leads captados por essa origem no período." /></Th><Th>Convertidos<HelpTooltip content="Quantidade de leads dessa origem que viraram contratos." /></Th><Th>Taxa de Conversão<HelpTooltip content="Percentual de leads dessa origem que viraram contratos (convertidos ÷ total)." /></Th></tr></thead>
         <tbody>
           {origens.length === 0 && <tr><td colSpan={4} className="px-4 py-8 text-center text-white/30">Sem dados</td></tr>}
           {origens.map((r) => (<tr key={r.origem}><Td>{r.origem}</Td><Td>{r.total_leads}</Td><Td>{r.leads_convertidos}</Td><Td highlight>{fmtPct(r.taxa_conversao)}</Td></tr>))}
@@ -126,24 +130,24 @@ function AbaFinanceiro({ data }: { data: FinanceiroSummary | null }) {
 
       {/* KPIs principais */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <KpiCard label="Ticket Médio (mês atual)" value={fmt(data.ticket_medio_mes)} />
-        <KpiCard label="Ticket Médio (anual)" value={fmt(data.ticket_medio_anual)} />
-        <KpiCard label="Faturamento Mês Atual" value={fmt(data.valor_mes_atual)} sub={data.variacao_mensal !== null ? `${data.variacao_mensal >= 0 ? '+' : ''}${data.variacao_mensal.toFixed(1)}% vs mês anterior` : undefined} />
-        <KpiCard label="Faturamento Mês Anterior" value={fmt(data.valor_mes_anterior)} />
+        <KpiCard label="Ticket Médio (mês atual)" value={fmt(data.ticket_medio_mes)} help="Valor médio dos contratos fechados neste mês." />
+        <KpiCard label="Ticket Médio (anual)" value={fmt(data.ticket_medio_anual)} help="Valor médio dos contratos fechados no ano." />
+        <KpiCard label="Faturamento Mês Atual" value={fmt(data.valor_mes_atual)} sub={data.variacao_mensal !== null ? `${data.variacao_mensal >= 0 ? '+' : ''}${data.variacao_mensal.toFixed(1)}% vs mês anterior` : undefined} help="Receita bruta acumulada no mês corrente." />
+        <KpiCard label="Faturamento Mês Anterior" value={fmt(data.valor_mes_anterior)} help="Receita bruta do mês anterior. Serve de base para o comparativo." />
       </div>
 
       {/* Comparativos */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="rounded-xl p-4 border border-white/10" style={{ background: 'var(--theme-surface)' }}>
-          <p className="text-xs text-white/40 mb-1">Média últimos 3 meses</p>
+          <p className="text-xs text-white/40 mb-1">Média últimos 3 meses<HelpTooltip content="Faturamento médio dos últimos 3 meses. Suaviza sazonalidade para análise de tendência." /></p>
           <p className="text-base font-bold text-white">{fmt(data.media_3m)}</p>
         </div>
         <div className="rounded-xl p-4 border border-white/10" style={{ background: 'var(--theme-surface)' }}>
-          <p className="text-xs text-white/40 mb-1">Média últimos 12 meses</p>
+          <p className="text-xs text-white/40 mb-1">Média últimos 12 meses<HelpTooltip content="Faturamento médio dos últimos 12 meses (média móvel anual)." /></p>
           <p className="text-base font-bold text-white">{fmt(data.media_12m)}</p>
         </div>
         <div className="rounded-xl p-4 border border-white/10" style={{ background: 'var(--theme-surface)' }}>
-          <p className="text-xs text-white/40 mb-1">Variação vs mês anterior</p>
+          <p className="text-xs text-white/40 mb-1">Variação vs mês anterior<HelpTooltip content="Percentual de crescimento (ou queda) do faturamento em relação ao mês anterior." /></p>
           <p className="text-base font-bold"><VariacaoTag value={data.variacao_mensal} /></p>
         </div>
       </div>
@@ -151,15 +155,15 @@ function AbaFinanceiro({ data }: { data: FinanceiroSummary | null }) {
       {/* Crescimento */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="rounded-xl p-4 border border-white/10" style={{ background: 'var(--theme-surface)' }}>
-          <p className="text-xs text-white/40 mb-1">Crescimento Mensal</p>
+          <p className="text-xs text-white/40 mb-1">Crescimento Mensal<HelpTooltip content="Taxa de crescimento do faturamento mês contra mês." /></p>
           <VariacaoTag value={data.crescimento_mensal} />
         </div>
         <div className="rounded-xl p-4 border border-white/10" style={{ background: 'var(--theme-surface)' }}>
-          <p className="text-xs text-white/40 mb-1">Crescimento Trimestral</p>
+          <p className="text-xs text-white/40 mb-1">Crescimento Trimestral<HelpTooltip content="Taxa de crescimento do faturamento comparando os últimos 3 meses com o trimestre anterior." /></p>
           <VariacaoTag value={data.crescimento_trimestral} />
         </div>
         <div className="rounded-xl p-4 border border-white/10" style={{ background: 'var(--theme-surface)' }}>
-          <p className="text-xs text-white/40 mb-1">Crescimento Anual</p>
+          <p className="text-xs text-white/40 mb-1">Crescimento Anual<HelpTooltip content="Taxa de crescimento do faturamento comparando o ano atual com o ano anterior." /></p>
           <VariacaoTag value={data.crescimento_anual} />
         </div>
       </div>
@@ -213,8 +217,8 @@ function AbaTecnico({ data }: { data: TecnicoSummary | null }) {
     <div id="print-area">
       <h2 className="text-white font-bold text-lg mb-4">Relatório Técnico</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-        <KpiCard label="Tempo Médio de Implantação" value={data.tempo_medio_implantacao != null ? `${data.tempo_medio_implantacao} dias` : '—'} />
-        <KpiCard label="Total kWh Projetados" value={fmtNum(data.total_kwh_projetados, 0) + ' kWh'} />
+        <KpiCard label="Tempo Médio de Implantação" value={data.tempo_medio_implantacao != null ? `${data.tempo_medio_implantacao} dias` : '—'} help="Dias médios entre o contrato assinado e a obra concluída. Indicador chave para cumprimento de prazo (SLA)." />
+        <KpiCard label="Total kWh Projetados" value={fmtNum(data.total_kwh_projetados, 0) + ' kWh'} help="Produção anual estimada (em quilowatt-hora) somada de todos os sistemas vendidos no período." />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <div>
@@ -318,9 +322,9 @@ function AbaPosVenda({ data }: { data: PosVendaSummary | null }) {
     <div id="print-area" className="space-y-6">
       <h2 className="text-white font-bold text-lg">Relatório Pós-Venda</h2>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <KpiCard label="NPS Médio" value={data.nps_medio != null ? `${data.nps_medio.toFixed(1)} / 10` : '—'} />
-        <KpiCard label="Pós-Obras Realizadas" value={`${data.concluidos} / ${data.total_pos_obra}`} />
-        <KpiCard label="Clientes com Expansão" value={String(data.clientes_expansao.length)} />
+        <KpiCard label="NPS Médio" value={data.nps_medio != null ? `${data.nps_medio.toFixed(1)} / 10` : '—'} help="Net Promoter Score: nota média (0-10) de satisfação dos clientes. Acima de 8 = clientes promotores." />
+        <KpiCard label="Pós-Obras Realizadas" value={`${data.concluidos} / ${data.total_pos_obra}`} help="Quantidade de contatos pós-obra concluídos versus o total previsto." />
+        <KpiCard label="Clientes com Expansão" value={String(data.clientes_expansao.length)} help="Clientes cujo inversor tem capacidade extra para adicionar mais painéis no futuro — potencial de nova venda." />
       </div>
 
       <h3 className="text-sm font-semibold text-white/70">Clientes com Potencial de Expansão</h3>
@@ -349,12 +353,18 @@ function AbaSla({ data }: { data: SlaSummary | null }) {
   if (!data) return <EmptyState />
   return (
     <div id="print-area" className="space-y-6">
-      <h2 className="text-white font-bold text-lg">Indicadores de SLA</h2>
+      <h2 className="text-white font-bold text-lg">
+        Indicadores de SLA
+        <HelpTooltip content="SLA (Service Level Agreement): acordo de nível de serviço. Aqui mostra o tempo total do pipeline — do contrato à entrega." />
+      </h2>
       <div className="grid grid-cols-2 gap-3">
-        <KpiCard label="Prazo Médio Total (contrato)" value={data.prazo_medio_total != null ? `${data.prazo_medio_total} dias` : '—'} />
+        <KpiCard label="Prazo Médio Total (contrato)" value={data.prazo_medio_total != null ? `${data.prazo_medio_total} dias` : '—'} help="Dias médios do contrato assinado até a entrega da obra (soma de todas as etapas)." />
       </div>
 
-      <h3 className="text-sm font-semibold text-white/70">Tempo Médio por Etapa</h3>
+      <h3 className="text-sm font-semibold text-white/70">
+        Tempo Médio por Etapa
+        <HelpTooltip content="Duração média de cada fase do pipeline. Útil para identificar gargalos onde os clientes ficam parados mais tempo." />
+      </h3>
       <TableWrapper>
         <thead><tr><Th>Etapa</Th><Th>Tempo Médio</Th><Th>Total Registros</Th></tr></thead>
         <tbody>

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import type { PosObraClient as POClient } from '@/lib/pos-obra/queries'
 import { SearchBar, filterBySearch } from '@/components/ui/SearchBar'
+import { HelpTooltip } from '@/components/ui/HelpTooltip'
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
@@ -36,11 +37,11 @@ export default function PosObraClientComponent({ posObras }: { posObras: POClien
         <table className="w-full text-sm min-w-[520px]">
           <thead>
             <tr className="border-b border-white/10 text-white/50">
-              <th className="text-left px-4 py-3 font-medium">Cliente</th>
-              <th className="text-left px-4 py-3 font-medium">Cidade</th>
-              <th className="text-left px-4 py-3 font-medium">Prazo</th>
-              <th className="text-left px-4 py-3 font-medium">NPS</th>
-              <th className="text-left px-4 py-3 font-medium">Status</th>
+              <th className="text-left px-4 py-3 font-medium">Cliente<HelpTooltip content="Proprietário do sistema instalado." /></th>
+              <th className="text-left px-4 py-3 font-medium">Cidade<HelpTooltip content="Localidade do sistema." /></th>
+              <th className="text-left px-4 py-3 font-medium">Prazo<HelpTooltip content="Dias decorridos desde o término da obra." /></th>
+              <th className="text-left px-4 py-3 font-medium">NPS<HelpTooltip content="Net Promoter Score: nota de 0 a 10 dada pelo cliente para medir satisfação." /></th>
+              <th className="text-left px-4 py-3 font-medium">Status<HelpTooltip content="Situação do pós-venda: pendente (contato ainda não efetuado) ou concluída." /></th>
               <th className="px-4 py-3" />
             </tr>
           </thead>

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import type { CompraClient } from '@/lib/compras/queries'
 import { formatCurrency, formatDate } from '@/lib/format'
 import { SearchBar, filterBySearch } from '@/components/ui/SearchBar'
+import { HelpTooltip } from '@/components/ui/HelpTooltip'
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
@@ -44,12 +45,12 @@ export default function ComprasClient({ compras }: { compras: CompraClient[] }) 
         <table className="w-full text-sm min-w-[640px]">
           <thead>
             <tr className="border-b border-white/10 text-white/50">
-              <th className="text-left px-4 py-3 font-medium">Cliente</th>
-              <th className="text-left px-4 py-3 font-medium">Fornecedor</th>
-              <th className="text-left px-4 py-3 font-medium">Valor</th>
-              <th className="text-left px-4 py-3 font-medium">Data Prevista</th>
-              <th className="text-left px-4 py-3 font-medium">Dias em Compras</th>
-              <th className="text-left px-4 py-3 font-medium">Status</th>
+              <th className="text-left px-4 py-3 font-medium">Cliente<HelpTooltip content="Nome do cliente para quem os materiais serão adquiridos." /></th>
+              <th className="text-left px-4 py-3 font-medium">Fornecedor<HelpTooltip content="Empresa ou distribuidor responsável pelo envio do material." /></th>
+              <th className="text-left px-4 py-3 font-medium">Valor<HelpTooltip content="Valor total do pedido de compra (R$)." /></th>
+              <th className="text-left px-4 py-3 font-medium">Data Prevista<HelpTooltip content="Data estimada de chegada do material no cliente." /></th>
+              <th className="text-left px-4 py-3 font-medium">Dias em Compras<HelpTooltip content="Tempo decorrido desde que o cliente entrou na etapa de compras." /></th>
+              <th className="text-left px-4 py-3 font-medium">Status<HelpTooltip content="Situação do pedido: aguardando confirmação, confirmado pelo fornecedor ou entregue." /></th>
               <th className="px-4 py-3" />
             </tr>
           </thead>

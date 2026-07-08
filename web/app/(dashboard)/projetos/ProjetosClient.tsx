@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import type { ProjetoClient } from '@/lib/projetos/queries'
 import { SearchBar, filterBySearch } from '@/components/ui/SearchBar'
+import { HelpTooltip } from '@/components/ui/HelpTooltip'
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
@@ -45,11 +46,11 @@ export default function ProjetosClient({ projetos }: { projetos: ProjetoClient[]
         <table className="w-full text-sm min-w-[560px]">
           <thead>
             <tr className="border-b border-white/10 text-white/50">
-              <th className="text-left px-4 py-3 font-medium">Cliente</th>
-              <th className="text-left px-4 py-3 font-medium">Cidade</th>
-              <th className="text-left px-4 py-3 font-medium">Responsável</th>
-              <th className="text-left px-4 py-3 font-medium">Dias em Projetos</th>
-              <th className="text-left px-4 py-3 font-medium">Status</th>
+              <th className="text-left px-4 py-3 font-medium">Cliente<HelpTooltip content="Nome do cliente cadastrado no CRM." /></th>
+              <th className="text-left px-4 py-3 font-medium">Cidade<HelpTooltip content="Localidade onde o sistema será instalado." /></th>
+              <th className="text-left px-4 py-3 font-medium">Responsável<HelpTooltip content="Pessoa designada para conduzir a homologação do projeto." /></th>
+              <th className="text-left px-4 py-3 font-medium">Dias em Projetos<HelpTooltip content="Tempo decorrido desde que o cliente entrou na etapa de projetos." /></th>
+              <th className="text-left px-4 py-3 font-medium">Status<HelpTooltip content="Etapa atual junto à concessionária: pendente, enviado, em análise ou aprovado." /></th>
               <th className="px-4 py-3" />
             </tr>
           </thead>

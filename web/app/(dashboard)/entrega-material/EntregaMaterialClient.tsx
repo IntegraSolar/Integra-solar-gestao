@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import type { EntregaMaterialClient as EMClient } from '@/lib/entrega-material/queries'
 import { SearchBar, filterBySearch } from '@/components/ui/SearchBar'
+import { HelpTooltip } from '@/components/ui/HelpTooltip'
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
@@ -38,10 +39,10 @@ export default function EntregaMaterialClientComponent({ entregas }: { entregas:
         <table className="w-full text-sm min-w-[480px]">
           <thead>
             <tr className="border-b border-white/10 text-white/50">
-              <th className="text-left px-4 py-3 font-medium">Cliente</th>
-              <th className="text-left px-4 py-3 font-medium">Cidade</th>
-              <th className="text-left px-4 py-3 font-medium">Prazo</th>
-              <th className="text-left px-4 py-3 font-medium">Status</th>
+              <th className="text-left px-4 py-3 font-medium">Cliente<HelpTooltip content="Cliente que receberá os materiais." /></th>
+              <th className="text-left px-4 py-3 font-medium">Cidade<HelpTooltip content="Local de destino da entrega." /></th>
+              <th className="text-left px-4 py-3 font-medium">Prazo<HelpTooltip content="Dias já decorridos versus prazo máximo do contrato (dias usados / dias totais)." /></th>
+              <th className="text-left px-4 py-3 font-medium">Status<HelpTooltip content="Situação da entrega: pendente, atrasada ou concluída." /></th>
               <th className="px-4 py-3" />
             </tr>
           </thead>

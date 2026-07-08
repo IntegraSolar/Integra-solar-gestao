@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import type { ObraClient as OClient } from '@/lib/obra/queries'
 import { SearchBar, filterBySearch } from '@/components/ui/SearchBar'
+import { HelpTooltip } from '@/components/ui/HelpTooltip'
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
@@ -37,11 +38,11 @@ export default function ObraClientComponent({ obras }: { obras: OClient[] }) {
         <table className="w-full text-sm min-w-[560px]">
           <thead>
             <tr className="border-b border-white/10 text-white/50">
-              <th className="text-left px-4 py-3 font-medium">Cliente</th>
-              <th className="text-left px-4 py-3 font-medium">Equipe</th>
-              <th className="text-left px-4 py-3 font-medium">Data Prevista</th>
-              <th className="text-left px-4 py-3 font-medium">Prazo</th>
-              <th className="text-left px-4 py-3 font-medium">Status</th>
+              <th className="text-left px-4 py-3 font-medium">Cliente<HelpTooltip content="Cliente onde a instalação será realizada." /></th>
+              <th className="text-left px-4 py-3 font-medium">Equipe<HelpTooltip content="Time de eletricistas ou técnicos designado para executar a obra." /></th>
+              <th className="text-left px-4 py-3 font-medium">Data Prevista<HelpTooltip content="Data estimada para término da instalação." /></th>
+              <th className="text-left px-4 py-3 font-medium">Prazo<HelpTooltip content="Dias já decorridos versus prazo máximo do contrato (dias usados / dias totais)." /></th>
+              <th className="text-left px-4 py-3 font-medium">Status<HelpTooltip content="Situação da obra: aguardando liberação, em andamento ou concluída." /></th>
               <th className="px-4 py-3" />
             </tr>
           </thead>
