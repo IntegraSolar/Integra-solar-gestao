@@ -3,8 +3,8 @@
 import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
-const FROM = 'Integra Solar <noreply@integrasolar.com.br>'
-const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://app.integrasolar.com.br'
+const FROM = 'Integra Solar <noreply@integrasolar.app.br>'
+const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://app.integrasolar.app.br'
 
 export async function sendNewDeviceLoginEmail({
   to,
