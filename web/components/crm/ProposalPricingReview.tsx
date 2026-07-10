@@ -62,14 +62,19 @@ export function ProposalPricingReview({
   const [showAdjustModal, setShowAdjustModal] = useState(false)
   const [isSavingAdjust, startSavingAdjust] = useTransition()
 
-  // Variáveis editáveis — inicializadas com valores das configurações
-  const [vInstalacao, setVInstalacao] = useState(orgConfig.valor_instalacao_por_placa ?? 0)
-  const [vProjeto, setVProjeto] = useState(orgConfig.valor_projeto_por_kwp ?? 0)
-  const [vMaterialCa, setVMaterialCa] = useState(orgConfig.pct_material_ca ?? 0)
-  const [vKm, setVKm] = useState(orgConfig.quilometragem ?? 0)
-  const [vComissao, setVComissao] = useState(orgConfig.pct_comissao ?? 0)
-  const [vImposto, setVImposto] = useState(orgConfig.pct_imposto ?? 0)
-  const [vMargem, setVMargem] = useState(orgConfig.pct_margem ?? 0)
+  // Condições de pagamento
+  const [valorEntrada, setValorEntrada] = useState(proposal.valor_entrada ?? 0)
+  const [numParcelas, setNumParcelas] = useState(proposal.num_parcelas ?? 0)
+
+  // Variáveis editáveis — usa overrides salvos da última geração, ou config global como fallback
+  const ov = proposal.pricing_overrides
+  const [vInstalacao, setVInstalacao] = useState(ov?.valor_instalacao_por_placa ?? orgConfig.valor_instalacao_por_placa ?? 0)
+  const [vProjeto, setVProjeto] = useState(ov?.valor_projeto_por_kwp ?? orgConfig.valor_projeto_por_kwp ?? 0)
+  const [vMaterialCa, setVMaterialCa] = useState(ov?.pct_material_ca ?? orgConfig.pct_material_ca ?? 0)
+  const [vKm, setVKm] = useState(ov?.quilometragem ?? orgConfig.quilometragem ?? 0)
+  const [vComissao, setVComissao] = useState(ov?.pct_comissao ?? orgConfig.pct_comissao ?? 0)
+  const [vImposto, setVImposto] = useState(ov?.pct_imposto ?? orgConfig.pct_imposto ?? 0)
+  const [vMargem, setVMargem] = useState(ov?.pct_margem ?? orgConfig.pct_margem ?? 0)
 
   type Row = {
     categoria: string
@@ -108,7 +113,7 @@ export function ProposalPricingReview({
       buildRow('Projeto', 'Engenharia elétrica', proposal.total_power_kwp.toFixed(2) + ' kWp', vProjeto, proposal.total_power_kwp * vProjeto),
       buildRow('Instalação', 'Mão de obra', proposal.panel_qty, vInstalacao, proposal.panel_qty * vInstalacao),
       buildRow('Quilometragem', 'Deslocamento', km_rodados, vKm, vKm * km_rodados),
-      buildRow('Material CA', '% sobre kit', `${vMaterialCa}%`, proposal.kit_value * pct_ca, proposal.kit_value * pct_ca),
+      buildRow('Material CA', `${vMaterialCa}% sobre kit`, 1, proposal.kit_value * pct_ca, proposal.kit_value * pct_ca),
     ]
 
     for (const ec of extraCosts) {
@@ -124,8 +129,29 @@ export function ProposalPricingReview({
     return { rows: computed, totals }
   }, [vInstalacao, vProjeto, vMaterialCa, vKm, vComissao, vImposto, vMargem, extraCosts, proposal])
 
+  // Recalcula o ajuste comercial quando as variáveis mudam
+  const ajusteRecalculado = useMemo(() => {
+    if (!ajusteComercial) return null
+    const { ajuste_tipo, ajuste_percentual, ajuste_valor, ajuste_motivo } = ajusteComercial
+    if (ajuste_tipo === 'percentual') {
+      const novoValor = totals.venda * ajuste_percentual
+      return { ...ajusteComercial, ajuste_valor: novoValor, preco_final: totals.venda + novoValor }
+    }
+    if (ajuste_tipo === 'valor') {
+      const novoPct = totals.venda !== 0 ? ajuste_valor / totals.venda : 0
+      return { ...ajusteComercial, ajuste_percentual: novoPct, preco_final: totals.venda + ajuste_valor }
+    }
+    // valor_final: preço fixo negociado — recalcula o delta
+    const novoAjusteValor = ajusteComercial.preco_final - totals.venda
+    const novoPct2 = totals.venda !== 0 ? novoAjusteValor / totals.venda : 0
+    return { ...ajusteComercial, ajuste_valor: novoAjusteValor, ajuste_percentual: novoPct2 }
+  }, [ajusteComercial, totals.venda])
+
   // Preço exibido no resumo: valor final negociado (com ajuste) ou valor calculado
-  const precoExibido = ajusteComercial?.preco_final ?? totals.venda
+  const precoExibido = ajusteRecalculado?.preco_final ?? totals.venda
+
+  // Valor das parcelas calculado automaticamente
+  const valorParcelas = numParcelas > 0 ? Math.max(0, precoExibido - valorEntrada) / numParcelas : 0
 
   async function handleApplyAdjustment(data: {
     ajuste_tipo: string
@@ -184,9 +210,9 @@ export function ProposalPricingReview({
           body: JSON.stringify({
             proposalId: proposal.id,
             templateId: selectedTemplateId,
-            valor_entrada: 0,
-            valor_parcelas: 0,
-            num_parcelas: 0,
+            valor_entrada: valorEntrada,
+            valor_parcelas: valorParcelas,
+            num_parcelas: numParcelas,
             overrides: {
               valor_instalacao_por_placa: vInstalacao,
               valor_projeto_por_kwp: vProjeto,
@@ -202,7 +228,7 @@ export function ProposalPricingReview({
               qtd: ec.qtd,
               custo_unit: ec.custo_unit,
             })),
-            ajuste_comercial: ajusteComercial ?? null,
+            ajuste_comercial: ajusteRecalculado ?? null,
           }),
         })
 
@@ -346,32 +372,32 @@ export function ProposalPricingReview({
                 <tfoot>
                   <tr style={{ borderTop: '2px solid var(--theme-input-border)' }}>
                     <td colSpan={4} className={`${tdCls} font-semibold text-white`}>
-                      {ajusteComercial ? 'Valor Calculado' : 'Total'}
+                      {ajusteRecalculado ? 'Valor Calculado' : 'Total'}
                     </td>
                     <td className={`${tdCls} text-right font-semibold text-white`}>{formatCurrency(totals.custo)}</td>
                     <td className={`${tdCls} text-right font-semibold text-white`}>{formatCurrency(totals.imposto)}</td>
                     <td className={`${tdCls} text-right font-semibold text-white`}>{formatCurrency(totals.lucro)}</td>
-                    <td className={`${tdCls} text-right font-bold text-base`} style={{ color: ajusteComercial ? 'var(--theme-text-muted)' : 'var(--theme-accent)' }}>
+                    <td className={`${tdCls} text-right font-bold text-base`} style={{ color: ajusteRecalculado ? 'var(--theme-text-muted)' : 'var(--theme-accent)' }}>
                       {formatCurrency(totals.venda)}
                     </td>
                     <td></td>
                   </tr>
-                  {ajusteComercial && (
+                  {ajusteRecalculado && (
                     <>
                       <tr>
                         <td colSpan={7} className={`${tdCls}`}>
                           <span className="text-white/40">Ajuste Comercial</span>
                           <span
                             className="ml-2 text-xs font-medium"
-                            style={{ color: ajusteComercial.ajuste_valor < 0 ? 'rgba(248,113,113,0.9)' : 'rgba(52,211,153,0.9)' }}
+                            style={{ color: ajusteRecalculado.ajuste_valor < 0 ? 'rgba(248,113,113,0.9)' : 'rgba(52,211,153,0.9)' }}
                           >
-                            {ajusteComercial.ajuste_valor >= 0 ? '+' : ''}
-                            {formatCurrency(ajusteComercial.ajuste_valor)}
+                            {ajusteRecalculado.ajuste_valor >= 0 ? '+' : ''}
+                            {formatCurrency(ajusteRecalculado.ajuste_valor)}
                             {' '}
-                            ({ajusteComercial.ajuste_percentual >= 0 ? '+' : ''}{(ajusteComercial.ajuste_percentual * 100).toFixed(2)}%)
+                            ({ajusteRecalculado.ajuste_percentual >= 0 ? '+' : ''}{(ajusteRecalculado.ajuste_percentual * 100).toFixed(2)}%)
                           </span>
-                          {ajusteComercial.ajuste_motivo && (
-                            <span className="ml-2 text-white/30 text-[10px]">— {ajusteComercial.ajuste_motivo}</span>
+                          {ajusteRecalculado.ajuste_motivo && (
+                            <span className="ml-2 text-white/30 text-[10px]">— {ajusteRecalculado.ajuste_motivo}</span>
                           )}
                         </td>
                         <td className={`${tdCls} text-right`}>
@@ -413,7 +439,7 @@ export function ProposalPricingReview({
               <button onClick={addExtraCost} className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/70 transition-colors">
                 <Plus size={13} /> Adicionar custo extra
               </button>
-              {!ajusteComercial && (
+              {!ajusteRecalculado && (
                 <button
                   onClick={() => setShowAdjustModal(true)}
                   className="flex items-center gap-1.5 text-xs transition-colors"
@@ -498,6 +524,29 @@ export function ProposalPricingReview({
             </div>
           )}
 
+          {/* Condições de pagamento */}
+          <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--theme-card-border)' }}>
+            <div className="px-4 py-3" style={{ background: 'var(--theme-surface)' }}>
+              <p className="text-xs font-semibold text-white/50 uppercase tracking-wide">Condições de Pagamento</p>
+            </div>
+            <div className="p-4 grid grid-cols-3 gap-4">
+              <div>
+                <label className={labelCls}>Entrada (R$)</label>
+                <input type="number" min="0" step="0.01" value={valorEntrada} onChange={(e) => setValorEntrada(parseFloat(e.target.value) || 0)} className={varInputCls} />
+              </div>
+              <div>
+                <label className={labelCls}>Nº de parcelas</label>
+                <input type="number" min="0" step="1" value={numParcelas} onChange={(e) => setNumParcelas(parseInt(e.target.value) || 0)} className={varInputCls} />
+              </div>
+              <div>
+                <label className={labelCls}>Valor da parcela</label>
+                <p className="px-3 py-2 rounded-xl text-sm text-white/70 border border-white/10" style={{ background: 'var(--theme-input-bg)' }}>
+                  {numParcelas > 0 ? formatCurrency(valorParcelas) : '—'}
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Seleção de template */}
           <div>
             <label className={labelCls}>Template do Orçamento *</label>
@@ -543,11 +592,11 @@ export function ProposalPricingReview({
       {showAdjustModal && (
         <CommercialAdjustmentModal
           precoCalculado={totals.venda}
-          ajusteAtual={ajusteComercial ? {
-            valor: ajusteComercial.ajuste_valor,
-            percentual: ajusteComercial.ajuste_percentual,
-            motivo: ajusteComercial.ajuste_motivo,
-            tipo: ajusteComercial.ajuste_tipo,
+          ajusteAtual={ajusteRecalculado ? {
+            valor: ajusteRecalculado.ajuste_valor,
+            percentual: ajusteRecalculado.ajuste_percentual,
+            motivo: ajusteRecalculado.ajuste_motivo,
+            tipo: ajusteRecalculado.ajuste_tipo,
           } : null}
           onApply={handleApplyAdjustment}
           onRemove={handleRemoveAdjustment}

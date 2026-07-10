@@ -352,6 +352,7 @@ export async function POST(
       num_parcelas: num_parcelas ?? 0,
       pdf_url: pdfUrl,
       docx_url: docxUrl,
+      pricing_overrides: overrides ?? null,
       gerado_em: new Date().toISOString(),
       ...(ajuste_comercial ? {
         ajuste_tipo:       ajuste_comercial.ajuste_tipo,

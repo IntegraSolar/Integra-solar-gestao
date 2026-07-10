@@ -115,6 +115,15 @@ export type Proposal = {
   pdf_url: string | null
   docx_url: string | null
   gerado_em: string | null
+  pricing_overrides: {
+    valor_instalacao_por_placa?: number
+    valor_projeto_por_kwp?: number
+    pct_material_ca?: number
+    quilometragem?: number
+    pct_comissao?: number
+    pct_imposto?: number
+    pct_margem?: number
+  } | null
   // Ajuste Comercial
   preco_calculado:      number | null
   ajuste_tipo:          'percentual' | 'valor' | 'valor_final' | null
