@@ -95,6 +95,7 @@ export type Proposal = {
   inverter_power_w: number
   inverter_brand_model: string | null
   kit_value: number
+  km_rodados: number
   total_power_kwp: number
   monthly_generation_kwh: number
   status: 'draft' | 'sent' | 'approved' | 'rejected' | 'cancelled'

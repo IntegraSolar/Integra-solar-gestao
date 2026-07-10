@@ -105,6 +105,7 @@ export async function getProposalsByLead(leadId: string): Promise<Proposal[]> {
     inverter_power_w: p.inverter_power_w ?? 0,
     inverter_brand_model: p.inverter_brand_model ?? null,
     kit_value: p.kit_value ?? 0,
+    km_rodados: p.km_rodados ?? 0,
     total_power_kwp: p.total_power_kwp ?? 0,
     monthly_generation_kwh: p.monthly_generation_kwh ?? 0,
     status: p.status ?? 'draft',

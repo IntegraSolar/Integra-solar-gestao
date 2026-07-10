@@ -136,12 +136,14 @@ export function ProposalsList({ lead }: { lead: Lead }) {
             </div>
             <div>
               <p className="text-xs" style={{ color: 'var(--theme-text-subtle)' }}>
-                {p.preco_total ? 'Preço Total' : 'Valor kit'}
+                {p.preco_final ?? p.preco_total ? 'Preço Total' : 'Valor kit'}
               </p>
               <p className="text-sm font-medium" style={{ color: 'var(--theme-text-muted)' }}>
-                {p.preco_total
-                  ? formatCurrency(p.preco_total)
-                  : p.kit_value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                {p.preco_final
+                  ? formatCurrency(p.preco_final)
+                  : p.preco_total
+                    ? formatCurrency(p.preco_total)
+                    : p.kit_value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
               </p>
             </div>
           </div>

@@ -91,7 +91,7 @@ export function ProposalPricingReview({
     const pct_ca       = vMaterialCa / 100
     const divisor = 1 - pct_imposto - pct_margem - pct_comissao
     const d = divisor > 0 ? divisor : 1
-    const km_rodados = (proposal as any).km_rodados ?? 0
+    const km_rodados = proposal.km_rodados ?? 0
 
     function buildRow(categoria: string, item: string, qtd: number | string, custoUnit: number, custo: number): Row {
       const venda = custo / d
