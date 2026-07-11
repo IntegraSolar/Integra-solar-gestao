@@ -7,8 +7,7 @@ import type { ProjetoClient, ProjetoMember } from '@/lib/projetos/queries'
 import { upsertProject, uploadProjectAttachment, deleteProjectAttachment } from '@/lib/projetos/actions'
 import type { ProjectAttachment } from '@/lib/projetos/actions'
 import { DatePicker } from '@/components/ui/inputs'
-import { Paperclip, ExternalLink, FileText, Plus, Trash2 } from 'lucide-react'
-import { secureStorageUrl } from '@/lib/storage/url'
+import { ExternalLink, FileText, Plus, Trash2 } from 'lucide-react'
 
 const STATUS_OPTIONS = [
   { value: 'pendente', label: 'Pendente' },
@@ -116,9 +115,8 @@ export default function ProjetoDetail({
     setDeletingId(null)
   }
 
-  function buildStorageUrl(filePath: string): string {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
-    return `${supabaseUrl}/storage/v1/object/public/project-docs/${filePath}`
+  function attachmentUrl(filePath: string): string {
+    return `/api/storage/download?bucket=project-docs&path=${encodeURIComponent(filePath)}`
   }
 
   const inputCls =
@@ -233,7 +231,7 @@ export default function ProjetoDetail({
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <a
-                  href={secureStorageUrl(buildStorageUrl(att.file_path)) ?? '#'}
+                  href={attachmentUrl(att.file_path)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg transition-colors hover:bg-white/10"
