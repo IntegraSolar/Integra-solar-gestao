@@ -60,6 +60,15 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     .eq('active', true)
     .maybeSingle()
 
+  // Fetch projetista link
+  const { data: projetistaLink } = await (supabase as any)
+    .from('projetista_links')
+    .select('token')
+    .eq('client_id', clientId)
+    .eq('organization_id', orgId)
+    .eq('active', true)
+    .maybeSingle()
+
   return NextResponse.json({
     project: project.data ?? null,
     projectAttachments,
@@ -70,5 +79,6 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     obraPhotos,
     posObra: posObra.data ?? null,
     installerToken: installerLink?.token ?? null,
+    projetistaToken: projetistaLink?.token ?? null,
   })
 }

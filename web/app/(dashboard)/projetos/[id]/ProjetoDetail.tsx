@@ -4,10 +4,10 @@
 import { useState, useTransition, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import type { ProjetoClient, ProjetoMember } from '@/lib/projetos/queries'
-import { upsertProject, uploadProjectAttachment, deleteProjectAttachment } from '@/lib/projetos/actions'
+import { upsertProject, uploadProjectAttachment, deleteProjectAttachment, generateProjetistaLink } from '@/lib/projetos/actions'
 import type { ProjectAttachment } from '@/lib/projetos/actions'
 import { DatePicker } from '@/components/ui/inputs'
-import { ExternalLink, FileText, Plus, Trash2 } from 'lucide-react'
+import { ExternalLink, FileText, Plus, Trash2, Copy, Check, Link2 } from 'lucide-react'
 
 const STATUS_OPTIONS = [
   { value: 'pendente', label: 'Pendente' },
@@ -30,11 +30,13 @@ export default function ProjetoDetail({
   members,
   clientId,
   initialAttachments,
+  initialProjetistaToken,
 }: {
   projeto: ProjetoClient
   members: ProjetoMember[]
   clientId: string
   initialAttachments: ProjectAttachment[]
+  initialProjetistaToken: string | null
 }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -45,6 +47,9 @@ export default function ProjetoDetail({
   const [uploading, setUploading] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+  const [projetistaToken, setProjetistaToken] = useState<string | null>(initialProjetistaToken)
+  const [generatingLink, setGeneratingLink] = useState(false)
+  const [linkCopied, setLinkCopied] = useState(false)
 
   const [form, setForm] = useState({
     responsavel_id: projeto.responsavel_id ?? '',
@@ -271,6 +276,76 @@ export default function ProjetoDetail({
               {uploading ? 'Enviando...' : 'Adicionar anexo'}
             </button>
           </>
+        )}
+      </div>
+
+      {/* Link do Projetista */}
+      <div className={cardCls} style={cardStyle}>
+        <div className="flex items-center gap-2">
+          <Link2 size={16} style={{ color: '#3B82F6' }} />
+          <h2 className="text-sm font-semibold text-white/70">Link do Projetista</h2>
+        </div>
+        {projetistaToken ? (
+          <div className="space-y-3">
+            <div className="p-3 rounded-xl" style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)' }}>
+              <p className="text-[11px] text-blue-400/60 mb-1">URL do projetista</p>
+              <p className="text-xs text-blue-300 font-mono break-all">
+                {typeof window !== 'undefined' ? window.location.origin : ''}/projetista/{projetistaToken}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={async () => {
+                  await navigator.clipboard.writeText(`${window.location.origin}/projetista/${projetistaToken}`)
+                  setLinkCopied(true)
+                  setTimeout(() => setLinkCopied(false), 2000)
+                }}
+                className="flex-1 flex items-center justify-center gap-1.5 text-xs py-2 rounded-lg transition-colors hover:bg-white/10"
+                style={{ color: linkCopied ? '#10B981' : '#3B82F6', border: '1px solid rgba(59,130,246,0.3)' }}
+              >
+                {linkCopied ? <Check size={12} /> : <Copy size={12} />}
+                {linkCopied ? 'Copiado!' : 'Copiar link'}
+              </button>
+              <a
+                href={`/projetista/${projetistaToken}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 flex items-center justify-center gap-1.5 text-xs py-2 rounded-lg transition-colors hover:bg-white/10"
+                style={{ color: '#3B82F6', border: '1px solid rgba(59,130,246,0.3)' }}
+              >
+                <ExternalLink size={12} /> Abrir
+              </a>
+            </div>
+            <button
+              type="button"
+              onClick={async () => {
+                setGeneratingLink(true)
+                const result = await generateProjetistaLink(clientId)
+                if (result.token) setProjetistaToken(result.token)
+                setGeneratingLink(false)
+              }}
+              disabled={generatingLink}
+              className="w-full text-xs py-2 rounded-lg text-white/40 hover:text-white/60 hover:bg-white/5 transition-colors disabled:opacity-50"
+            >
+              {generatingLink ? 'Gerando...' : 'Gerar novo link (invalida o anterior)'}
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={async () => {
+              setGeneratingLink(true)
+              const result = await generateProjetistaLink(clientId)
+              if (result.token) setProjetistaToken(result.token)
+              setGeneratingLink(false)
+            }}
+            disabled={generatingLink}
+            className="w-full py-2.5 rounded-xl text-sm font-medium transition-colors disabled:opacity-50"
+            style={{ background: 'rgba(59,130,246,0.15)', color: '#60A5FA', border: '1px solid rgba(59,130,246,0.3)' }}
+          >
+            {generatingLink ? 'Gerando...' : 'Gerar Link do Projetista'}
+          </button>
         )}
       </div>
 

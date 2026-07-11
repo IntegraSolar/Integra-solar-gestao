@@ -108,6 +108,7 @@ type PipelineData = {
   obraPhotos: any[]
   posObra: any | null
   installerToken: string | null
+  projetistaToken: string | null
 }
 
 export function Tab8PastaCompleta({ client }: { client: Client }) {
@@ -161,13 +162,22 @@ export function Tab8PastaCompleta({ client }: { client: Client }) {
       </Section>
 
       {/* 1.5. Links de Acesso */}
-      {data?.installerToken && (
+      {(data?.installerToken || data?.projetistaToken) && (
         <Section title="Links de Acesso">
-          <LinkRow
-            label="Link do Instalador"
-            description="Página com dados da instalação para a equipe"
-            url={`${typeof window !== 'undefined' ? window.location.origin : ''}/instalador/${data.installerToken}`}
-          />
+          {data.installerToken && (
+            <LinkRow
+              label="Link do Instalador"
+              description="Página com dados da instalação para a equipe"
+              url={`${typeof window !== 'undefined' ? window.location.origin : ''}/instalador/${data.installerToken}`}
+            />
+          )}
+          {data.projetistaToken && (
+            <LinkRow
+              label="Link do Projetista"
+              description="Página com dados do projeto, documentos e fotos"
+              url={`${typeof window !== 'undefined' ? window.location.origin : ''}/projetista/${data.projetistaToken}`}
+            />
+          )}
         </Section>
       )}
 
