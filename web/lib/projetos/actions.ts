@@ -129,7 +129,7 @@ export async function getProjectAttachments(
   projectId: string
 ): Promise<ProjectAttachment[]> {
   const supabase = await createClient()
-  const { data } = await supabase
+  const { data } = await (supabase as any)
     .from('project_attachments')
     .select('id, file_name, file_path, uploaded_at')
     .eq('project_id', projectId)
@@ -151,7 +151,7 @@ export async function uploadProjectAttachment(
 
   const supabase = await createClient()
 
-  const { count } = await supabase
+  const { count } = await (supabase as any)
     .from('project_attachments')
     .select('id', { count: 'exact', head: true })
     .eq('project_id', projectId)
@@ -168,7 +168,7 @@ export async function uploadProjectAttachment(
 
   if (uploadError) return { error: 'Erro ao enviar: ' + uploadError.message }
 
-  const { data: row, error: insertError } = await supabase
+  const { data: row, error: insertError } = await (supabase as any)
     .from('project_attachments')
     .insert({
       project_id: projectId,
@@ -194,7 +194,7 @@ export async function deleteProjectAttachment(
 
   const supabase = await createClient()
 
-  const { data: att } = await supabase
+  const { data: att } = await (supabase as any)
     .from('project_attachments')
     .select('file_path')
     .eq('id', attachmentId)
@@ -205,7 +205,7 @@ export async function deleteProjectAttachment(
 
   await supabase.storage.from('project-docs').remove([att.file_path])
 
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from('project_attachments')
     .delete()
     .eq('id', attachmentId)
