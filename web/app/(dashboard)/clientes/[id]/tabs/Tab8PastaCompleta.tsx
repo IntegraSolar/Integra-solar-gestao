@@ -1,12 +1,12 @@
 // web/app/(dashboard)/clientes/[id]/tabs/Tab8PastaCompleta.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import type { Client } from '@/lib/clients/types'
 import { ATTACHMENT_TYPE_LABELS } from '@/lib/clients/types'
 import { formatCurrency, formatDate, formatPhone, formatCpfCnpj } from '@/lib/format'
 import Image from 'next/image'
-import { ExternalLink } from 'lucide-react'
+import { ExternalLink, X, ZoomIn } from 'lucide-react'
 import { secureStorageUrl } from '@/lib/storage/url'
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -65,16 +65,22 @@ function StatusBadge({ status }: { status: string }) {
 
 type PipelineData = {
   project: any | null
+  projectAttachments: any[]
   purchase: any | null
   delivery: any | null
   obra: any | null
   obraDelivery: any | null
+  obraPhotos: any[]
   posObra: any | null
 }
 
 export function Tab8PastaCompleta({ client }: { client: Client }) {
   const [data, setData] = useState<PipelineData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
+
+  const storageUrl = useCallback((filePath: string) =>
+    `/api/storage/download?bucket=project-docs&path=${encodeURIComponent(filePath)}`, [])
 
   useEffect(() => {
     fetch(`/api/clients/${client.id}/full-data`)
@@ -203,6 +209,20 @@ export function Tab8PastaCompleta({ client }: { client: Client }) {
               <DocLink label="ART" url={data.project.art_url} />
               <DocLink label="Projeto" url={data.project.projeto_url} />
               <DocLink label="Parecer de acesso" url={data.project.parecer_acesso_url} />
+              {data.projectAttachments && data.projectAttachments.length > 0 && (
+                <>
+                  <div className="border-t border-white/[0.06] my-2" />
+                  <span className="text-xs font-semibold" style={{ color: 'var(--theme-text-subtle)' }}>Anexos do Projeto</span>
+                  {data.projectAttachments.map((att: any) => (
+                    <div key={att.id} className="flex items-center justify-between py-1">
+                      <span className="text-sm truncate" style={{ color: 'var(--theme-text-muted)' }}>{att.file_name}</span>
+                      <a href={storageUrl(att.file_path)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs flex-shrink-0" style={{ color: 'var(--theme-accent)' }}>
+                        <ExternalLink size={11} /> ver
+                      </a>
+                    </div>
+                  ))}
+                </>
+              )}
             </Section>
           )}
 
@@ -299,6 +319,33 @@ export function Tab8PastaCompleta({ client }: { client: Client }) {
                   <Row label="Senha" value={data.obraDelivery.monitor_pass} />
                 </>
               )}
+              {data.obraPhotos && data.obraPhotos.length > 0 && (
+                <>
+                  <div className="border-t border-white/[0.06] my-2" />
+                  <span className="text-xs font-semibold" style={{ color: 'var(--theme-text-subtle)' }}>Fotos da Obra Finalizada</span>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-1.5">
+                    {data.obraPhotos.map((photo: any) => (
+                      <button
+                        key={photo.id}
+                        type="button"
+                        onClick={() => setLightboxUrl(storageUrl(photo.file_path))}
+                        className="relative group rounded-lg overflow-hidden aspect-square cursor-pointer"
+                        style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--theme-card-border)' }}
+                      >
+                        <img
+                          src={storageUrl(photo.file_path)}
+                          alt={photo.file_name}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                          <ZoomIn size={18} className="text-white" />
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
             </Section>
           )}
 
@@ -312,6 +359,16 @@ export function Tab8PastaCompleta({ client }: { client: Client }) {
             </Section>
           )}
         </>
+      )}
+
+      {/* Lightbox */}
+      {lightboxUrl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setLightboxUrl(null)}>
+          <button type="button" className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors" onClick={() => setLightboxUrl(null)}>
+            <X size={20} />
+          </button>
+          <img src={lightboxUrl} alt="Foto ampliada" className="max-w-full max-h-[90vh] rounded-xl object-contain" onClick={(e) => e.stopPropagation()} />
+        </div>
       )}
 
       {/* 12. Documentos e Anexos (consolidado) */}

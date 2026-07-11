@@ -29,12 +29,36 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     (supabase as any).from('client_pos_obra').select('*').eq('client_id', clientId).maybeSingle(),
   ])
 
+  // Fetch project attachments
+  let projectAttachments: any[] = []
+  if (project.data?.id) {
+    const { data: atts } = await (supabase as any)
+      .from('project_attachments')
+      .select('id, file_name, file_path, uploaded_at')
+      .eq('project_id', project.data.id)
+      .order('uploaded_at', { ascending: true })
+    projectAttachments = atts ?? []
+  }
+
+  // Fetch obra photos
+  let obraPhotos: any[] = []
+  if (obraDelivery.data?.id) {
+    const { data: photos } = await (supabase as any)
+      .from('obra_photos')
+      .select('id, file_name, file_path, uploaded_at')
+      .eq('obra_delivery_id', obraDelivery.data.id)
+      .order('uploaded_at', { ascending: true })
+    obraPhotos = photos ?? []
+  }
+
   return NextResponse.json({
     project: project.data ?? null,
+    projectAttachments,
     purchase: purchase.data ?? null,
     delivery: delivery.data ?? null,
     obra: obra.data ?? null,
     obraDelivery: obraDelivery.data ?? null,
+    obraPhotos,
     posObra: posObra.data ?? null,
   })
 }
