@@ -20,13 +20,17 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   )
 }
 
-function Row({ label, value }: { label: string; value?: string | number | boolean | null }) {
+function Row({ label, value, href }: { label: string; value?: string | number | boolean | React.ReactNode | null; href?: string }) {
   if (value === null || value === undefined || value === '') return null
-  const display = typeof value === 'boolean' ? (value ? 'Sim' : 'Não') : String(value)
+  const display = typeof value === 'boolean' ? (value ? 'Sim' : 'Não') : typeof value === 'string' || typeof value === 'number' ? String(value) : value
   return (
     <div className="flex items-start gap-3">
       <span className="text-xs flex-shrink-0 w-44" style={{ color: 'var(--theme-text-subtle)' }}>{label}</span>
-      <span className="text-sm flex-1" style={{ color: 'var(--theme-text)' }}>{display}</span>
+      {href ? (
+        <a href={href} target="_blank" rel="noopener noreferrer" className="text-sm flex-1 underline" style={{ color: 'var(--theme-accent)' }}>{display}</a>
+      ) : (
+        <span className="text-sm flex-1" style={{ color: 'var(--theme-text)' }}>{display}</span>
+      )}
     </div>
   )
 }
@@ -100,6 +104,13 @@ export function Tab8PastaCompleta({ client }: { client: Client }) {
         <Row label="Endereço" value={[client.street, client.number, client.neighborhood, client.city, client.state].filter(Boolean).join(', ')} />
         <Row label="CEP" value={client.zip} />
         <Row label="Coordenadas Google Maps" value={client.maps_coordinates} />
+        {client.maps_coordinates && (
+          <Row
+            label=""
+            value="Abrir no Google Maps ↗"
+            href={`https://www.google.com/maps?q=${encodeURIComponent(client.maps_coordinates)}`}
+          />
+        )}
         <div className="border-t border-white/[0.06] my-2" />
         <Row label="kWh prometido/mês" value={client.promised_kwh} />
         <Row label="Potência do sistema" value={client.system_power_kwp ? `${client.system_power_kwp} kWp` : null} />
