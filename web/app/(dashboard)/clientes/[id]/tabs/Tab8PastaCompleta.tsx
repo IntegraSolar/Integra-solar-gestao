@@ -109,6 +109,7 @@ type PipelineData = {
   posObra: any | null
   installerToken: string | null
   projetistaToken: string | null
+  portalToken: string | null
 }
 
 export function Tab8PastaCompleta({ client }: { client: Client }) {
@@ -162,8 +163,15 @@ export function Tab8PastaCompleta({ client }: { client: Client }) {
       </Section>
 
       {/* 1.5. Links de Acesso */}
-      {(data?.installerToken || data?.projetistaToken) && (
+      {(data?.installerToken || data?.projetistaToken || data?.portalToken) && (
         <Section title="Links de Acesso">
+          {data.portalToken && (
+            <LinkRow
+              label="Portal do Cliente"
+              description="Página de acompanhamento para o cliente final"
+              url={`${typeof window !== 'undefined' ? window.location.origin : ''}/cliente/${data.portalToken}`}
+            />
+          )}
           {data.installerToken && (
             <LinkRow
               label="Link do Instalador"

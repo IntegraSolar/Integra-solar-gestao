@@ -9,6 +9,7 @@ import { SearchBar, filterBySearch } from '@/components/ui/SearchBar'
 import { FilterBar, FilterField } from '@/components/ui/filters/FilterBar'
 import { SelectFilter } from '@/components/ui/filters/SelectFilter'
 import { RangeSlider } from '@/components/ui/filters/RangeSlider'
+import { Copy, Check, ExternalLink } from 'lucide-react'
 
 const PrazoBadge = memo(function PrazoBadge({ client }: { client: Client }) {
   const start = client.delivery_start_date ? new Date(client.delivery_start_date) : null
@@ -32,7 +33,38 @@ const PrazoBadge = memo(function PrazoBadge({ client }: { client: Client }) {
   )
 })
 
-const ClientRow = memo(function ClientRow({ client }: { client: Client }) {
+const PortalButton = memo(function PortalButton({ token }: { token?: string }) {
+  const [copied, setCopied] = useState(false)
+  if (!token) return <span className="text-[11px] px-2 py-1 rounded-lg" style={{ color: 'var(--theme-text-subtle)' }}>—</span>
+  const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/cliente/${token}`
+  return (
+    <div className="flex items-center gap-1">
+      <button
+        type="button"
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 2000) }}
+        className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg transition-colors hover:bg-white/10"
+        style={{ color: copied ? '#10B981' : 'var(--theme-accent)' }}
+        title="Copiar link do portal"
+      >
+        {copied ? <Check size={10} /> : <Copy size={10} />}
+        {copied ? 'Copiado' : 'Copiar'}
+      </button>
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(e) => e.stopPropagation()}
+        className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg transition-colors hover:bg-white/10"
+        style={{ color: 'var(--theme-accent)' }}
+        title="Abrir portal"
+      >
+        <ExternalLink size={10} />
+      </a>
+    </div>
+  )
+})
+
+const ClientRow = memo(function ClientRow({ client, portalToken }: { client: Client; portalToken?: string }) {
   const tabsDone = Object.values(client.completed_tabs).filter(Boolean).length
   const isIncomplete = tabsDone < 6
   return (
@@ -48,6 +80,7 @@ const ClientRow = memo(function ClientRow({ client }: { client: Client }) {
         </p>
       </div>
       <div className="flex items-center gap-3 flex-shrink-0">
+        <PortalButton token={portalToken} />
         <PrazoBadge client={client} />
         <span className="text-xs" style={{ color: 'var(--theme-text-subtle)' }}>{tabsDone}/8 abas</span>
         {isIncomplete ? (
@@ -72,6 +105,7 @@ export default function ClientesClient({
   pageSize,
   filterOptions,
   filters,
+  portalTokens,
 }: {
   clients: Client[]
   total: number
@@ -79,6 +113,7 @@ export default function ClientesClient({
   pageSize: number
   filterOptions: ClientsFilterOptions
   filters: ClientsFilters
+  portalTokens?: Record<string, string>
 }) {
   const [search, setSearch] = useState('')
   const router = useRouter()
@@ -223,7 +258,7 @@ export default function ClientesClient({
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            {filtered.map((client) => <ClientRow key={client.id} client={client} />)}
+            {filtered.map((client) => <ClientRow key={client.id} client={client} portalToken={portalTokens?.[client.id]} />)}
           </div>
         )}
       </div>

@@ -2,6 +2,7 @@
 import { getCurrentUserData } from '@/lib/org/queries'
 import { getClients, getClientsFilterOptions, CLIENTS_PAGE_SIZE, type ClientsFilters } from '@/lib/clients/queries'
 import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
 import ClientesClient from './ClientesClient'
 
 export default async function ClientesPage({
@@ -43,6 +44,22 @@ export default async function ClientesPage({
 
   if (!user?.membership) redirect('/login')
 
+  const orgId = user.membership.organization.id
+  const supabase = await createClient()
+  const clientIds = clients.map(c => c.id)
+  let portalTokens: Record<string, string> = {}
+  if (clientIds.length > 0) {
+    const { data: links } = await (supabase as any)
+      .from('client_portal_links')
+      .select('client_id, token')
+      .eq('organization_id', orgId)
+      .eq('active', true)
+      .in('client_id', clientIds)
+    for (const link of links ?? []) {
+      portalTokens[link.client_id] = link.token
+    }
+  }
+
   return (
     <ClientesClient
       clients={clients}
@@ -51,6 +68,7 @@ export default async function ClientesPage({
       pageSize={CLIENTS_PAGE_SIZE}
       filterOptions={filterOptions}
       filters={filters}
+      portalTokens={portalTokens}
     />
   )
 }

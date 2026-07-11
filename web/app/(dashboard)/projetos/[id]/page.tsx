@@ -2,6 +2,7 @@
 import { notFound } from 'next/navigation'
 import { getProjetoById, getProjetoMembers } from '@/lib/projetos/queries'
 import { getProjectAttachments, getProjetistaLink } from '@/lib/projetos/actions'
+import { getClientPortalLink } from '@/lib/clients/portal-actions'
 import ProjetoDetail from './ProjetoDetail'
 
 export default async function ProjetoDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -13,10 +14,11 @@ export default async function ProjetoDetailPage({ params }: { params: Promise<{ 
 
   if (!projeto) notFound()
 
-  const [attachments, projetistaLink] = await Promise.all([
+  const [attachments, projetistaLink, portalLink] = await Promise.all([
     getProjectAttachments(projeto.id),
     getProjetistaLink(id),
+    getClientPortalLink(id),
   ])
 
-  return <ProjetoDetail projeto={projeto} members={members} clientId={id} initialAttachments={attachments} initialProjetistaToken={projetistaLink?.token ?? null} />
+  return <ProjetoDetail projeto={projeto} members={members} clientId={id} initialAttachments={attachments} initialProjetistaToken={projetistaLink?.token ?? null} initialPortalToken={portalLink?.token ?? null} />
 }
