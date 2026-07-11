@@ -117,3 +117,101 @@ export async function uploadProjectDoc(
   revalidatePath(`/projetos/${clientId}`)
   return { success: 'Documento anexado.', url }
 }
+
+export type ProjectAttachment = {
+  id: string
+  file_name: string
+  file_path: string
+  uploaded_at: string
+}
+
+export async function getProjectAttachments(
+  projectId: string
+): Promise<ProjectAttachment[]> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('project_attachments')
+    .select('id, file_name, file_path, uploaded_at')
+    .eq('project_id', projectId)
+    .order('uploaded_at', { ascending: true })
+
+  return (data ?? []) as ProjectAttachment[]
+}
+
+export async function uploadProjectAttachment(
+  projectId: string,
+  formData: FormData
+): Promise<ActionResult & { attachment?: ProjectAttachment }> {
+  const file = formData.get('file') as File | null
+  if (!file || file.size === 0) return { error: 'Selecione um arquivo.' }
+
+  const user = await getCurrentUserData()
+  const orgId = user?.membership?.organization.id ?? null
+  if (!orgId) return { error: 'Sem organização ativa.' }
+
+  const supabase = await createClient()
+
+  const { count } = await supabase
+    .from('project_attachments')
+    .select('id', { count: 'exact', head: true })
+    .eq('project_id', projectId)
+
+  if ((count ?? 0) >= 10) return { error: 'Limite de 10 anexos atingido.' }
+
+  const uniqueId = crypto.randomUUID().slice(0, 8)
+  const ext = file.name.split('.').pop() ?? 'bin'
+  const storagePath = `${projectId}/${uniqueId}.${ext}`
+
+  const { error: uploadError } = await supabase.storage
+    .from('project-docs')
+    .upload(storagePath, file, { upsert: false })
+
+  if (uploadError) return { error: 'Erro ao enviar: ' + uploadError.message }
+
+  const { data: row, error: insertError } = await supabase
+    .from('project_attachments')
+    .insert({
+      project_id: projectId,
+      organization_id: orgId,
+      file_name: file.name,
+      file_path: storagePath,
+    })
+    .select('id, file_name, file_path, uploaded_at')
+    .single()
+
+  if (insertError) return { error: 'Erro ao registrar anexo: ' + insertError.message }
+
+  revalidatePath(`/projetos`)
+  return { success: 'Anexo enviado.', attachment: row as ProjectAttachment }
+}
+
+export async function deleteProjectAttachment(
+  attachmentId: string
+): Promise<ActionResult> {
+  const user = await getCurrentUserData()
+  const orgId = user?.membership?.organization.id ?? null
+  if (!orgId) return { error: 'Sem organização ativa.' }
+
+  const supabase = await createClient()
+
+  const { data: att } = await supabase
+    .from('project_attachments')
+    .select('file_path')
+    .eq('id', attachmentId)
+    .eq('organization_id', orgId)
+    .single()
+
+  if (!att) return { error: 'Anexo não encontrado.' }
+
+  await supabase.storage.from('project-docs').remove([att.file_path])
+
+  const { error } = await supabase
+    .from('project_attachments')
+    .delete()
+    .eq('id', attachmentId)
+
+  if (error) return { error: 'Erro ao remover: ' + error.message }
+
+  revalidatePath(`/projetos`)
+  return { success: 'Anexo removido.' }
+}

@@ -4,9 +4,10 @@
 import { useState, useTransition, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import type { ProjetoClient, ProjetoMember } from '@/lib/projetos/queries'
-import { upsertProject, uploadProjectDoc } from '@/lib/projetos/actions'
+import { upsertProject, uploadProjectAttachment, deleteProjectAttachment } from '@/lib/projetos/actions'
+import type { ProjectAttachment } from '@/lib/projetos/actions'
 import { DatePicker } from '@/components/ui/inputs'
-import { Paperclip, ExternalLink, FileText } from 'lucide-react'
+import { Paperclip, ExternalLink, FileText, Plus, Trash2 } from 'lucide-react'
 import { secureStorageUrl } from '@/lib/storage/url'
 
 const STATUS_OPTIONS = [
@@ -23,111 +24,28 @@ const STATUS_BADGE: Record<string, string> = {
   aprovado: 'bg-green-500/20 text-green-300 border-green-500/40',
 }
 
-function DocUploadRow({
-  label,
-  url,
-  clientId,
-  docType,
-  onUploaded,
-  onMessage,
-}: {
-  label: string
-  url: string | null
-  clientId: string
-  docType: 'art' | 'projeto' | 'parecer_acesso'
-  onUploaded: (url: string) => void
-  onMessage: (msg: { type: 'error' | 'success'; text: string }) => void
-}) {
-  const fileRef = useRef<HTMLInputElement>(null)
-  const [uploading, setUploading] = useState(false)
-
-  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setUploading(true)
-    const fd = new FormData()
-    fd.append('file', file)
-    const result = await uploadProjectDoc(clientId, docType, fd)
-    if (result.error) {
-      onMessage({ type: 'error', text: result.error })
-    } else {
-      onMessage({ type: 'success', text: result.success! })
-      if (result.url) onUploaded(result.url)
-    }
-    setUploading(false)
-    if (fileRef.current) fileRef.current.value = ''
-  }
-
-  return (
-    <div
-      className="flex items-center justify-between p-3 rounded-xl"
-      style={{ background: 'var(--theme-surface)', border: '1px solid var(--theme-border)' }}
-    >
-      <div className="flex items-center gap-2.5 min-w-0">
-        <FileText size={15} style={{ color: 'var(--theme-text-subtle)', flexShrink: 0 }} />
-        <span className="text-sm text-white/70 truncate">{label}</span>
-      </div>
-      <div className="flex items-center gap-2 flex-shrink-0">
-        {url ? (
-          <>
-            <a
-              href={secureStorageUrl(url) ?? '#'}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg transition-colors hover:bg-white/10"
-              style={{ color: 'var(--theme-accent)' }}
-            >
-              <ExternalLink size={12} /> Ver documento
-            </a>
-            <input ref={fileRef} type="file" accept=".pdf,image/*" onChange={handleFile} className="hidden" />
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              disabled={uploading}
-              className="text-xs px-2 py-1.5 rounded-lg text-white/30 hover:text-white/60 transition-colors"
-            >
-              {uploading ? '...' : 'Substituir'}
-            </button>
-          </>
-        ) : (
-          <>
-            <input ref={fileRef} type="file" accept=".pdf,image/*" onChange={handleFile} className="hidden" />
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              disabled={uploading}
-              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-colors hover:bg-white/10"
-              style={{ color: 'var(--theme-text-muted)' }}
-            >
-              <Paperclip size={12} />
-              {uploading ? 'Enviando...' : 'Anexar'}
-            </button>
-          </>
-        )}
-      </div>
-    </div>
-  )
-}
+const MAX_ATTACHMENTS = 10
 
 export default function ProjetoDetail({
   projeto,
   members,
   clientId,
+  initialAttachments,
 }: {
   projeto: ProjetoClient
   members: ProjetoMember[]
   clientId: string
+  initialAttachments: ProjectAttachment[]
 }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
-  const [docUrls, setDocUrls] = useState({
-    art_url: projeto.art_url ?? null as string | null,
-    projeto_url: projeto.projeto_url ?? null as string | null,
-    parecer_acesso_url: projeto.parecer_acesso_url ?? null as string | null,
-  })
+  const [attachments, setAttachments] = useState<ProjectAttachment[]>(initialAttachments)
+  const [uploading, setUploading] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
 
   const [form, setForm] = useState({
     responsavel_id: projeto.responsavel_id ?? '',
@@ -165,6 +83,42 @@ export default function ProjetoDetail({
         if (form.status === 'aprovado') router.push('/projetos')
       }
     })
+  }
+
+  async function handleUploadAttachment(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    setError(null)
+    const fd = new FormData()
+    fd.append('file', file)
+    const result = await uploadProjectAttachment(projeto.id, fd)
+    if (result.error) {
+      setError(result.error)
+    } else if (result.attachment) {
+      setAttachments((prev) => [...prev, result.attachment!])
+      setSuccess(result.success ?? 'Anexo enviado.')
+    }
+    setUploading(false)
+    if (fileRef.current) fileRef.current.value = ''
+  }
+
+  async function handleDeleteAttachment(id: string) {
+    setDeletingId(id)
+    setError(null)
+    const result = await deleteProjectAttachment(id)
+    if (result.error) {
+      setError(result.error)
+    } else {
+      setAttachments((prev) => prev.filter((a) => a.id !== id))
+      setSuccess(result.success ?? 'Anexo removido.')
+    }
+    setDeletingId(null)
+  }
+
+  function buildStorageUrl(filePath: string): string {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
+    return `${supabaseUrl}/storage/v1/object/public/project-docs/${filePath}`
   }
 
   const inputCls =
@@ -260,29 +214,66 @@ export default function ProjetoDetail({
         </div>
       </div>
 
-      {/* Documentos */}
+      {/* Anexos do Projeto */}
       <div className={cardCls} style={cardStyle}>
-        <h2 className="text-sm font-semibold text-white/70">Documentos do Projeto</h2>
-        <div className="space-y-3">
-          {([
-            { key: 'art' as const, label: 'ART (Anotação de Responsabilidade Técnica)', urlKey: 'art_url' as const },
-            { key: 'projeto' as const, label: 'Projeto Elétrico', urlKey: 'projeto_url' as const },
-            { key: 'parecer_acesso' as const, label: 'Parecer de Acesso', urlKey: 'parecer_acesso_url' as const },
-          ]).map(({ key, label, urlKey }) => (
-            <DocUploadRow
-              key={key}
-              label={label}
-              url={docUrls[urlKey]}
-              clientId={clientId}
-              docType={key}
-              onUploaded={(url) => setDocUrls((prev) => ({ ...prev, [urlKey]: url }))}
-              onMessage={(msg) => {
-                if (msg.type === 'error') setError(msg.text)
-                else setSuccess(msg.text)
-              }}
-            />
-          ))}
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-white/70">Anexos do Projeto</h2>
+          <span className="text-xs text-white/30">{attachments.length}/{MAX_ATTACHMENTS}</span>
         </div>
+        <div className="space-y-2">
+          {attachments.map((att) => (
+            <div
+              key={att.id}
+              className="flex items-center justify-between p-3 rounded-xl"
+              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--theme-border)' }}
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <FileText size={15} style={{ color: 'var(--theme-text-subtle)', flexShrink: 0 }} />
+                <span className="text-sm text-white/70 truncate">{att.file_name}</span>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <a
+                  href={secureStorageUrl(buildStorageUrl(att.file_path)) ?? '#'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg transition-colors hover:bg-white/10"
+                  style={{ color: 'var(--theme-accent)' }}
+                >
+                  <ExternalLink size={12} /> Ver
+                </a>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteAttachment(att.id)}
+                  disabled={deletingId === att.id}
+                  className="flex items-center gap-1 text-xs px-2 py-1.5 rounded-lg text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50"
+                >
+                  <Trash2 size={12} />
+                  {deletingId === att.id ? '...' : 'Remover'}
+                </button>
+              </div>
+            </div>
+          ))}
+
+          {attachments.length === 0 && (
+            <p className="text-xs text-white/30 text-center py-3">Nenhum anexo adicionado.</p>
+          )}
+        </div>
+
+        {attachments.length < MAX_ATTACHMENTS && (
+          <>
+            <input ref={fileRef} type="file" accept=".pdf,.doc,.docx,.dwg,.dxf,image/*" onChange={handleUploadAttachment} className="hidden" />
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              disabled={uploading}
+              className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg transition-colors hover:bg-white/10 w-full justify-center"
+              style={{ color: 'var(--theme-text-muted)', border: '1px dashed var(--theme-border)' }}
+            >
+              <Plus size={14} />
+              {uploading ? 'Enviando...' : 'Adicionar anexo'}
+            </button>
+          </>
+        )}
       </div>
 
       {/* Feedback + Salvar */}

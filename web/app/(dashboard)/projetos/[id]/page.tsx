@@ -1,6 +1,7 @@
 // web/app/(dashboard)/projetos/[id]/page.tsx
 import { notFound } from 'next/navigation'
 import { getProjetoById, getProjetoMembers } from '@/lib/projetos/queries'
+import { getProjectAttachments } from '@/lib/projetos/actions'
 import ProjetoDetail from './ProjetoDetail'
 
 export default async function ProjetoDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -12,5 +13,7 @@ export default async function ProjetoDetailPage({ params }: { params: Promise<{ 
 
   if (!projeto) notFound()
 
-  return <ProjetoDetail projeto={projeto} members={members} clientId={id} />
+  const attachments = await getProjectAttachments(projeto.id)
+
+  return <ProjetoDetail projeto={projeto} members={members} clientId={id} initialAttachments={attachments} />
 }
