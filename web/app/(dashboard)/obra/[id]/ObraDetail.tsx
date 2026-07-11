@@ -4,8 +4,9 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import type { ObraClient, ObraMember } from '@/lib/obra/queries'
-import { upsertObra } from '@/lib/obra/actions'
+import { upsertObra, generateInstallerLink } from '@/lib/obra/actions'
 import { DatePicker } from '@/components/ui/inputs'
+import { Link2, Copy, ExternalLink, RefreshCw, Check } from 'lucide-react'
 
 const STATUS_OPTIONS = [
   { value: 'aguardando', label: 'Aguardando' },
@@ -19,11 +20,25 @@ const STATUS_BADGE: Record<string, string> = {
   concluida: 'bg-green-500/20 text-green-300 border-green-500/40',
 }
 
-export default function ObraDetail({ obra, members, clientId }: { obra: ObraClient; members: ObraMember[]; clientId: string }) {
+export default function ObraDetail({
+  obra,
+  members,
+  clientId,
+  initialToken,
+}: {
+  obra: ObraClient
+  members: ObraMember[]
+  clientId: string
+  initialToken: string | null
+}) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+
+  const [installerToken, setInstallerToken] = useState<string | null>(initialToken)
+  const [generatingLink, setGeneratingLink] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   const [form, setForm] = useState({
     data_inicio: obra.data_inicio ?? '',
@@ -53,6 +68,33 @@ export default function ObraDetail({ obra, members, clientId }: { obra: ObraClie
     })
   }
 
+  async function handleGenerateLink() {
+    setGeneratingLink(true)
+    setError(null)
+    const result = await generateInstallerLink(clientId)
+    if (result.error) {
+      setError(result.error)
+    } else if (result.token) {
+      setInstallerToken(result.token)
+      setSuccess('Link do instalador gerado.')
+    }
+    setGeneratingLink(false)
+  }
+
+  function getInstallerUrl() {
+    if (!installerToken) return ''
+    const base = typeof window !== 'undefined' ? window.location.origin : ''
+    return `${base}/instalador/${installerToken}`
+  }
+
+  async function handleCopyLink() {
+    const url = getInstallerUrl()
+    if (!url) return
+    await navigator.clipboard.writeText(url)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
   const inputCls = 'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-400/60'
   const labelCls = 'block text-xs text-white/50 mb-1'
   const cardCls = 'rounded-2xl border border-white/10 p-5 space-y-4'
@@ -73,6 +115,69 @@ export default function ObraDetail({ obra, members, clientId }: { obra: ObraClie
       <div className="rounded-xl border border-white/10 px-4 py-3 flex items-center gap-3" style={cardStyle}>
         <span className="text-white/50 text-sm">Prazo global:</span>
         <span className="text-white font-semibold">{obra.dias_usados} / {obra.contract_max_days ?? '—'} dias</span>
+      </div>
+
+      {/* Link do Instalador */}
+      <div className={cardCls} style={{ ...cardStyle, borderColor: 'rgba(59,130,246,0.25)' }}>
+        <div className="flex items-center gap-2">
+          <Link2 size={16} className="text-blue-400" />
+          <h2 className="text-sm font-semibold text-blue-300">Link do Instalador</h2>
+        </div>
+
+        {installerToken ? (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 bg-white/5 rounded-lg px-3 py-2 border border-white/10">
+              <span className="text-xs text-white/50 truncate flex-1 font-mono">
+                {getInstallerUrl()}
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleCopyLink}
+                className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg transition-colors flex-1 justify-center"
+                style={{
+                  background: copied ? 'rgba(16,185,129,0.15)' : 'rgba(59,130,246,0.12)',
+                  color: copied ? '#10B981' : '#60A5FA',
+                  border: `1px solid ${copied ? 'rgba(16,185,129,0.3)' : 'rgba(59,130,246,0.25)'}`,
+                }}
+              >
+                {copied ? <Check size={13} /> : <Copy size={13} />}
+                {copied ? 'Copiado!' : 'Copiar link'}
+              </button>
+              <a
+                href={getInstallerUrl()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg transition-colors flex-1 justify-center"
+                style={{ background: 'rgba(59,130,246,0.12)', color: '#60A5FA', border: '1px solid rgba(59,130,246,0.25)' }}
+              >
+                <ExternalLink size={13} />
+                Abrir link
+              </a>
+            </div>
+            <button
+              type="button"
+              onClick={handleGenerateLink}
+              disabled={generatingLink}
+              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg text-white/30 hover:text-white/60 transition-colors w-full justify-center disabled:opacity-50"
+            >
+              <RefreshCw size={12} className={generatingLink ? 'animate-spin' : ''} />
+              {generatingLink ? 'Gerando...' : 'Gerar novo link (invalida o anterior)'}
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={handleGenerateLink}
+            disabled={generatingLink}
+            className="flex items-center gap-1.5 text-xs px-3 py-2.5 rounded-lg transition-colors w-full justify-center disabled:opacity-50"
+            style={{ background: 'rgba(59,130,246,0.12)', color: '#60A5FA', border: '1px dashed rgba(59,130,246,0.35)' }}
+          >
+            <Link2 size={14} />
+            {generatingLink ? 'Gerando...' : 'Gerar Link do Instalador'}
+          </button>
+        )}
       </div>
 
       {obra.has_adaptation_works && obra.adaptation_details.length > 0 && (

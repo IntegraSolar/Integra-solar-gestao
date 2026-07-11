@@ -88,3 +88,54 @@ export async function upsertObra(
   revalidatePath('/obra')
   return { success: 'Obra salva.' }
 }
+
+export async function getInstallerLink(
+  clientId: string
+): Promise<{ token: string } | null> {
+  const user = await getCurrentUserData()
+  const orgId = user?.membership?.organization.id ?? null
+  if (!orgId) return null
+
+  const supabase = await createClient()
+  const { data } = await (supabase as any)
+    .from('installer_links')
+    .select('token')
+    .eq('client_id', clientId)
+    .eq('organization_id', orgId)
+    .eq('active', true)
+    .maybeSingle()
+
+  return data ?? null
+}
+
+export async function generateInstallerLink(
+  clientId: string
+): Promise<ActionResult & { token?: string }> {
+  const user = await getCurrentUserData()
+  const orgId = user?.membership?.organization.id ?? null
+  if (!orgId) return { error: 'Sem organização ativa.' }
+
+  const supabase = await createClient()
+
+  // Invalidar links anteriores
+  await (supabase as any)
+    .from('installer_links')
+    .update({ active: false })
+    .eq('client_id', clientId)
+    .eq('organization_id', orgId)
+
+  const token = crypto.randomUUID().replace(/-/g, '').slice(0, 24)
+
+  const { error } = await (supabase as any)
+    .from('installer_links')
+    .insert({
+      client_id: clientId,
+      organization_id: orgId,
+      token,
+    })
+
+  if (error) return { error: 'Erro ao gerar link: ' + error.message }
+
+  revalidatePath('/obra')
+  return { success: 'Link gerado.', token }
+}
