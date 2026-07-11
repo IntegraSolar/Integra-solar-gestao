@@ -97,3 +97,100 @@ export async function upsertObraDelivery(
   revalidatePath('/entrega-obra')
   return { success: 'Entrega da obra salva.' }
 }
+
+export type ObraPhoto = {
+  id: string
+  file_name: string
+  file_path: string
+  uploaded_at: string
+}
+
+export async function getObraPhotos(
+  obraDeliveryId: string
+): Promise<ObraPhoto[]> {
+  const supabase = await createClient()
+  const { data } = await (supabase as any)
+    .from('obra_photos')
+    .select('id, file_name, file_path, uploaded_at')
+    .eq('obra_delivery_id', obraDeliveryId)
+    .order('uploaded_at', { ascending: true })
+  return (data ?? []) as ObraPhoto[]
+}
+
+export async function uploadObraPhoto(
+  obraDeliveryId: string,
+  formData: FormData
+): Promise<ActionResult & { photo?: ObraPhoto }> {
+  const file = formData.get('file') as File | null
+  if (!file || file.size === 0) return { error: 'Selecione uma imagem.' }
+
+  const user = await getCurrentUserData()
+  const orgId = user?.membership?.organization.id ?? null
+  if (!orgId) return { error: 'Sem organização ativa.' }
+
+  const supabase = await createClient()
+
+  const { count } = await (supabase as any)
+    .from('obra_photos')
+    .select('id', { count: 'exact', head: true })
+    .eq('obra_delivery_id', obraDeliveryId)
+
+  if ((count ?? 0) >= 20) return { error: 'Limite de 20 fotos atingido.' }
+
+  const uniqueId = crypto.randomUUID().slice(0, 8)
+  const ext = file.name.split('.').pop()?.toLowerCase() ?? 'jpg'
+  const storagePath = `obra-fotos/${obraDeliveryId}/${uniqueId}.${ext}`
+
+  const { error: uploadError } = await supabase.storage
+    .from('project-docs')
+    .upload(storagePath, file, { upsert: false })
+
+  if (uploadError) return { error: 'Erro ao enviar: ' + uploadError.message }
+
+  const { data: row, error: insertError } = await (supabase as any)
+    .from('obra_photos')
+    .insert({
+      obra_delivery_id: obraDeliveryId,
+      organization_id: orgId,
+      file_name: file.name,
+      file_path: storagePath,
+    })
+    .select('id, file_name, file_path, uploaded_at')
+    .single()
+
+  if (insertError) return { error: 'Erro ao registrar foto: ' + insertError.message }
+
+  revalidatePath('/entrega-obra')
+  return { success: 'Foto enviada.', photo: row as ObraPhoto }
+}
+
+export async function deleteObraPhoto(
+  photoId: string
+): Promise<ActionResult> {
+  const user = await getCurrentUserData()
+  const orgId = user?.membership?.organization.id ?? null
+  if (!orgId) return { error: 'Sem organização ativa.' }
+
+  const supabase = await createClient()
+
+  const { data: photo } = await (supabase as any)
+    .from('obra_photos')
+    .select('file_path')
+    .eq('id', photoId)
+    .eq('organization_id', orgId)
+    .single()
+
+  if (!photo) return { error: 'Foto não encontrada.' }
+
+  await supabase.storage.from('project-docs').remove([photo.file_path])
+
+  const { error } = await (supabase as any)
+    .from('obra_photos')
+    .delete()
+    .eq('id', photoId)
+
+  if (error) return { error: 'Erro ao remover: ' + error.message }
+
+  revalidatePath('/entrega-obra')
+  return { success: 'Foto removida.' }
+}

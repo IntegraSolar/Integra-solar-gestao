@@ -41,6 +41,13 @@ export async function GET(req: NextRequest) {
       .eq('organization_id', orgId)
       .eq('file_path', path)
     if ((projectCount ?? 0) > 0) return true
+    // Verificar se é uma foto de obra
+    const { count: obraCount } = await (supabase as any)
+      .from('obra_photos')
+      .select('id', { count: 'exact', head: true })
+      .eq('organization_id', orgId)
+      .eq('file_path', path)
+    if ((obraCount ?? 0) > 0) return true
     // Verificar se é um client_id (paths legados)
     const { count } = await supabase
       .from('clients')
