@@ -26,15 +26,22 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Bucket não permitido' }, { status: 403 })
   }
 
+  const supabase = await createClient()
+
   // Verificar que o path pertence à organização do usuário.
-  // Paths novos: sempre começam com orgId (ou entrega-material/orgId).
-  // Paths legados: começam com clientId — verificamos via DB se esse cliente
-  // pertence à org do usuário (backward compat com arquivos antigos).
   const pathBelongsToOrg = async (): Promise<boolean> => {
     if (path.startsWith(orgId) || path.startsWith(`entrega-material/${orgId}`)) return true
     const segments = path.split('/')
     const uuidCandidate = segments[0] === 'entrega-material' ? segments[1] : segments[0]
     if (!uuidCandidate) return false
+    // Verificar se é um project_id (anexos de projeto)
+    const { count: projectCount } = await (supabase as any)
+      .from('project_attachments')
+      .select('id', { count: 'exact', head: true })
+      .eq('organization_id', orgId)
+      .eq('file_path', path)
+    if ((projectCount ?? 0) > 0) return true
+    // Verificar se é um client_id (paths legados)
     const { count } = await supabase
       .from('clients')
       .select('id', { count: 'exact', head: true })
@@ -46,8 +53,6 @@ export async function GET(req: NextRequest) {
   if (!(await pathBelongsToOrg())) {
     return NextResponse.json({ error: 'Acesso negado' }, { status: 403 })
   }
-
-  const supabase = await createClient()
   const { data, error } = await supabase.storage
     .from(bucket)
     .createSignedUrl(path, 300)
