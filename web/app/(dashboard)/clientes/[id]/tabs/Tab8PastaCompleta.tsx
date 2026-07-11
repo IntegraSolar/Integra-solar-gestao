@@ -6,7 +6,7 @@ import type { Client } from '@/lib/clients/types'
 import { ATTACHMENT_TYPE_LABELS } from '@/lib/clients/types'
 import { formatCurrency, formatDate, formatPhone, formatCpfCnpj } from '@/lib/format'
 import Image from 'next/image'
-import { ExternalLink, X, ZoomIn } from 'lucide-react'
+import { ExternalLink, X, ZoomIn, Copy, Check, Link2 } from 'lucide-react'
 import { secureStorageUrl } from '@/lib/storage/url'
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -47,6 +47,41 @@ function DocLink({ label, url }: { label: string; url: string | null }) {
   )
 }
 
+function LinkRow({ label, description, url }: { label: string; description: string; url: string }) {
+  const [copied, setCopied] = useState(false)
+  return (
+    <div className="flex items-center justify-between gap-3 py-1">
+      <div className="flex items-center gap-2.5 min-w-0">
+        <Link2 size={14} style={{ color: '#60A5FA', flexShrink: 0 }} />
+        <div className="min-w-0">
+          <p className="text-sm font-medium" style={{ color: 'var(--theme-text)' }}>{label}</p>
+          <p className="text-xs truncate" style={{ color: 'var(--theme-text-subtle)' }}>{description}</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-1.5 flex-shrink-0">
+        <button
+          type="button"
+          onClick={async () => { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 2000) }}
+          className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg transition-colors hover:bg-white/10"
+          style={{ color: copied ? '#10B981' : 'var(--theme-accent)' }}
+        >
+          {copied ? <Check size={11} /> : <Copy size={11} />}
+          {copied ? 'Copiado' : 'Copiar'}
+        </button>
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg transition-colors hover:bg-white/10"
+          style={{ color: 'var(--theme-accent)' }}
+        >
+          <ExternalLink size={11} /> Abrir
+        </a>
+      </div>
+    </div>
+  )
+}
+
 function StatusBadge({ status }: { status: string }) {
   const colors: Record<string, { bg: string; color: string }> = {
     confirmada: { bg: 'rgba(16,185,129,0.12)', color: '#10B981' },
@@ -72,6 +107,7 @@ type PipelineData = {
   obraDelivery: any | null
   obraPhotos: any[]
   posObra: any | null
+  installerToken: string | null
 }
 
 export function Tab8PastaCompleta({ client }: { client: Client }) {
@@ -123,6 +159,17 @@ export function Tab8PastaCompleta({ client }: { client: Client }) {
         <Row label="Painel" value={[client.panel_brand, client.panel_power_w ? `${client.panel_power_w}W` : null].filter(Boolean).join(' ')} />
         <Row label="Inversor" value={[client.inverter_brand, client.inverter_power_w ? `${client.inverter_power_w}kW` : null].filter(Boolean).join(' ')} />
       </Section>
+
+      {/* 1.5. Links de Acesso */}
+      {data?.installerToken && (
+        <Section title="Links de Acesso">
+          <LinkRow
+            label="Link do Instalador"
+            description="Página com dados da instalação para a equipe"
+            url={`${typeof window !== 'undefined' ? window.location.origin : ''}/instalador/${data.installerToken}`}
+          />
+        </Section>
+      )}
 
       {/* 2. Vistoria */}
       <Section title="Vistoria">

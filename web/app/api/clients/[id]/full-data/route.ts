@@ -51,6 +51,15 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     obraPhotos = photos ?? []
   }
 
+  // Fetch installer link
+  const { data: installerLink } = await (supabase as any)
+    .from('installer_links')
+    .select('token')
+    .eq('client_id', clientId)
+    .eq('organization_id', orgId)
+    .eq('active', true)
+    .maybeSingle()
+
   return NextResponse.json({
     project: project.data ?? null,
     projectAttachments,
@@ -60,5 +69,6 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     obraDelivery: obraDelivery.data ?? null,
     obraPhotos,
     posObra: posObra.data ?? null,
+    installerToken: installerLink?.token ?? null,
   })
 }
