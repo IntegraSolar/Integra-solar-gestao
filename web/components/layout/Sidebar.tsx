@@ -77,20 +77,47 @@ export function Sidebar({ user, notificationCount = 0, onNotificationClick }: Si
     })
   }
 
+  const FINANCEIRO_SUB = [
+    { label: 'Painel', href: '/financeiro' },
+    { label: 'Custos', href: '/financeiro/custos' },
+    { label: 'DRE', href: '/financeiro/dre' },
+  ]
+
   function renderItem(item: NavItem) {
     const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
     const Icon = item.icon
     const color = isActive ? 'var(--theme-accent)' : 'rgba(255,255,255,0.4)'
+    const isFinanceiro = item.href === '/financeiro'
     return (
-      <Link
-        key={item.href}
-        href={item.href}
-        className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-[13px] font-medium my-0.5 transition-all"
-        style={isActive ? { color: 'var(--theme-accent)', background: 'rgba(255,200,100,0.08)', fontWeight: 600 } : undefined}
-      >
-        <Icon size={15} style={{ color, flexShrink: 0 }} />
-        <span style={{ color }}>{item.label}</span>
-      </Link>
+      <div key={item.href}>
+        <Link
+          href={item.href}
+          className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-[13px] font-medium my-0.5 transition-all"
+          style={isActive ? { color: 'var(--theme-accent)', background: 'rgba(255,200,100,0.08)', fontWeight: 600 } : undefined}
+        >
+          <Icon size={15} style={{ color, flexShrink: 0 }} />
+          <span style={{ color }}>{item.label}</span>
+        </Link>
+        {isFinanceiro && isActive && (
+          <div className="ml-6 mb-1 flex flex-col gap-0.5">
+            {FINANCEIRO_SUB.map(sub => {
+              const subActive = sub.href === '/financeiro' ? pathname === '/financeiro' : pathname.startsWith(sub.href)
+              return (
+                <Link
+                  key={sub.href}
+                  href={sub.href}
+                  className="px-3 py-1.5 rounded-lg text-[12px] transition-all"
+                  style={subActive
+                    ? { color: 'var(--theme-accent)', fontWeight: 600, background: 'rgba(255,200,100,0.06)' }
+                    : { color: 'rgba(255,255,255,0.35)' }}
+                >
+                  {sub.label}
+                </Link>
+              )
+            })}
+          </div>
+        )}
+      </div>
     )
   }
 
