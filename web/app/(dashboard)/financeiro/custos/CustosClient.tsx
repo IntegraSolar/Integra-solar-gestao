@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useMemo, useTransition } from 'react'
-import { createCost, updateCost, deleteCost, COST_CATEGORIES } from '@/lib/financeiro/costs-actions'
-import type { ProjectCost, UpsertCostData } from '@/lib/financeiro/costs-actions'
+import { createCost, updateCost, deleteCost } from '@/lib/financeiro/costs-actions'
+import { COST_CATEGORIES } from '@/lib/financeiro/costs-types'
+import type { ProjectCost, UpsertCostData } from '@/lib/financeiro/costs-types'
 import { formatCurrency, formatDate } from '@/lib/format'
 import { Plus, Pencil, Trash2, X, BarChart2 } from 'lucide-react'
 import Link from 'next/link'
