@@ -182,7 +182,6 @@ export async function generateReceiptPdf(data: ReceiptData): Promise<Buffer> {
     columnStyles: { 3: { halign: 'right', fontStyle: 'bold' } },
   })
 
-  // @ts-expect-error jspdf-autotable adds lastAutoTable
   y = (doc as any).lastAutoTable.finalY + 10
 
   // ── Declaration ────────────────────────────────────────────────────

@@ -33,7 +33,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
     const { data: fileData } = await admin.storage.from('documents').download(receipt.pdf_path)
     if (fileData) {
       const buf = Buffer.from(await fileData.arrayBuffer())
-      return new NextResponse(buf, {
+      return new NextResponse(buf as unknown as BodyInit, {
         headers: {
           'Content-Type': 'application/pdf',
           'Content-Disposition': `inline; filename="recibo-v${receipt.version}.pdf"`,
@@ -98,7 +98,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
   }
 
   const buf = await generateReceiptPdf(receiptData)
-  return new NextResponse(buf, {
+  return new NextResponse(buf as unknown as BodyInit, {
     headers: {
       'Content-Type': 'application/pdf',
       'Content-Disposition': `inline; filename="recibo-v${receipt.version}.pdf"`,

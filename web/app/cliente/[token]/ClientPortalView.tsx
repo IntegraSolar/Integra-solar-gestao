@@ -24,6 +24,7 @@ type PortalData = {
   documents: { type: string; label: string; url: string }[]
   projectDocs: { name: string; url: string }[]
   photos: { name: string; url: string }[]
+  latestReceipt: { token: string; version: number; total_paid: number; created_at: string } | null
 }
 
 const STATUS_ICON: Record<string, string> = {
