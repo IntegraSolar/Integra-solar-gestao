@@ -10,6 +10,7 @@ import { Tab5Prazos } from './tabs/Tab5Prazos'
 import { Tab6Anexos } from './tabs/Tab6Anexos'
 import { Tab7Contrato } from './tabs/Tab7Contrato'
 import { Tab8PastaCompleta } from './tabs/Tab8PastaCompleta'
+import { Tab9Links } from './tabs/Tab9Links'
 
 const TABS = [
   { key: 'tab1', label: 'Dados Pessoais' },
@@ -19,6 +20,7 @@ const TABS = [
   { key: 'tab6', label: 'Anexos' },
   { key: 'tab7', label: 'Contrato' },
   { key: 'tab8', label: 'Todos os Dados' },
+  { key: 'tab9', label: 'Links' },
 ] as const
 
 type TabKey = (typeof TABS)[number]['key']
@@ -27,7 +29,7 @@ export function ClientTabs({ client }: { client: Client }) {
   const [active, setActive] = useState<TabKey>('tab1')
 
   function isDone(key: string) {
-    return key === 'tab8' ? false : client.completed_tabs[key] === true
+    return key === 'tab8' || key === 'tab9' ? false : client.completed_tabs[key] === true
   }
 
   return (
@@ -65,6 +67,7 @@ export function ClientTabs({ client }: { client: Client }) {
         {active === 'tab6' && <Tab6Anexos client={client} />}
         {active === 'tab7' && <Tab7Contrato client={client} />}
         {active === 'tab8' && <Tab8PastaCompleta client={client} />}
+        {active === 'tab9' && <Tab9Links client={client} />}
       </div>
     </div>
   )
