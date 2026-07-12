@@ -42,6 +42,12 @@ export default async function EmpresasPage({
           <h1 className="text-2xl font-bold text-[#0E2236]">Empresas</h1>
           <p className="text-sm text-[#6B8CA4] mt-0.5">{empresas.length} empresa{empresas.length !== 1 ? 's' : ''} cadastrada{empresas.length !== 1 ? 's' : ''}</p>
         </div>
+        <Link
+          href="/backoffice/empresas/nova"
+          className="rounded-xl bg-[#1A3A5C] text-white px-5 py-2.5 text-sm font-semibold hover:bg-[#0E2236] transition-colors"
+        >
+          + Nova Empresa
+        </Link>
       </div>
 
       {/* Busca */}
