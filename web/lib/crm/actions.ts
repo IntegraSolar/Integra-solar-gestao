@@ -322,15 +322,14 @@ export async function createProposalFromKit(leadId: string, kitId: string): Prom
       name: kit.name,
       status: 'draft',
       kit_value: Number(kit.kit_value ?? 0),
-      panel_qty: kit.panel_qty ?? 0,
-      panel_power_w: kit.panel_power_w ? Number(kit.panel_power_w) : 0,
+      total_modules: kit.panel_qty ?? 0,
+      module_power_wp: kit.panel_power_w ? Number(kit.panel_power_w) : 0,
       panel_brand_model: [kit.panel_brand, kit.panel_model].filter(Boolean).join(' ') || null,
-      inverter_qty: kit.inverter_qty ?? 0,
+      total_inverters: kit.inverter_qty ?? 0,
       inverter_power_w: kit.inverter_power_w ? Number(kit.inverter_power_w) : 0,
       inverter_brand_model: [kit.inverter_brand, kit.inverter_model].filter(Boolean).join(' ') || null,
       total_power_kwp: kit.total_power_kwp ? Number(kit.total_power_kwp) : 0,
       monthly_generation_kwh: kit.monthly_generation_kwh ? Number(kit.monthly_generation_kwh) : 0,
-      km_rodados: Number(kit.km_rodados ?? 0),
     })
     .select('id')
     .single()
