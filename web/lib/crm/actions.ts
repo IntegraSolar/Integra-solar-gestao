@@ -302,22 +302,22 @@ export async function createProposalFromKit(leadId: string, kitId: string): Prom
 
   // Fetch lead + kit in parallel
   const [leadRes, kitRes] = await Promise.all([
-    supabase.from('leads').select('*').eq('id', leadId).eq('organization_id', orgId).single(),
+    (supabase as any).from('leads').select('id, converted_to_client_id').eq('id', leadId).eq('organization_id', orgId).single(),
     (supabase as any).from('kit_catalog').select('*').eq('id', kitId).eq('organization_id', orgId).single(),
   ])
 
   if (!leadRes.data) return { error: 'Lead não encontrado.' }
   if (!kitRes.data) return { error: 'Kit não encontrado.' }
 
-  const kit = kitRes.data
-  const lead = leadRes.data
+  const kit = kitRes.data as any
+  const lead = leadRes.data as any
 
-  const { data: newProposal, error } = await supabase
+  const { data: newProposal, error } = await (supabase as any)
     .from('proposals')
     .insert({
       organization_id: orgId,
       lead_id: leadId,
-      client_id: lead.client_id ?? null,
+      client_id: lead.converted_to_client_id ?? null,
       created_by_user_id: userId,
       name: kit.name,
       status: 'draft',
