@@ -25,6 +25,7 @@ const MODULES = [
   { key: 'entrega_obra', label: 'Entrega da Obra' },
   { key: 'pos_obra', label: 'Pós-Obra' },
   { key: 'configuracoes', label: 'Configurações' },
+  { key: 'catalogo_kits', label: 'Catálogo de Kits' },
 ]
 
 const PERM_COLS = [

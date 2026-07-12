@@ -292,6 +292,54 @@ export async function duplicateProposal(proposalId: string): Promise<ActionResul
   return { success: 'Proposta duplicada.', id: newProposal.id }
 }
 
+export async function createProposalFromKit(leadId: string, kitId: string): Promise<ActionResult & { id?: string }> {
+  const user = await getCurrentUserData()
+  const orgId = user?.membership?.organization.id ?? null
+  const userId = user?.profile.id ?? null
+  if (!orgId) return { error: 'Sem organização ativa.' }
+
+  const supabase = await createClient()
+
+  // Fetch lead + kit in parallel
+  const [leadRes, kitRes] = await Promise.all([
+    supabase.from('leads').select('*').eq('id', leadId).eq('organization_id', orgId).single(),
+    (supabase as any).from('kit_catalog').select('*').eq('id', kitId).eq('organization_id', orgId).single(),
+  ])
+
+  if (!leadRes.data) return { error: 'Lead não encontrado.' }
+  if (!kitRes.data) return { error: 'Kit não encontrado.' }
+
+  const kit = kitRes.data
+  const lead = leadRes.data
+
+  const { data: newProposal, error } = await supabase
+    .from('proposals')
+    .insert({
+      organization_id: orgId,
+      lead_id: leadId,
+      client_id: lead.client_id ?? null,
+      created_by_user_id: userId,
+      name: kit.name,
+      status: 'draft',
+      kit_value: Number(kit.kit_value ?? 0),
+      panel_qty: kit.panel_qty ?? 0,
+      panel_power_w: kit.panel_power_w ? Number(kit.panel_power_w) : 0,
+      panel_brand_model: [kit.panel_brand, kit.panel_model].filter(Boolean).join(' ') || null,
+      inverter_qty: kit.inverter_qty ?? 0,
+      inverter_power_w: kit.inverter_power_w ? Number(kit.inverter_power_w) : 0,
+      inverter_brand_model: [kit.inverter_brand, kit.inverter_model].filter(Boolean).join(' ') || null,
+      total_power_kwp: kit.total_power_kwp ? Number(kit.total_power_kwp) : 0,
+      monthly_generation_kwh: kit.monthly_generation_kwh ? Number(kit.monthly_generation_kwh) : 0,
+      km_rodados: Number(kit.km_rodados ?? 0),
+    })
+    .select('id')
+    .single()
+
+  if (error) return { error: error.message }
+  revalidatePath('/leads')
+  return { success: 'Proposta criada a partir do kit.', id: newProposal.id }
+}
+
 // ── Funnel Stage Actions ──────────────────────────────────────────
 
 export async function createFunnelStage(

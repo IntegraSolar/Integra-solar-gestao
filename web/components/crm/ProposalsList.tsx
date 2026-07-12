@@ -9,6 +9,7 @@ import type { Lead, Proposal, Supplier, ProposalTemplate } from '@/lib/crm/types
 import type { OrgConfig } from '@/lib/configuracoes/queries'
 import { formatCurrency } from '@/lib/format'
 import { secureStorageUrl } from '@/lib/storage/url'
+import type { KitPublic } from '@/lib/catalogo/kit-actions'
 
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Rascunho',
@@ -35,6 +36,9 @@ export function ProposalsList({ lead }: { lead: Lead }) {
   const [showForm, setShowForm] = useState(false)
   const [reviewProposal, setReviewProposal] = useState<Proposal | null>(null)
   const [isPending, startTransition] = useTransition()
+  const [showKitModal, setShowKitModal] = useState(false)
+  const [kits, setKits] = useState<KitPublic[]>([])
+  const [kitsLoading, setKitsLoading] = useState(false)
 
   useEffect(() => {
     fetch(`/api/leads/${lead.id}/proposals`)
@@ -53,6 +57,33 @@ export function ProposalsList({ lead }: { lead: Lead }) {
     startTransition(async () => {
       await deleteProposal(id)
       setProposals((prev) => prev.filter((p) => p.id !== id))
+    })
+  }
+
+  async function openKitModal() {
+    setShowKitModal(true)
+    if (kits.length === 0) {
+      setKitsLoading(true)
+      const res = await fetch('/api/kits')
+      if (res.ok) {
+        const data = await res.json()
+        setKits(data.kits ?? [])
+      }
+      setKitsLoading(false)
+    }
+  }
+
+  function handleSelectKit(kit: KitPublic) {
+    setShowKitModal(false)
+    // Pre-fill a new proposal form from kit data — handled by ProposalForm via kitData prop
+    // We create the proposal directly via server action
+    startTransition(async () => {
+      const { createProposalFromKit } = await import('@/lib/crm/actions')
+      const result = await createProposalFromKit(lead.id, kit.id)
+      if (result.error) { alert(result.error); return }
+      const r = await fetch(`/api/leads/${lead.id}/proposals`)
+      const { proposals: newProposals } = await r.json()
+      setProposals(newProposals)
     })
   }
 
@@ -85,10 +116,75 @@ export function ProposalsList({ lead }: { lead: Lead }) {
         />
       )}
 
+      {/* Kit selection modal */}
+      {showKitModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.75)' }}>
+          <div className="rounded-2xl border border-white/10 p-6 w-full max-w-2xl max-h-[80vh] flex flex-col gap-4" style={{ background: 'var(--theme-surface)' }}>
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-semibold text-white">Selecionar Kit</h3>
+              <button onClick={() => setShowKitModal(false)} className="text-white/40 hover:text-white text-xl leading-none">×</button>
+            </div>
+            {kitsLoading ? (
+              <p className="text-sm text-white/40 text-center py-8">Carregando kits...</p>
+            ) : kits.length === 0 ? (
+              <p className="text-sm text-white/40 text-center py-8">Nenhum kit ativo cadastrado.</p>
+            ) : (
+              <div className="overflow-y-auto flex flex-col gap-3">
+                {kits.map(kit => (
+                  <button
+                    key={kit.id}
+                    onClick={() => handleSelectKit(kit)}
+                    disabled={isPending}
+                    className="text-left rounded-xl border border-white/10 p-4 hover:border-yellow-400/40 transition-colors disabled:opacity-50"
+                    style={{ background: 'var(--theme-input-bg)' }}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="font-semibold text-white text-sm">{kit.name}</p>
+                        {kit.code && <p className="text-xs text-white/40">{kit.code}</p>}
+                        {kit.description && <p className="text-xs text-white/50 mt-1">{kit.description}</p>}
+                      </div>
+                      {kit.sale_price && (
+                        <span className="text-sm font-bold flex-shrink-0" style={{ color: 'var(--theme-accent)' }}>
+                          {formatCurrency(kit.sale_price)}
+                        </span>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-3 gap-3 mt-3">
+                      <div>
+                        <p className="text-xs text-white/40">Potência</p>
+                        <p className="text-xs text-white/80">{kit.total_power_kwp ? `${kit.total_power_kwp.toFixed(2)} kWp` : '—'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-white/40">Geração/mês</p>
+                        <p className="text-xs text-white/80">{kit.monthly_generation_kwh ? `${kit.monthly_generation_kwh.toFixed(0)} kWh` : '—'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-white/40">Painéis</p>
+                        <p className="text-xs text-white/80">{kit.panel_qty}x {kit.panel_brand ?? ''} {kit.panel_model ?? ''}</p>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {!showForm ? (
-        <Button className="self-start text-xs py-1.5 px-4" onClick={() => setShowForm(true)}>
-          + Nova Proposta
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button className="self-start text-xs py-1.5 px-4" onClick={() => setShowForm(true)}>
+            + Nova Proposta
+          </Button>
+          <button
+            onClick={openKitModal}
+            className="text-xs py-1.5 px-4 rounded-lg font-semibold transition-all hover:opacity-90"
+            style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--theme-text-muted)', border: '1px solid var(--theme-border)' }}
+          >
+            Proposta por Kit
+          </button>
+        </div>
       ) : (
         <ProposalForm
           leadId={lead.id}
