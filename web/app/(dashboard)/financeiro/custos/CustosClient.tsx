@@ -131,7 +131,7 @@ export default function CustosClient({ costs: initial, clients }: { costs: Proje
       const result = await createCost(data)
       if (result.error) { setError(result.error); return }
       const clientName = clients.find(c => c.id === data.client_id)?.name ?? '—'
-      const newCost: ProjectCost = { id: crypto.randomUUID(), client_name: clientName, created_at: new Date().toISOString(), ...data, amount: Number(data.amount) }
+      const newCost: ProjectCost = { id: crypto.randomUUID(), client_name: clientName, created_at: new Date().toISOString(), ...data, amount: Number(data.amount), notes: data.notes ?? null }
       setCosts(prev => [newCost, ...prev])
       setShowForm(false)
     })
