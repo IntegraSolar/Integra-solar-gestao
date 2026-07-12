@@ -39,16 +39,18 @@ export function ProposalsList({ lead }: { lead: Lead }) {
   const [showKitModal, setShowKitModal] = useState(false)
   const [kits, setKits] = useState<KitPublic[]>([])
   const [kitsLoading, setKitsLoading] = useState(false)
+  const [canSeePricing, setCanSeePricing] = useState(true)
 
   useEffect(() => {
     fetch(`/api/leads/${lead.id}/proposals`)
       .then((r) => r.json())
-      .then(({ proposals, suppliers, generationFactor, orgConfig, templates }) => {
+      .then(({ proposals, suppliers, generationFactor, orgConfig, templates, canSeePricing: csp }) => {
         setProposals(proposals)
         setSuppliers(suppliers)
         setGenerationFactor(generationFactor)
         if (orgConfig) setOrgConfig(orgConfig)
         if (templates) setTemplates(templates)
+        if (typeof csp === 'boolean') setCanSeePricing(csp)
       })
   }, [lead.id])
 
@@ -111,6 +113,7 @@ export function ProposalsList({ lead }: { lead: Lead }) {
           proposal={reviewProposal}
           orgConfig={orgConfig}
           templates={templates}
+          canSeePricing={canSeePricing}
           onClose={() => setReviewProposal(null)}
           onGenerated={(url) => handleGenerated(reviewProposal.id, url)}
         />

@@ -10,6 +10,11 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const orgId = user?.membership?.organization.id
   if (!orgId) return NextResponse.json({ proposals: [], suppliers: [], generationFactor: 1, orgConfig: null, templates: [] })
 
+  const role = user?.membership?.role ?? ''
+  const isAdmin = role === 'owner' || role === 'admin'
+  const permissions = (user?.membership as any)?.permissions ?? {}
+  const canSeePricing = isAdmin || permissions?.ver_precificacao?.access === true
+
   // RLS já garante que só retorna dados da org do usuário — sem query extra de verificação
   const [proposals, suppliers, generationFactor, orgConfig, templates] = await Promise.all([
     getProposalsByLead(id),
@@ -18,5 +23,5 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     getOrgConfig(orgId),
     getActiveProposalTemplates(),
   ])
-  return NextResponse.json({ proposals, suppliers, generationFactor, orgConfig, templates })
+  return NextResponse.json({ proposals, suppliers, generationFactor, orgConfig, templates, canSeePricing })
 }

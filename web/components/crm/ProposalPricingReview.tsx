@@ -13,6 +13,7 @@ interface ProposalPricingReviewProps {
   proposal: Proposal
   orgConfig: OrgConfig
   templates: ProposalTemplate[]
+  canSeePricing?: boolean
   onClose: () => void
   onGenerated: (pdfUrl: string) => void
 }
@@ -29,6 +30,7 @@ export function ProposalPricingReview({
   proposal,
   orgConfig,
   templates,
+  canSeePricing = true,
   onClose,
   onGenerated,
 }: ProposalPricingReviewProps) {
@@ -306,8 +308,8 @@ export function ProposalPricingReview({
             </div>
           </div>
 
-          {/* Tabela de composição */}
-          <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--theme-card-border)' }}>
+          {/* Tabela de composição — visível apenas para quem tem permissão ver_precificacao */}
+          {canSeePricing && <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--theme-card-border)' }}>
             <div className="px-4 py-3" style={{ background: 'var(--theme-surface)' }}>
               <p className="text-xs font-semibold text-white/50 uppercase tracking-wide">Composição do Preço</p>
             </div>
@@ -449,10 +451,10 @@ export function ProposalPricingReview({
                 </button>
               )}
             </div>
-          </div>
+          </div>}
 
-          {/* Variáveis da proposta */}
-          <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--theme-card-border)' }}>
+          {/* Variáveis da proposta — apenas para quem tem permissão ver_precificacao */}
+          {canSeePricing && <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--theme-card-border)' }}>
             <div className="px-4 py-3 flex items-center gap-2" style={{ background: 'var(--theme-surface)' }}>
               <Settings2 size={13} style={{ color: 'var(--theme-text-subtle)' }} />
               <p className="text-xs font-semibold text-white/50 uppercase tracking-wide">Variáveis desta Proposta</p>
@@ -487,7 +489,7 @@ export function ProposalPricingReview({
                 <input type="number" min="0" step="0.1" value={vMargem} onChange={(e) => setVMargem(parseFloat(e.target.value) || 0)} className={varInputCls} />
               </div>
             </div>
-          </div>
+          </div>}
 
           {/* Equipamentos da proposta */}
           {(proposal.panel_qty > 0 || proposal.inverter_qty > 0) && (
