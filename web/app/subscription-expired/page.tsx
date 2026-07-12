@@ -12,15 +12,17 @@ export default function SubscriptionExpiredPage() {
           Assinatura inativa
         </h1>
         <p className="text-[#57534e] mb-8 leading-relaxed">
-          Sua assinatura expirou ou está pendente de pagamento. Renove para continuar usando a plataforma.
+          Sua assinatura expirou ou está pendente de pagamento. Entre em contato com nossa equipe para regularizar o acesso.
         </p>
         <div className="space-y-3">
-          <Link
-            href="/#planos"
-            className="block w-full bg-[#28944a] text-white font-semibold py-3 rounded-xl hover:bg-[#1d7035] transition-colors"
+          <a
+            href="https://wa.me/5563992217642?text=Olá!%20Preciso%20regularizar%20o%20acesso%20à%20plataforma%20Integra%20Solar."
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block w-full bg-[#28944a] text-white font-semibold py-3 rounded-xl hover:bg-[#1d7035] transition-colors text-center"
           >
-            Renovar assinatura
-          </Link>
+            Falar com nossa equipe
+          </a>
           <a
             href="https://wa.me/5563992217642?text=Preciso%20de%20ajuda%20com%20minha%20assinatura"
             target="_blank"

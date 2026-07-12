@@ -79,9 +79,9 @@ export function LoginForm() {
       </form>
 
       <p className="mt-6 text-center text-sm text-[#A8BCCE]">
-        Ainda não tem conta?{' '}
-        <Link href="/register" className="font-semibold text-[#28944a] hover:underline">
-          Criar conta empresarial
+        Ainda não tem acesso?{' '}
+        <Link href="/agendar-demo" className="font-semibold text-[#28944a] hover:underline">
+          Solicitar demonstração
         </Link>
       </p>
     </div>

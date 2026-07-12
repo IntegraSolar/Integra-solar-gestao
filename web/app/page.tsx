@@ -78,29 +78,11 @@ const METRICS = [
 ]
 
 const FAQ = [
-  { q: 'Preciso de treinamento para usar?', a: 'O sistema foi feito para quem não tem tempo de aprender ferramentas complexas. A interface é intuitiva e os planos semestrais e anuais incluem onboarding.' },
+  { q: 'Preciso de treinamento para usar?', a: 'O sistema foi feito para quem não tem tempo de aprender ferramentas complexas. A interface é intuitiva e o onboarding guiado faz parte do processo de implantação.' },
   { q: 'Funciona para empresas pequenas?', a: 'Sim. O Integra Solar atende desde o integrador solo até empresas com dezenas de instalações por mês. Você usa o que precisa.' },
-  { q: 'Como funciona a renovação dos planos?', a: 'Planos mensais não têm fidelidade. Planos semestrais e anuais podem ter a renovação interrompida antes do próximo ciclo.' },
   { q: 'Meus dados ficam seguros?', a: 'Os dados ficam em infraestrutura de nível bancário (Supabase/AWS) com criptografia, backups automáticos e isolamento por organização.' },
-  { q: 'Consigo migrar meus dados atuais?', a: 'Sim. Oferecemos suporte para importação de dados nos planos com onboarding. Você não precisa começar do zero.' },
-]
-
-const PLANS = [
-  {
-    id: 'mensal', name: 'Mensal', price: 'R$ 149,90', period: '/mês', tag: 'Sem fidelidade', highlight: false,
-    features: ['CRM completo', 'Propostas ilimitadas', 'Gestão financeira', 'Controle de obras', 'Gestão documental', 'Relatórios', 'Suporte por chat'],
-    cta: 'Começar agora',
-  },
-  {
-    id: 'semestral', name: 'Semestral', price: 'R$ 779,90', period: '/semestre', tag: 'Mais vendido', saving: 'Economia de ~R$ 120 (13%)', highlight: false,
-    features: ['Tudo do mensal', 'Economia de ~13%', 'Suporte prioritário', 'Treinamento incluso', 'Integrações avançadas'],
-    cta: 'Escolher semestral',
-  },
-  {
-    id: 'anual', name: 'Anual', price: 'R$ 1.199,90', period: '/ano', tag: 'Melhor custo-benefício', saving: 'Economia de ~R$ 599 (33%)', highlight: true,
-    features: ['Tudo do semestral', 'Economia de ~33%', 'Suporte dedicado', 'Consultoria de setup', 'Onboarding guiado'],
-    cta: 'Escolher anual',
-  },
+  { q: 'Consigo migrar meus dados atuais?', a: 'Sim. Oferecemos suporte para importação de dados. Você não precisa começar do zero.' },
+  { q: 'Como funciona o acesso à plataforma?', a: 'O acesso é liberado após uma apresentação comercial. Nossa equipe faz um onboarding personalizado para garantir que você aproveite ao máximo desde o primeiro dia.' },
 ]
 
 // ── Page ─────────────────────────────────────────────────────────
@@ -153,9 +135,6 @@ export default function LandingPage() {
           <button onClick={() => setShowDemo(true)} className="inline-flex items-center gap-2 bg-[#28944a] text-white font-semibold px-7 py-3.5 rounded-lg text-base hover:bg-[#1d7035] transition-colors">
             Agendar demonstração <ArrowRight className="w-4 h-4" />
           </button>
-          <a href="#planos" className="inline-flex items-center gap-2 text-[#28944a] font-semibold px-7 py-3.5 rounded-lg text-base hover:bg-[#28944a]/5 transition-colors">
-            Ver planos
-          </a>
         </motion.div>
       </motion.section>
 
@@ -295,7 +274,6 @@ export default function LandingPage() {
           </h2>
           <div className="space-y-4">
             {[
-              { bad: 'ERPs genéricos costumam exigir alto investimento para implantação e configuração', good: 'Integra Solar já vem configurada para o fluxo de uma empresa integradora, com vídeos de treinamento inclusos — qualquer pessoa da equipe aprende a usar em pouco tempo' },
               { bad: 'Utilizar diversos softwares e planilhas para controlar a empresa', good: 'Tudo centralizado em um único lugar dentro da Integra Solar' },
               { bad: 'Planilhas dependem da memória de quem preencheu', good: 'Dados estruturados e acessíveis por qualquer membro da equipe' },
               { bad: 'WhatsApp não tem histórico, nem rastreabilidade', good: 'Cada interação, documento e pagamento registrado por cliente' },
@@ -332,55 +310,6 @@ export default function LandingPage() {
         </motion.div>
       </Section>
 
-      {/* ── Planos ──────────────────────────────────────────────── */}
-      <Section id="planos" className="max-w-5xl mx-auto">
-        <motion.p variants={fadeUp} className="text-sm font-semibold text-[#28944a] tracking-wide uppercase text-center mb-3">
-          Planos
-        </motion.p>
-        <motion.h2 variants={fadeUp} style={{ fontFamily: "'Sora', sans-serif" }} className="text-3xl sm:text-4xl font-bold text-center text-[#0d3019] mb-4">
-          Escolha o plano ideal
-        </motion.h2>
-        <motion.p variants={fadeUp} className="text-center text-[#57534e] mb-14">Escolha o modelo que melhor se encaixa na sua operação. Onboarding e suporte inclusos em todos os planos.</motion.p>
-        <motion.div variants={stagger} className="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch">
-          {PLANS.map((plan) => (
-            <motion.div
-              key={plan.id}
-              variants={fadeUp}
-              className={`relative bg-white rounded-2xl p-7 flex flex-col ${
-                plan.highlight ? 'border-2 border-[#28944a] shadow-lg' : 'border border-gray-200'
-              }`}
-            >
-              <span className={`self-start text-xs font-semibold px-3 py-1 rounded-full mb-4 ${
-                plan.highlight ? 'bg-[#28944a] text-white' : 'bg-gray-100 text-[#57534e]'
-              }`}>
-                {plan.tag}
-              </span>
-              <h3 style={{ fontFamily: "'Sora', sans-serif" }} className="text-lg font-bold text-[#0d3019]">{plan.name}</h3>
-              <div className="mt-2 flex items-baseline gap-1">
-                <span style={{ fontFamily: "'Sora', sans-serif" }} className="text-3xl font-bold text-[#0d3019]">{plan.price}</span>
-                <span className="text-sm text-[#57534e]">{plan.period}</span>
-              </div>
-              {plan.saving && <p className="mt-1 text-sm font-medium text-[#28944a]">{plan.saving}</p>}
-              <ul className="mt-6 space-y-2.5 flex-1">
-                {plan.features.map((f) => (
-                  <li key={f} className="flex items-center gap-2 text-sm text-[#57534e]">
-                    <Check className="w-4 h-4 text-[#28944a] flex-shrink-0" /> {f}
-                  </li>
-                ))}
-              </ul>
-              <Link
-                href={`/checkout?plan=${plan.id}`}
-                className={`mt-7 block text-center font-semibold py-3 rounded-lg transition-colors text-sm ${
-                  plan.highlight ? 'bg-[#28944a] text-white hover:bg-[#1d7035]' : 'bg-[#28944a] text-white hover:bg-[#1d7035]'
-                }`}
-              >
-                {plan.cta}
-              </Link>
-            </motion.div>
-          ))}
-        </motion.div>
-      </Section>
-
       {/* ── FAQ ─────────────────────────────────────────────────── */}
       <Section className="max-w-2xl mx-auto">
         <motion.h2 variants={fadeUp} style={{ fontFamily: "'Sora', sans-serif" }} className="text-2xl font-bold text-center text-[#0d3019] mb-10">
@@ -410,12 +339,17 @@ export default function LandingPage() {
             Fale com nosso time, veja a plataforma funcionando e comece a estruturar sua operação com quem entende do setor solar.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <a href="#planos" className="inline-flex items-center gap-2 bg-[#28944a] text-white font-semibold px-7 py-3.5 rounded-lg hover:bg-[#1d7035] transition-colors">
-              Começar agora <ArrowRight className="w-4 h-4" />
-            </a>
-            <button onClick={() => setShowDemo(true)} className="inline-flex items-center gap-2 text-[#0d3019] font-semibold px-7 py-3.5 rounded-lg border border-gray-200 hover:border-[#28944a] transition-colors">
+            <button onClick={() => setShowDemo(true)} className="inline-flex items-center gap-2 bg-[#28944a] text-white font-semibold px-7 py-3.5 rounded-lg hover:bg-[#1d7035] transition-colors">
               <Calendar className="w-4 h-4" /> Agendar demonstração
             </button>
+            <a
+              href={WHATSAPP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-[#0d3019] font-semibold px-7 py-3.5 rounded-lg border border-gray-200 hover:border-[#28944a] transition-colors"
+            >
+              <MessageCircle className="w-4 h-4" /> Falar no WhatsApp
+            </a>
           </div>
         </motion.div>
       </Section>
@@ -426,7 +360,6 @@ export default function LandingPage() {
           <Image src="/Logo integra solar - Com nome.png" alt="Integra Solar" width={110} height={32} className="h-7 w-auto" />
           <div className="flex gap-6 text-sm text-[#57534e]">
             <Link href="/login" className="hover:text-[#1c1917]">Entrar</Link>
-            <a href="#planos" className="hover:text-[#1c1917]">Planos</a>
             <Link href="/termos" className="hover:text-[#1c1917]">Termos de Uso</Link>
             <Link href="/privacidade" className="hover:text-[#1c1917]">Privacidade</Link>
           </div>
