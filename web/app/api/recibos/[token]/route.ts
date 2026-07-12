@@ -30,7 +30,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
 
   // If PDF already stored, try to serve directly from storage
   if (receipt.pdf_path) {
-    const { data: fileData } = await admin.storage.from('documents').download(receipt.pdf_path)
+    const { data: fileData } = await admin.storage.from('project-docs').download(receipt.pdf_path)
     if (fileData) {
       const buf = Buffer.from(await fileData.arrayBuffer())
       return new NextResponse(buf as unknown as BodyInit, {

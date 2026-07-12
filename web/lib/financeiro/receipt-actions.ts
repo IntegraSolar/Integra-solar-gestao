@@ -167,7 +167,7 @@ export async function generateReceipt(clientId: string): Promise<ActionResult & 
   // Upload to Supabase Storage
   const pdfPath = `receipts/${orgId}/${clientId}/v${receiptData.version}.pdf`
   const { error: uploadError } = await adminClient.storage
-    .from('documents')
+    .from('project-docs')
     .upload(pdfPath, pdfBuffer, {
       contentType: 'application/pdf',
       upsert: true,
