@@ -4,7 +4,7 @@ import { useState, useEffect, useTransition } from 'react'
 import { Button } from '@/components/ui/Button'
 import { ProposalForm } from './ProposalForm'
 import { ProposalPricingReview } from './ProposalPricingReview'
-import { deleteProposal } from '@/lib/crm/actions'
+import { deleteProposal, duplicateProposal } from '@/lib/crm/actions'
 import type { Lead, Proposal, Supplier, ProposalTemplate } from '@/lib/crm/types'
 import type { OrgConfig } from '@/lib/configuracoes/queries'
 import { formatCurrency } from '@/lib/format'
@@ -53,6 +53,16 @@ export function ProposalsList({ lead }: { lead: Lead }) {
     startTransition(async () => {
       await deleteProposal(id)
       setProposals((prev) => prev.filter((p) => p.id !== id))
+    })
+  }
+
+  function handleDuplicate(id: string) {
+    startTransition(async () => {
+      const result = await duplicateProposal(id)
+      if (result.error) return
+      const r = await fetch(`/api/leads/${lead.id}/proposals`)
+      const { proposals } = await r.json()
+      setProposals(proposals)
     })
   }
 
@@ -190,6 +200,14 @@ export function ProposalsList({ lead }: { lead: Lead }) {
                 style={{ background: 'var(--theme-accent)', color: 'var(--theme-accent-text)' }}
               >
                 {p.pdf_url ? 'Editar Orçamento' : 'Gerar Orçamento'}
+              </button>
+              <button
+                onClick={() => handleDuplicate(p.id)}
+                disabled={isPending}
+                className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-all hover:opacity-90 disabled:opacity-50"
+                style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--theme-text-muted)', border: '1px solid var(--theme-border)' }}
+              >
+                Duplicar
               </button>
             </div>
             <button

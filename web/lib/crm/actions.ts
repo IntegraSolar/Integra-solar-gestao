@@ -263,6 +263,35 @@ export async function deleteProposal(proposalId: string): Promise<ActionResult> 
   return { success: 'Proposta excluída.' }
 }
 
+export async function duplicateProposal(proposalId: string): Promise<ActionResult & { id?: string }> {
+  const user = await getCurrentUserData()
+  const orgId = user?.membership?.organization.id ?? null
+  const userId = user?.profile.id ?? null
+  if (!orgId) return { error: 'Sem organização ativa.' }
+
+  const supabase = await createClient()
+  const { data: original } = await supabase
+    .from('proposals')
+    .select('*')
+    .eq('id', proposalId)
+    .eq('organization_id', orgId)
+    .single()
+
+  if (!original) return { error: 'Proposta não encontrada.' }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { id, created_at, updated_at, pdf_url, ...rest } = original as any
+  const { data: newProposal, error } = await supabase
+    .from('proposals')
+    .insert({ ...rest, name: `${rest.name} (cópia)`, status: 'draft', pdf_url: null, created_by_user_id: userId })
+    .select('id')
+    .single()
+
+  if (error) return { error: error.message }
+  revalidatePath('/leads')
+  return { success: 'Proposta duplicada.', id: newProposal.id }
+}
+
 // ── Funnel Stage Actions ──────────────────────────────────────────
 
 export async function createFunnelStage(
