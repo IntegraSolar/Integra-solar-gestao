@@ -283,7 +283,7 @@ export async function duplicateProposal(proposalId: string): Promise<ActionResul
   const { id, created_at, updated_at, pdf_url, ...rest } = original as any
   const { data: newProposal, error } = await supabase
     .from('proposals')
-    .insert({ ...rest, name: `${rest.name} (cópia)`, status: 'draft', pdf_url: null, created_by_user_id: userId })
+    .insert({ ...rest, name: rest.name, status: 'draft', pdf_url: null, created_by_user_id: userId })
     .select('id')
     .single()
 
