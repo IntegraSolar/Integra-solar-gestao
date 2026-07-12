@@ -295,6 +295,21 @@ export default function ProjetoDetail({
         </Link>
       </div>
 
+      {/* Recibos */}
+      <div className={cardCls} style={cardStyle}>
+        <div className="flex items-center gap-2 mb-3">
+          <FileText size={16} style={{ color: '#60a5fa' }} />
+          <h2 className="text-sm font-semibold text-white/70">Recibos de Pagamento</h2>
+        </div>
+        <Link
+          href={`/financeiro/recibos`}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-colors hover:opacity-90"
+          style={{ background: 'rgba(96,165,250,0.12)', color: '#60a5fa', border: '1px solid rgba(96,165,250,0.25)' }}
+        >
+          <FileText size={14} /> Ver Recibos
+        </Link>
+      </div>
+
       {/* Link do Projetista */}
       <div className={cardCls} style={cardStyle}>
         <div className="flex items-center gap-2">

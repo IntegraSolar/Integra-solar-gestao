@@ -5,8 +5,9 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
 import { InstallmentStatus, PurchaseStatus, ProjectStatus, PipelineStage } from '@/lib/constants/status'
+import { generateReceipt } from './receipt-actions'
 
-export type ActionResult = { error?: string; success?: string; payment_proof_url?: string }
+export type ActionResult = { error?: string; success?: string; payment_proof_url?: string; receiptToken?: string }
 
 export async function confirmInstallment(installmentId: string): Promise<ActionResult> {
   const user = await getCurrentUserData()
@@ -90,7 +91,17 @@ export async function confirmInstallment(installmentId: string): Promise<ActionR
   }
 
   revalidatePath('/financeiro')
-  return { success: 'Pagamento confirmado.' }
+
+  // Gera recibo automático em background (não bloqueia a resposta se falhar)
+  let receiptToken: string | undefined
+  try {
+    const receiptResult = await generateReceipt(installment.client_id)
+    receiptToken = receiptResult.token
+  } catch {
+    // silently ignore receipt generation errors — payment confirmation succeeded
+  }
+
+  return { success: 'Pagamento confirmado.', receiptToken }
 }
 
 const ALLOWED_RECEIPT_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp']

@@ -144,7 +144,7 @@ export default function ClientPortalView({ paramsPromise }: { paramsPromise: Pro
     )
   }
 
-  const { organization, client, project, timeline, notices, deadline, financial, equipment, monitoring, documents, projectDocs, photos } = data
+  const { organization, client, project, timeline, notices, deadline, financial, equipment, monitoring, documents, projectDocs, photos, latestReceipt } = data
   const hasEquipment = equipment.modules.brand || equipment.modules.qty || equipment.inverters.brand
   const allDocs = [...documents, ...projectDocs.map(d => ({ type: 'projeto', label: d.name, url: d.url }))]
 
@@ -347,6 +347,47 @@ export default function ClientPortalView({ paramsPromise }: { paramsPromise: Pro
                   <>📦 Baixar todos os documentos (.ZIP)</>
                 )}
               </button>
+            </div>
+          </Card>
+        )}
+
+        {/* Recibo de Pagamento */}
+        {latestReceipt && (
+          <Card icon="🧾" title="Recibo de Pagamento">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-500">Versão {latestReceipt.version}</span>
+                <span className="text-gray-500">{new Date(latestReceipt.created_at).toLocaleDateString('pt-BR')}</span>
+              </div>
+              <div className="bg-green-50 rounded-xl p-3 flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-green-600 font-medium">Total pago</p>
+                  <p className="text-lg font-bold text-green-700">
+                    {latestReceipt.total_paid.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  </p>
+                </div>
+                <span className="text-2xl">✅</span>
+              </div>
+              <p className="text-xs text-gray-500">
+                Comprovante oficial atualizado com todos os pagamentos realizados até a data de emissão.
+              </p>
+              <div className="flex gap-2">
+                <a
+                  href={`/api/recibos/${latestReceipt.token}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 py-2.5 bg-green-600 text-white text-sm font-medium rounded-xl text-center hover:bg-green-700 transition-colors"
+                >
+                  📄 Visualizar Recibo
+                </a>
+                <a
+                  href={`/api/recibos/${latestReceipt.token}`}
+                  download="recibo.pdf"
+                  className="flex-1 py-2.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-xl text-center hover:bg-gray-200 transition-colors"
+                >
+                  ⬇ Baixar PDF
+                </a>
+              </div>
             </div>
           </Card>
         )}

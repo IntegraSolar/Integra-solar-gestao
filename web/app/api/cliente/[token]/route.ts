@@ -74,7 +74,7 @@ export async function GET(
   const [
     saleRes, contractRes, projectRes, purchaseRes,
     deliveryRes, obraRes, obraDeliveryRes, posObraRes,
-    installmentsRes, attachmentsRes, proposalRes
+    installmentsRes, attachmentsRes, proposalRes, latestReceiptRes
   ] = await Promise.all([
     (supabase as any).from('client_sales').select('*').eq('client_id', clientId).maybeSingle(),
     (supabase as any).from('client_contracts').select('*').eq('client_id', clientId).maybeSingle(),
@@ -88,6 +88,7 @@ export async function GET(
     (supabase as any).from('client_attachments').select('id, type, file_url').eq('client_id', clientId).order('uploaded_at', { ascending: true }),
     (supabase as any).from('proposals').select('total_modules, module_power_wp, panel_brand_model, total_inverters, inverter_power_w, inverter_brand_model, total_power_kwp')
       .eq('lead_id', client.lead_id).order('created_at', { ascending: false }).limit(1).maybeSingle(),
+    (supabase as any).from('payment_receipts').select('token, version, total_paid, created_at').eq('client_id', clientId).order('version', { ascending: false }).limit(1).maybeSingle(),
   ])
 
   const sale = saleRes.data
@@ -255,6 +256,12 @@ export async function GET(
     documents,
     projectDocs: projDocs,
     photos,
+    latestReceipt: latestReceiptRes?.data ? {
+      token: latestReceiptRes.data.token,
+      version: latestReceiptRes.data.version,
+      total_paid: Number(latestReceiptRes.data.total_paid),
+      created_at: latestReceiptRes.data.created_at,
+    } : null,
   })
 }
 

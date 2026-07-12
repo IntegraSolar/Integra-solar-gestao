@@ -79,6 +79,7 @@ export function Sidebar({ user, notificationCount = 0, onNotificationClick }: Si
 
   const FINANCEIRO_SUB = [
     { label: 'Painel', href: '/financeiro' },
+    { label: 'Recibos', href: '/financeiro/recibos' },
     { label: 'Custos', href: '/financeiro/custos' },
     { label: 'DRE', href: '/financeiro/dre' },
   ]

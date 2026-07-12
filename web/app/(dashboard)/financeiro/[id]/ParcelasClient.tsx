@@ -5,8 +5,11 @@ import { useTransition, useState, useRef } from 'react'
 import { Button } from '@/components/ui/Button'
 import { confirmInstallment, advanceToProjects, uploadReceipt } from '@/lib/financeiro/actions'
 import type { FinanceiroInstallment } from '@/lib/financeiro/queries'
-import { Paperclip, ExternalLink } from 'lucide-react'
+import { Paperclip, ExternalLink, FileText, Download, Copy, Check } from 'lucide-react'
 import { secureStorageUrl } from '@/lib/storage/url'
+import { getLatestReceiptByClient, generateReceipt } from '@/lib/financeiro/receipt-actions'
+import type { PaymentReceipt } from '@/lib/financeiro/receipt-actions'
+import { useEffect } from 'react'
 
 function formatBRL(value: number) {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -127,6 +130,83 @@ function ParcelaRow({
   )
 }
 
+function ReceiptCard({ receipt, onRegenerate, regenerating }: {
+  receipt: PaymentReceipt | null
+  onRegenerate: () => void
+  regenerating: boolean
+}) {
+  const [copied, setCopied] = useState(false)
+  const publicUrl = receipt ? `${typeof window !== 'undefined' ? window.location.origin : ''}/api/recibos/${receipt.token}` : null
+
+  function copyLink() {
+    if (!publicUrl) return
+    navigator.clipboard.writeText(publicUrl)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <div className="rounded-2xl border border-white/10 p-4 space-y-3" style={{ background: 'var(--theme-surface)' }}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <FileText size={15} style={{ color: 'var(--theme-accent)' }} />
+          <span className="text-sm font-semibold" style={{ color: 'var(--theme-text)' }}>Recibo de Pagamento</span>
+        </div>
+        <button
+          type="button"
+          onClick={onRegenerate}
+          disabled={regenerating}
+          className="text-xs px-2.5 py-1 rounded-lg border border-white/10 hover:bg-white/10 transition-colors disabled:opacity-50"
+          style={{ color: 'var(--theme-text-subtle)' }}
+        >
+          {regenerating ? 'Gerando...' : '↻ Regerar'}
+        </button>
+      </div>
+
+      {receipt ? (
+        <>
+          <p className="text-xs" style={{ color: 'var(--theme-text-subtle)' }}>
+            Versão {receipt.version} · Emitido em {new Date(receipt.created_at).toLocaleDateString('pt-BR')}
+            {receipt.created_by_name ? ` por ${receipt.created_by_name}` : ''}
+          </p>
+          <div className="flex gap-2 flex-wrap">
+            <a
+              href={publicUrl!}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium transition-colors hover:opacity-90"
+              style={{ background: 'var(--theme-accent)', color: 'var(--theme-accent-text)' }}
+            >
+              <ExternalLink size={12} /> Visualizar
+            </a>
+            <a
+              href={`${publicUrl}?dl=1`}
+              download={`recibo-v${receipt.version}.pdf`}
+              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium border border-white/10 hover:bg-white/10 transition-colors"
+              style={{ color: 'var(--theme-text)' }}
+            >
+              <Download size={12} /> Baixar PDF
+            </a>
+            <button
+              type="button"
+              onClick={copyLink}
+              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium border border-white/10 hover:bg-white/10 transition-colors"
+              style={{ color: 'var(--theme-text)' }}
+            >
+              {copied ? <Check size={12} /> : <Copy size={12} />}
+              {copied ? 'Copiado!' : 'Copiar link'}
+            </button>
+          </div>
+        </>
+      ) : (
+        <p className="text-xs" style={{ color: 'var(--theme-text-subtle)' }}>
+          Nenhum recibo gerado ainda. Confirme um pagamento para gerar automaticamente.
+        </p>
+      )}
+    </div>
+  )
+}
+
 export function ParcelasClient({
   clientId,
   parcelas,
@@ -137,13 +217,35 @@ export function ParcelasClient({
   pipelineStage: string
 }) {
   const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null)
+  const [receipt, setReceipt] = useState<PaymentReceipt | null>(null)
+  const [regenerating, setRegenerating] = useState(false)
+
+  useEffect(() => {
+    getLatestReceiptByClient(clientId).then(r => setReceipt(r))
+  }, [clientId])
+
+  async function handleRegenerate() {
+    setRegenerating(true)
+    const result = await generateReceipt(clientId)
+    if (result.error) setMessage({ type: 'error', text: result.error })
+    else {
+      const r = await getLatestReceiptByClient(clientId)
+      setReceipt(r)
+      setMessage({ type: 'success', text: 'Recibo gerado com sucesso.' })
+    }
+    setRegenerating(false)
+  }
   const [isPending, startTransition] = useTransition()
 
   function handleConfirm(installmentId: string) {
     startTransition(async () => {
       const result = await confirmInstallment(installmentId)
       if (result.error) setMessage({ type: 'error', text: result.error })
-      if (result.success) setMessage({ type: 'success', text: result.success })
+      if (result.success) {
+        setMessage({ type: 'success', text: result.success })
+        // Refresh receipt after confirmation
+        getLatestReceiptByClient(clientId).then(r => setReceipt(r))
+      }
     })
   }
 
@@ -196,6 +298,9 @@ export function ParcelasClient({
           {message.text}
         </p>
       )}
+
+      {/* Recibo automático */}
+      <ReceiptCard receipt={receipt} onRegenerate={handleRegenerate} regenerating={regenerating} />
 
       {/* Avançar pipeline */}
       {pipelineStage === 'financeiro' && (
