@@ -189,7 +189,7 @@ export function ProposalsList({ lead }: { lead: Lead }) {
                 className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-all hover:opacity-90"
                 style={{ background: 'var(--theme-accent)', color: 'var(--theme-accent-text)' }}
               >
-                {p.pdf_url ? 'Regerar Orçamento' : 'Gerar Orçamento'}
+                {p.pdf_url ? 'Editar Orçamento' : 'Gerar Orçamento'}
               </button>
             </div>
             <button
