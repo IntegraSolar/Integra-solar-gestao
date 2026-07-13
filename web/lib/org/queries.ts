@@ -7,6 +7,7 @@ export type ModulePermission = {
   add: boolean
   edit: boolean
   delete: boolean
+  export: boolean
 }
 
 export type CurrentUserData = {
