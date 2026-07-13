@@ -14,7 +14,7 @@ export type EmpresaRow = {
 }
 
 export type EmpresaDetalhe = EmpresaRow & {
-  usuarios: Array<{ id: string; full_name: string; email: string; role: string; created_at: string }>
+  usuarios: Array<{ id: string; user_id: string; full_name: string; email: string; role: string; created_at: string }>
 }
 
 export async function listarEmpresas(search?: string): Promise<EmpresaRow[]> {
@@ -96,6 +96,7 @@ export async function buscarEmpresa(id: string): Promise<EmpresaDetalhe | null> 
 
   const usuarios = (members ?? []).map((m) => ({
     id: m.id,
+    user_id: m.user_id,
     full_name: profileMap[m.user_id]?.full_name ?? '—',
     email: profileMap[m.user_id]?.email ?? '—',
     role: m.role ?? 'member',
@@ -141,6 +142,54 @@ export async function excluirEmpresa(id: string): Promise<{ error?: string }> {
   }
 
   return {}
+}
+
+export type OrgConfig = {
+  razao_social: string | null
+  nome_fantasia: string | null
+  cnpj: string | null
+  email: string | null
+  telefone: string | null
+  cep: string | null
+  endereco: string | null
+  numero: string | null
+  bairro: string | null
+  cidade: string | null
+  estado: string | null
+}
+
+const EMPTY_CONFIG: OrgConfig = {
+  razao_social: null, nome_fantasia: null, cnpj: null, email: null, telefone: null,
+  cep: null, endereco: null, numero: null, bairro: null, cidade: null, estado: null,
+}
+
+export async function getOrgConfig(orgId: string): Promise<OrgConfig> {
+  const admin = createAdminClient()
+  const { data } = await admin
+    .from('org_config')
+    .select('razao_social, nome_fantasia, cnpj, email, telefone, cep, endereco, numero, bairro, cidade, estado')
+    .eq('organization_id', orgId)
+    .maybeSingle()
+  return (data as OrgConfig) ?? EMPTY_CONFIG
+}
+
+export type OwnerInfo = { userId: string; email: string; name: string | null } | null
+
+export async function getOwnerInfo(orgId: string): Promise<OwnerInfo> {
+  const admin = createAdminClient()
+  const { data: members } = await admin
+    .from('organization_members')
+    .select('user_id, role, created_at')
+    .eq('organization_id', orgId)
+    .order('created_at', { ascending: true })
+  if (!members?.length) return null
+  const owner = members.find((m) => m.role === 'owner') ?? members[0]
+  const { data: profile } = await admin
+    .from('profiles')
+    .select('full_name, email')
+    .eq('id', owner.user_id)
+    .maybeSingle()
+  return { userId: owner.user_id, email: profile?.email ?? '', name: profile?.full_name ?? null }
 }
 
 export async function bloquearEmpresa(id: string, motivo: string): Promise<{ error?: string }> {

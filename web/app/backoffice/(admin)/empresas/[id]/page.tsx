@@ -1,10 +1,11 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { buscarEmpresa } from '@/lib/backoffice/empresas/queries'
+import { buscarEmpresa, getOrgConfig } from '@/lib/backoffice/empresas/queries'
 import { getAssinatura } from '@/lib/backoffice/assinaturas/queries'
-import { PageHeader, Card, CardHeader, Table, EmptyRow, Badge } from '@/components/backoffice/ui'
+import { PageHeader, Card, CardHeader, Table, Badge } from '@/components/backoffice/ui'
 import { BloquearEmpresaButton, DesbloquearEmpresaButton, EditarEmpresaButton, ExcluirEmpresaButton } from './EmpresaActions'
 import { AssinaturaManager } from './AssinaturaManager'
+import { EditarCadastroButton, ResetarSenhaButton, AdicionarUsuarioButton, RemoverUsuarioButton, ImpersonarButton } from './EmpresaManage'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,7 +26,11 @@ function InfoRow({ label, value }: { label: string; value?: string | null }) {
 
 export default async function EmpresaDetalhePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const [empresa, assinatura] = await Promise.all([buscarEmpresa(id), getAssinatura(id)])
+  const [empresa, assinatura, config] = await Promise.all([
+    buscarEmpresa(id),
+    getAssinatura(id),
+    getOrgConfig(id),
+  ])
   if (!empresa) notFound()
 
   const bloqueada = !!empresa.blocked_at
@@ -36,7 +41,8 @@ export default async function EmpresaDetalhePage({ params }: { params: Promise<{
         title={empresa.name}
         back={{ href: '/backoffice/empresas', label: 'Voltar para Empresas' }}
         action={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <ImpersonarButton orgId={empresa.id} />
             <EditarEmpresaButton id={empresa.id} currentName={empresa.name} currentPlan={empresa.plan} currentStatus={empresa.status} />
             {bloqueada ? <DesbloquearEmpresaButton id={empresa.id} /> : <BloquearEmpresaButton id={empresa.id} />}
             <ExcluirEmpresaButton id={empresa.id} name={empresa.name} />
@@ -72,18 +78,46 @@ export default async function EmpresaDetalhePage({ params }: { params: Promise<{
         </Card>
       </div>
 
+      {/* Dados cadastrais */}
+      <Card className="mt-4">
+        <CardHeader title="Dados cadastrais" action={<EditarCadastroButton orgId={empresa.id} config={config} />} />
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-5 p-6">
+          <InfoRow label="Razão social" value={config.razao_social} />
+          <InfoRow label="Nome fantasia" value={config.nome_fantasia} />
+          <InfoRow label="CNPJ" value={config.cnpj} />
+          <InfoRow label="E-mail" value={config.email} />
+          <InfoRow label="Telefone" value={config.telefone} />
+          <InfoRow label="CEP" value={config.cep} />
+          <InfoRow label="Endereço" value={[config.endereco, config.numero].filter(Boolean).join(', ')} />
+          <InfoRow label="Bairro" value={config.bairro} />
+          <InfoRow label="Cidade / UF" value={[config.cidade, config.estado].filter(Boolean).join(' / ')} />
+        </div>
+      </Card>
+
+      {/* Membros */}
       <Card className="mt-4 overflow-hidden">
-        <CardHeader title={`Membros (${empresa.total_users})`} />
+        <CardHeader
+          title={`Membros (${empresa.total_users})`}
+          action={
+            <div className="flex items-center gap-2">
+              <ResetarSenhaButton orgId={empresa.id} />
+              <AdicionarUsuarioButton orgId={empresa.id} />
+            </div>
+          }
+        />
         {empresa.usuarios.length === 0 ? (
           <div className="p-6"><p className="text-sm text-[#7C8D9E]">Nenhum membro cadastrado.</p></div>
         ) : (
-          <Table head={['Nome', 'E-mail', 'Perfil', 'Desde']}>
+          <Table head={['Nome', 'E-mail', 'Perfil', 'Desde', '']}>
             {empresa.usuarios.map((u) => (
               <tr key={u.id} className="border-b border-[#F0F4F8] last:border-0">
                 <td className="px-5 py-3 font-semibold text-[#0E1B2A]">{u.full_name}</td>
                 <td className="px-5 py-3 text-[#45586E]">{u.email}</td>
                 <td className="px-5 py-3"><Badge tone={u.role === 'owner' ? 'purple' : 'gray'}>{u.role}</Badge></td>
                 <td className="px-5 py-3 text-[#7C8D9E] text-xs tabular-nums">{new Date(u.created_at).toLocaleDateString('pt-BR')}</td>
+                <td className="px-5 py-3 text-right">
+                  <RemoverUsuarioButton orgId={empresa.id} memberId={u.id} userId={u.user_id} nome={u.full_name} />
+                </td>
               </tr>
             ))}
           </Table>
