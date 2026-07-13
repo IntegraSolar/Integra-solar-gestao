@@ -76,7 +76,7 @@ function isPublicRoute(pathname: string): boolean {
   return PUBLIC_ROUTES.some((route) => pathname.startsWith(route))
 }
 
-export async function middleware(request: NextRequest) {
+async function middlewareHandler(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl
 
   // ── Branch 1: Backoffice — auth independente do Supabase ──────────
@@ -224,6 +224,23 @@ export async function middleware(request: NextRequest) {
   }
 
   return supabaseResponse
+}
+
+export async function middleware(request: NextRequest): Promise<NextResponse> {
+  try {
+    return await middlewareHandler(request)
+  } catch (err) {
+    console.error('[middleware] erro não tratado:', err)
+    const { pathname } = request.nextUrl
+    // Rotas públicas: permite passar mesmo com erro
+    if (isPublicRoute(pathname) || pathname === '/') {
+      return NextResponse.next()
+    }
+    // Rotas protegidas: redireciona para login
+    const url = request.nextUrl.clone()
+    url.pathname = '/login'
+    return NextResponse.redirect(url)
+  }
 }
 
 export const config = {

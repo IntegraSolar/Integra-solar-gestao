@@ -50,4 +50,7 @@ const nextConfig = {
 export default withSentryConfig(nextConfig, {
   silent: true,
   hideSourceMaps: true,
+  // Evita que o Sentry envolva o middleware com instrumentação Edge Runtime,
+  // que pode crashar quando NEXT_PUBLIC_SENTRY_DSN não está configurado.
+  autoInstrumentMiddleware: false,
 })
