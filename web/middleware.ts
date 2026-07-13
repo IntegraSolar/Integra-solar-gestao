@@ -104,17 +104,8 @@ async function middlewareHandler(request: NextRequest): Promise<NextResponse> {
   }
 
   // Rotas públicas não precisam de verificação Supabase — retorna direto.
-  // (Usuário autenticado em /login vai ao dashboard após o form redirect, não antes.)
   if (isPublicRoute(pathname)) {
     return NextResponse.next({ request })
-  }
-
-  // Rota raiz sem cookie de sessão → landing ou login, sem chamar Supabase
-  if (pathname === '/') {
-    const hasSession = request.cookies.getAll().some(
-      (c) => c.name.startsWith('sb-') && c.name.endsWith('-auth-token')
-    )
-    if (!hasSession) return NextResponse.next({ request })
   }
 
   let supabaseResponse = NextResponse.next({ request })
@@ -140,15 +131,17 @@ async function middlewareHandler(request: NextRequest): Promise<NextResponse> {
     }
   )
 
+  // getSession() lê o JWT do cookie localmente — sem chamada de rede ao Supabase.
+  // Evita timeout no Edge Runtime. A validação real ocorre nos Server Components.
   let user = null
   try {
-    const { data } = await supabase.auth.getUser()
-    user = data.user
+    const { data: { session } } = await supabase.auth.getSession()
+    user = session?.user ?? null
   } catch {
     user = null
   }
 
-  // Rota raiz com sessão → redireciona ao dashboard
+  // Rota raiz → redireciona usuário autenticado ao dashboard
   if (pathname === '/') {
     if (user) {
       const url = request.nextUrl.clone()
