@@ -80,6 +80,7 @@ export async function updateCost(id: string, data: UpsertCostData): Promise<Acti
   const { error } = await (supabase as any)
     .from('project_costs')
     .update({
+      client_id: data.client_id,
       description: data.description,
       category: data.category,
       amount: data.amount,
@@ -102,6 +103,15 @@ export async function deleteCost(id: string): Promise<ActionResult> {
   if (!orgId) return { error: 'Sem organização ativa.' }
 
   const supabase = await createClient()
+
+  // Busca o client_id antes de deletar para poder invalidar o cache do DRE
+  const { data: existing } = await (supabase as any)
+    .from('project_costs')
+    .select('client_id')
+    .eq('id', id)
+    .eq('organization_id', orgId)
+    .maybeSingle()
+
   const { error } = await (supabase as any)
     .from('project_costs')
     .delete()
@@ -110,5 +120,7 @@ export async function deleteCost(id: string): Promise<ActionResult> {
 
   if (error) return { error: error.message }
   revalidatePath('/financeiro/custos')
+  revalidatePath('/financeiro/dre')
+  if (existing?.client_id) revalidatePath(`/financeiro/dre/${existing.client_id}`)
   return { success: 'Custo removido.' }
 }

@@ -51,7 +51,7 @@ export default function DRESummaryClient({ summary }: { summary: DRESummary }) {
                 </div>
               </div>
             )}
-            {leastProfitable && leastProfitable !== mostProfitable && (
+            {leastProfitable && (
               <div className="rounded-2xl p-4 flex items-center gap-3" style={{ background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)' }}>
                 <TrendingDown size={20} className="text-red-400 flex-shrink-0" />
                 <div>

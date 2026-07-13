@@ -156,14 +156,17 @@ export async function getDRESummary(): Promise<DRESummary> {
 
   const sorted = [...projects].sort((a: any, b: any) => b.profit - a.profit)
 
+  const first = sorted[0] ?? null
+  const last = sorted.length > 1 ? sorted[sorted.length - 1] : null
+
   return {
     totalRevenue,
     totalCosts,
     totalProfit,
     avgMargin,
     projectCount: projects.length,
-    mostProfitable: sorted[0] ? { name: sorted[0].name, profit: sorted[0].profit } : null,
-    leastProfitable: sorted[sorted.length - 1] ? { name: sorted[sorted.length - 1].name, profit: sorted[sorted.length - 1].profit } : null,
+    mostProfitable: first ? { name: first.name, profit: first.profit } : null,
+    leastProfitable: last ? { name: last.name, profit: last.profit } : null,
     projects: sorted,
   }
 }
