@@ -25,7 +25,9 @@ export function NovaEmpresaForm() {
     email: '',
     phone: '',
     plan: 'professional' as 'starter' | 'professional' | 'enterprise',
+    password: '',
   })
+  const [showPassword, setShowPassword] = useState(false)
 
   function setField(key: keyof typeof form, value: string) {
     setForm(prev => ({ ...prev, [key]: value }))
@@ -125,13 +127,37 @@ export function NovaEmpresaForm() {
               placeholder="(63) 99999-9999"
             />
           </div>
+          <div>
+            <label className={labelCls}>Senha inicial <span className="text-[#9BAEBF] font-normal">(opcional)</span></label>
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                className={inputCls + ' pr-10'}
+                value={form.password}
+                onChange={e => setField('password', e.target.value)}
+                placeholder="Deixe em branco para enviar convite por e-mail"
+                minLength={form.password ? 8 : undefined}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(v => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9BAEBF] hover:text-[#4A6580]"
+                tabIndex={-1}
+              >
+                {showPassword ? '🙈' : '👁'}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Info sobre o convite */}
+      {/* Info sobre o modo de acesso */}
       <div className="rounded-xl bg-[#1A3A5C]/5 border border-[#1A3A5C]/10 px-5 py-4">
         <p className="text-xs text-[#4A6580] leading-relaxed">
-          <span className="font-semibold text-[#1A3A5C]">Como funciona:</span> Ao criar a empresa, um e-mail de convite será enviado automaticamente para o responsável com um link para ele definir sua senha e acessar a plataforma.
+          {form.password
+            ? <><span className="font-semibold text-[#1A3A5C]">Acesso imediato:</span> A conta será criada com a senha informada. O responsável poderá entrar na plataforma diretamente.</>
+            : <><span className="font-semibold text-[#1A3A5C]">Convite por e-mail:</span> Um e-mail será enviado para o responsável com um link para ele definir sua própria senha.</>
+          }
         </p>
       </div>
 

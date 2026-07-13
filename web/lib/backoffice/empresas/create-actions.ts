@@ -10,6 +10,7 @@ export type NovaEmpresaInput = {
   email: string
   phone?: string
   plan?: 'starter' | 'professional' | 'enterprise'
+  password?: string
 }
 
 export type NovaEmpresaResult = {
@@ -30,27 +31,48 @@ export async function criarNovaEmpresa(input: NovaEmpresaInput): Promise<NovaEmp
 
   const adminClient = createAdminClient()
 
-  // Envia convite por e-mail — o usuário define a própria senha ao clicar no link
-  const { data: inviteData, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(
-    email.trim().toLowerCase(),
-    {
-      data: { full_name: full_name.trim() },
-      redirectTo: process.env.NEXT_PUBLIC_SITE_URL
-        ? `${process.env.NEXT_PUBLIC_SITE_URL}/login`
-        : undefined,
-    }
-  )
+  let userId: string
 
-  if (inviteError || !inviteData?.user) {
-    // E-mail já cadastrado é o erro mais comum
-    const msg = inviteError?.message ?? 'Erro ao criar convite.'
-    if (msg.toLowerCase().includes('already')) {
-      return { error: 'Este e-mail já possui uma conta na plataforma.' }
+  if (password?.trim()) {
+    // Cria o usuário com senha definida — acesso imediato, sem e-mail de convite
+    const { data: createData, error: createError } = await adminClient.auth.admin.createUser({
+      email: email.trim().toLowerCase(),
+      password: password.trim(),
+      email_confirm: true,
+      user_metadata: { full_name: full_name.trim() },
+    })
+
+    if (createError || !createData?.user) {
+      const msg = createError?.message ?? 'Erro ao criar usuário.'
+      if (msg.toLowerCase().includes('already')) {
+        return { error: 'Este e-mail já possui uma conta na plataforma.' }
+      }
+      return { error: msg }
     }
-    return { error: msg }
+
+    userId = createData.user.id
+  } else {
+    // Envia convite por e-mail — o usuário define a própria senha ao clicar no link
+    const { data: inviteData, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(
+      email.trim().toLowerCase(),
+      {
+        data: { full_name: full_name.trim() },
+        redirectTo: process.env.NEXT_PUBLIC_SITE_URL
+          ? `${process.env.NEXT_PUBLIC_SITE_URL}/login`
+          : undefined,
+      }
+    )
+
+    if (inviteError || !inviteData?.user) {
+      const msg = inviteError?.message ?? 'Erro ao criar convite.'
+      if (msg.toLowerCase().includes('already')) {
+        return { error: 'Este e-mail já possui uma conta na plataforma.' }
+      }
+      return { error: msg }
+    }
+
+    userId = inviteData.user.id
   }
-
-  const userId = inviteData.user.id
 
   try {
     const { orgId } = await createOrganizationResources({
@@ -62,10 +84,13 @@ export async function criarNovaEmpresa(input: NovaEmpresaInput): Promise<NovaEmp
       plan,
     })
 
-    return { success: `Empresa criada com sucesso! Convite enviado para ${email}.`, orgId }
-  } catch (err: any) {
+    const successMsg = password?.trim()
+      ? `Empresa criada! Acesso imediato com o e-mail ${email}.`
+      : `Empresa criada! Convite enviado para ${email}.`
+    return { success: successMsg, orgId }
+  } catch (err: unknown) {
     // Rollback: remove o auth user se a org falhou
     await adminClient.auth.admin.deleteUser(userId)
-    return { error: err?.message ?? 'Erro ao criar organização.' }
+    return { error: err instanceof Error ? err.message : 'Erro ao criar organização.' }
   }
 }
