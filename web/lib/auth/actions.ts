@@ -6,7 +6,7 @@ import { headers } from 'next/headers'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { rateLimit } from '@/lib/rate-limit'
-import { checkBruteForce, recordLoginAttempt, isNewDevice, recordSession } from '@/lib/auth/brute-force'
+import { checkBruteForce, recordLoginAttempt, recordSession } from '@/lib/auth/brute-force'
 
 // ── Schemas de validação ─────────────────────────────────────────────────────
 
@@ -92,8 +92,6 @@ export async function signIn(
   const user = data.user
   const session = data.session
 
-  const newDevice = await isNewDevice(user.id, ua, ip)
-
   await recordSession({
     userId: user.id,
     organizationId: null,
@@ -103,39 +101,8 @@ export async function signIn(
     rememberMe,
   })
 
-  // Notificação de novo dispositivo em background (não crítico)
-  if (newDevice && user.email) {
-    try {
-      const { sendNewDeviceLoginEmail } = await import('@/lib/email/resend')
-      const name = (user.user_metadata?.full_name as string) || user.email
-      const now = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
-      const parsed2 = parseUA(ua)
-      sendNewDeviceLoginEmail({
-        to: user.email,
-        name,
-        device: parsed2.device,
-        browser: parsed2.browser,
-        ip,
-        time: now,
-      }).catch(() => null)
-    } catch {
-      // Email de notificação não deve bloquear o login
-    }
-  }
-
   revalidatePath('/', 'layout')
   redirect('/dashboard')
-}
-
-function parseUA(ua: string) {
-  let browser = 'Navegador'
-  let device = 'Desktop'
-  if (ua.includes('Mobile')) device = 'Mobile'
-  if (ua.includes('Chrome') && !ua.includes('Edg')) browser = 'Chrome'
-  else if (ua.includes('Firefox')) browser = 'Firefox'
-  else if (ua.includes('Safari') && !ua.includes('Chrome')) browser = 'Safari'
-  else if (ua.includes('Edg')) browser = 'Edge'
-  return { browser, device }
 }
 
 // ── Logout ───────────────────────────────────────────────────────────────────
