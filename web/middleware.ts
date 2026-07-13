@@ -126,9 +126,14 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  let user = null
+  try {
+    const { data } = await supabase.auth.getUser()
+    user = data.user
+  } catch {
+    // Se o Supabase lançar exceção (rede instável, cold start), trata como não autenticado
+    user = null
+  }
 
   // Rota raiz → only redirect if authenticated
   if (pathname === '/') {
