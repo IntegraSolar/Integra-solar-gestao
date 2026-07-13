@@ -3,12 +3,14 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
+import { requirePermission } from '@/lib/org/permissions'
 import type { ActionResult } from '@/lib/crm/types'
 
 export async function markCommissionPaid(
   commissionId: string,
   comprovanteUrl?: string
 ): Promise<ActionResult> {
+  try { await requirePermission('comissoes', 'edit') } catch { return { error: 'Sem permissão para marcar comissão como paga.' } }
   const supabase = await createClient()
 
   // Fetch commission to get client_id

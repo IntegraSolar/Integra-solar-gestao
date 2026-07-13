@@ -1,7 +1,6 @@
 // web/app/(dashboard)/financeiro/page.tsx
-import { getCurrentUserData } from '@/lib/org/queries'
+import { requireModuleAccess } from '@/lib/org/permissions'
 import { getFinanceiroPainel, getFinanceiroMembers } from '@/lib/financeiro/queries'
-import { redirect } from 'next/navigation'
 import { FinanceiroPainelClient } from './FinanceiroPainelClient'
 
 export default async function FinanceiroPage({
@@ -9,8 +8,7 @@ export default async function FinanceiroPage({
 }: {
   searchParams: Promise<{ month?: string; year?: string; vendedor?: string; dateField?: string }>
 }) {
-  const user = await getCurrentUserData()
-  if (!user?.membership) redirect('/login')
+  await requireModuleAccess('financeiro')
 
   const params = await searchParams
   const now = new Date()

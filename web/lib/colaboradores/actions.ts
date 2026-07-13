@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getCurrentUserData } from '@/lib/org/queries'
+import { requirePermission } from '@/lib/org/permissions'
 import { logAction } from '@/lib/auditoria/actions'
 import type { ActionResult } from '@/lib/crm/types'
 
@@ -18,6 +19,7 @@ type CreateColaboradorData = {
 }
 
 export async function createColaborador(data: CreateColaboradorData): Promise<ActionResult> {
+  try { await requirePermission('configuracoes', 'add') } catch { return { error: 'Sem permissão para adicionar colaboradores.' } }
   const user = await getCurrentUserData()
   const orgId = user?.membership?.organization.id
   if (!orgId) return { error: 'Sem organização ativa.' }
@@ -94,6 +96,7 @@ export async function createColaborador(data: CreateColaboradorData): Promise<Ac
 export async function resetColaboradorPassword(
   userId: string
 ): Promise<ActionResult & { newPassword?: string }> {
+  try { await requirePermission('configuracoes', 'edit') } catch { return { error: 'Sem permissão para redefinir senhas.' } }
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'
   const bytes = randomBytes(10)
   const newPassword = Array.from(bytes).map(b => chars[b % chars.length]).join('')
@@ -110,6 +113,7 @@ export async function updateColaboradorPermissions(
   memberId: string,
   permissions: Record<string, unknown>
 ): Promise<ActionResult> {
+  try { await requirePermission('configuracoes', 'edit') } catch { return { error: 'Sem permissão para editar permissões.' } }
   const user = await getCurrentUserData()
   const orgId = user?.membership?.organization.id
   if (!orgId) return { error: 'Sem organização ativa.' }
@@ -137,6 +141,7 @@ export async function updateColaboradorPermissions(
 }
 
 export async function removeColaborador(memberId: string, userId: string): Promise<ActionResult> {
+  try { await requirePermission('configuracoes', 'delete') } catch { return { error: 'Sem permissão para remover colaboradores.' } }
   const user = await getCurrentUserData()
   const orgId = user?.membership?.organization.id
   if (!orgId) return { error: 'Sem organização ativa.' }

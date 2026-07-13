@@ -1,3 +1,4 @@
+import { requireModuleAccess } from '@/lib/org/permissions'
 import { getOrgConfig, getLeadOrigins } from '@/lib/configuracoes/queries'
 import { getColaboradores } from '@/lib/colaboradores/queries'
 import { getAuditLogs } from '@/lib/auditoria/queries'
@@ -5,6 +6,7 @@ import { getProposalTemplates } from '@/lib/proposals/templates'
 import ConfiguracoesClient from './ConfiguracoesClient'
 
 export default async function ConfiguracoesPage() {
+  await requireModuleAccess('configuracoes')
   const [config, origins, colaboradores, { logs, total }, proposalTemplates] = await Promise.all([
     getOrgConfig(),
     getLeadOrigins(),

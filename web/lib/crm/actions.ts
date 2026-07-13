@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
+import { requirePermission } from '@/lib/org/permissions'
 import { logAction } from '@/lib/auditoria/actions'
 import type { ActionResult } from './types'
 
@@ -34,6 +35,7 @@ const leadSchema = z.object({
 })
 
 export async function createLead(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
+  try { await requirePermission('leads', 'add') } catch { return { error: 'Sem permissão para criar leads.' } }
   const orgId = await getOrgId()
   if (!orgId) return { error: 'Sem organização ativa.' }
 
@@ -64,6 +66,7 @@ export async function updateLead(
   _prev: ActionResult,
   formData: FormData
 ): Promise<ActionResult> {
+  try { await requirePermission('leads', 'edit') } catch { return { error: 'Sem permissão para editar leads.' } }
   const orgId = await getOrgId()
   if (!orgId) return { error: 'Sem organização ativa.' }
 
@@ -89,6 +92,7 @@ export async function updateLead(
 }
 
 export async function deleteLead(leadId: string): Promise<ActionResult> {
+  try { await requirePermission('leads', 'delete') } catch { return { error: 'Sem permissão para excluir leads.' } }
   const orgId = await getOrgId()
   if (!orgId) return { error: 'Sem organização ativa.' }
   const supabase = await createClient()

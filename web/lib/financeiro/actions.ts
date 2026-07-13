@@ -4,12 +4,14 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
+import { requirePermission } from '@/lib/org/permissions'
 import { InstallmentStatus, PurchaseStatus, ProjectStatus, PipelineStage } from '@/lib/constants/status'
 import { generateReceipt } from './receipt-actions'
 
 export type ActionResult = { error?: string; success?: string; payment_proof_url?: string; receiptToken?: string }
 
 export async function confirmInstallment(installmentId: string): Promise<ActionResult> {
+  try { await requirePermission('financeiro', 'edit') } catch { return { error: 'Sem permissão para registrar pagamentos.' } }
   const user = await getCurrentUserData()
   const orgId = user?.membership?.organization.id ?? null
   if (!orgId) return { error: 'Sem organização ativa.' }

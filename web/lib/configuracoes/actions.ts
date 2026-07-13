@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
+import { requirePermission } from '@/lib/org/permissions'
 import { logAction } from '@/lib/auditoria/actions'
 import type { ActionResult } from '@/lib/crm/types'
 
@@ -31,6 +32,7 @@ const orgConfigSchema = z.object({
 })
 
 export async function saveOrgConfig(formData: Record<string, unknown>): Promise<ActionResult> {
+  try { await requirePermission('configuracoes', 'edit') } catch { return { error: 'Sem permissão para editar configurações.' } }
   const user = await getCurrentUserData()
   const orgId = user?.membership?.organization.id
   if (!orgId) return { error: 'Sem organização ativa.' }
@@ -62,6 +64,7 @@ export async function saveOrgConfig(formData: Record<string, unknown>): Promise<
 }
 
 export async function addLeadOrigin(name: string): Promise<ActionResult> {
+  try { await requirePermission('configuracoes', 'edit') } catch { return { error: 'Sem permissão para adicionar origens.' } }
   const user = await getCurrentUserData()
   const orgId = user?.membership?.organization.id
   if (!orgId) return { error: 'Sem organização ativa.' }
@@ -78,6 +81,7 @@ export async function addLeadOrigin(name: string): Promise<ActionResult> {
 }
 
 export async function removeLeadOrigin(id: string): Promise<ActionResult> {
+  try { await requirePermission('configuracoes', 'delete') } catch { return { error: 'Sem permissão para remover origens.' } }
   const user = await getCurrentUserData()
   const orgId = user?.membership?.organization.id
   if (!orgId) return { error: 'Sem organização ativa.' }

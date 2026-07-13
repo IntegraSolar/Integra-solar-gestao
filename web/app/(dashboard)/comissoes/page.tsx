@@ -1,4 +1,5 @@
 // web/app/(dashboard)/comissoes/page.tsx
+import { requireModuleAccess } from '@/lib/org/permissions'
 import { getComissoesPainel, getComissoesMembers } from '@/lib/comissoes/queries'
 import ComissoesPainelClient from './ComissoesPainelClient'
 
@@ -7,6 +8,8 @@ export default async function ComissoesPage({
 }: {
   searchParams: Promise<{ month?: string; year?: string; vendedorId?: string; dateField?: string }>
 }) {
+  await requireModuleAccess('comissoes')
+
   const params = await searchParams
   const now = new Date()
   const month = parseInt(params.month ?? String(now.getMonth() + 1))

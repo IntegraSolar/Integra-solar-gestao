@@ -1,5 +1,7 @@
+import { requireModuleAccess } from '@/lib/org/permissions'
 import RelatoriosClient from './RelatoriosClient'
 
-export default function RelatoriosPage() {
+export default async function RelatoriosPage() {
+  await requireModuleAccess('relatorios')
   return <RelatoriosClient />
 }
