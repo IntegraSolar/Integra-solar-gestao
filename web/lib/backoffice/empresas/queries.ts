@@ -34,20 +34,22 @@ export async function listarEmpresas(search?: string): Promise<EmpresaRow[]> {
 
   const orgIds = data.map((o) => o.id)
 
-  const [{ data: subscriptions }, { data: memberCounts }] = await Promise.all([
+  const [{ data: assinaturas }, { data: memberCounts }] = await Promise.all([
     admin
-      .from('subscriptions')
-      .select('organization_id, plan, status, expires_at')
+      .from('assinaturas')
+      .select('organization_id, plano, status, data_fim')
       .in('organization_id', orgIds),
     admin
-      .from('organization_members')
+      .from('app_users')
       .select('organization_id')
       .in('organization_id', orgIds),
   ])
 
   const subMap: Record<string, { plan: string | null; status: string | null; expires_at: string | null }> = {}
-  for (const s of subscriptions ?? []) {
-    if (!subMap[s.organization_id]) subMap[s.organization_id] = s
+  for (const s of assinaturas ?? []) {
+    if (!subMap[s.organization_id]) {
+      subMap[s.organization_id] = { plan: s.plano, status: s.status, expires_at: s.data_fim }
+    }
   }
 
   const countMap: Record<string, number> = {}
@@ -65,46 +67,40 @@ export async function listarEmpresas(search?: string): Promise<EmpresaRow[]> {
 export async function buscarEmpresa(id: string): Promise<EmpresaDetalhe | null> {
   const admin = createAdminClient()
 
-  const [{ data: org }, { data: subscriptions }, { data: members }] = await Promise.all([
+  const [{ data: org }, { data: assinaturas }, { data: members }] = await Promise.all([
     admin
       .from('organizations')
       .select('id, name, plan, status, created_at, blocked_at, blocked_reason, trial_ends_at')
       .eq('id', id)
       .single(),
     admin
-      .from('subscriptions')
-      .select('plan, status, expires_at')
+      .from('assinaturas')
+      .select('plano, status, data_fim')
       .eq('organization_id', id)
+      .order('created_at', { ascending: false })
       .limit(1),
     admin
-      .from('organization_members')
-      .select('id, role, created_at, user_id')
+      .from('app_users')
+      .select('id, name, email, role_id, created_at')
       .eq('organization_id', id)
       .order('created_at'),
   ])
 
   if (!org) return null
 
-  // Buscar profiles dos membros
-  const userIds = (members ?? []).map((m) => m.user_id)
-  const { data: profiles } = userIds.length
-    ? await admin.from('profiles').select('id, full_name, email').in('id', userIds)
-    : { data: [] }
-
-  const profileMap: Record<string, { full_name: string; email: string }> = {}
-  for (const p of profiles ?? []) profileMap[p.id] = p
-
   const usuarios = (members ?? []).map((m) => ({
     id: m.id,
-    full_name: profileMap[m.user_id]?.full_name ?? '—',
-    email: profileMap[m.user_id]?.email ?? '—',
-    role: m.role ?? 'member',
+    full_name: m.name ?? '—',
+    email: m.email ?? '—',
+    role: m.role_id ?? 'member',
     created_at: m.created_at,
   }))
 
   return {
     ...org,
-    assinatura: subscriptions?.[0] ?? null,
+    assinatura: assinaturas?.[0]
+      ? { plan: assinaturas[0].plano, status: assinaturas[0].status, expires_at: assinaturas[0].data_fim }
+      : null,
     total_users: usuarios.length,
     usuarios,
   }
@@ -125,19 +121,26 @@ export async function editarEmpresa(
 export async function excluirEmpresa(id: string): Promise<{ error?: string }> {
   const admin = createAdminClient()
 
-  // Busca todos os user_ids desta org para remover do auth
+  // Busca todos os user_ids desta org para remover do auth depois
   const { data: members } = await admin
     .from('app_users')
     .select('id')
     .eq('organization_id', id)
 
-  // Remove a organização (FK cascade remove registros filhos)
+  const userIds = (members ?? []).map((m) => m.id)
+
+  // Remove membros da app_users primeiro (evita FK violations)
+  if (userIds.length) {
+    await admin.from('app_users').delete().in('id', userIds)
+  }
+
+  // Remove a organização
   const { error } = await admin.from('organizations').delete().eq('id', id)
   if (error) return { error: error.message }
 
   // Remove usuários do auth
-  for (const m of members ?? []) {
-    await admin.auth.admin.deleteUser(m.id).catch(() => null)
+  for (const uid of userIds) {
+    await admin.auth.admin.deleteUser(uid).catch(() => null)
   }
 
   return {}

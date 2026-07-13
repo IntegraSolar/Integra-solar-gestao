@@ -11,36 +11,28 @@ export type CreateOrganizationParams = {
   plan?: string
 }
 
-/**
- * Cria todos os recursos necessários para uma nova organização:
- * 1. Perfil do usuário (profiles)
- * 2. Organização
- * 3. Vínculo owner (organization_members)
- * 4. Configuração padrão (org_config)
- * 5. Etapas padrão do funil (pipeline_stages)
- * 6. Template padrão de proposta (se existir no storage global)
- *
- * Lança erro em caso de falha — o chamador é responsável por rollback
- * do auth user se necessário.
- */
+// Role ID do "Super Admin" — dono da conta ao criar a org.
+const SUPER_ADMIN_ROLE_ID = '9db39e35-0e9b-4617-986f-8b3f7af74db3'
+
 export async function createOrganizationResources(
   params: CreateOrganizationParams
 ): Promise<{ orgId: string }> {
   const { userId, email, full_name, company_name, phone, plan = 'professional' } = params
 
-  const adminClient = createAdminClient()
+  const admin = createAdminClient()
 
-  // 1. Criar profile
-  await (adminClient as any).from('profiles').upsert({
-    id: userId,
-    email,
-    full_name,
-  })
-
-  // 2. Criar organização
-  const { data: org, error: orgError } = await (adminClient as any)
+  // 1. Criar organização
+  const { data: org, error: orgError } = await admin
     .from('organizations')
-    .insert({ name: company_name, plan, status: 'active' })
+    .insert({
+      name: company_name,
+      fantasy_name: company_name,
+      corporate_name: company_name,
+      plan,
+      status: 'active',
+      phone: phone ?? null,
+      email,
+    })
     .select('id')
     .single()
 
@@ -50,59 +42,73 @@ export async function createOrganizationResources(
 
   const orgId: string = org.id
 
-  // 3. Vincular user como owner
-  const { error: memberError } = await (adminClient as any)
-    .from('organization_members')
+  // 2. Vincular user como Super Admin na app_users
+  const { error: userError } = await admin
+    .from('app_users')
     .insert({
+      id: userId,
       organization_id: orgId,
-      user_id: userId,
-      role: 'owner',
-      permissions: {},
+      email,
+      name: full_name,
+      role_id: SUPER_ADMIN_ROLE_ID,
+      is_active: true,
     })
 
-  if (memberError) {
-    // Desfaz a org criada — o auth user é responsabilidade do chamador
-    await (adminClient as any).from('organizations').delete().eq('id', orgId)
-    throw new Error('Erro ao vincular usuário: ' + memberError.message)
+  if (userError) {
+    await admin.from('organizations').delete().eq('id', orgId)
+    throw new Error('Erro ao vincular usuário: ' + userError.message)
   }
 
-  // 4. Criar org_config padrão
-  await (adminClient as any).from('org_config').insert({
-    organization_id: orgId,
-    telefone: phone ?? null,
-  })
-
-  // 5. Criar etapas padrão do funil
+  // 3. Criar etapas padrão do funil
   const defaultStages = [
     { name: 'Chegada de Leads', order: 1, color: '#6B7A90' },
     { name: 'Follow-up', order: 2, color: '#3B82F6' },
     { name: 'Visita Agendada', order: 3, color: '#F59E0B' },
-    { name: 'Contrato Assinado', order: 4, color: '#10B981', is_terminal_won: true },
+    { name: 'Proposta Enviada', order: 4, color: '#8B5CF6' },
+    { name: 'Negociação', order: 5, color: '#F97316' },
+    { name: 'Contrato Assinado', order: 6, color: '#10B981' },
   ]
-  await (adminClient as any).from('pipeline_stages').insert(
+
+  await admin.from('pipeline_stages').insert(
     defaultStages.map((d) => ({ ...d, organization_id: orgId }))
   )
 
-  // 6. Criar template padrão de proposta (se existir o arquivo global)
-  const { data: globalTemplate } = await (adminClient as any).storage
-    .from('proposal-templates')
-    .download('global/template-padrao.docx')
-  if (globalTemplate) {
-    const filePath = `${orgId}/template-padrao.docx`
-    await (adminClient as any).storage
+  // 4. Criar configurações padrão de proposta
+  await admin.from('proposal_defaults').insert({
+    organization_id: orgId,
+    custo_projeto: 150,
+    custo_instalacao: 300,
+    valor_km: 2,
+    custo_ca_pct: 5,
+    comissao_pct: 5,
+    imposto_pct: 8,
+    margem_pct: 15,
+    prazo_contrato: 90,
+  }).then(() => null).catch(() => null)
+
+  // 5. Template padrão de proposta (se existir no storage global)
+  try {
+    const { data: globalTemplate } = await admin.storage
       .from('proposal-templates')
-      .upload(filePath, globalTemplate, {
-        contentType:
-          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      .download('global/template-padrao.docx')
+    if (globalTemplate) {
+      const filePath = `${orgId}/template-padrao.docx`
+      await admin.storage
+        .from('proposal-templates')
+        .upload(filePath, globalTemplate, {
+          contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        })
+      await admin.from('proposal_templates').insert({
+        org_id: orgId,
+        name: 'Template Padrão',
+        category: 'Residencial e comercial',
+        file_path: filePath,
+        is_default: true,
+        is_active: true,
       })
-    await (adminClient as any).from('proposal_templates').insert({
-      org_id: orgId,
-      name: 'Template Padrão',
-      category: 'Residencial e comercial',
-      file_path: filePath,
-      is_default: true,
-      is_active: true,
-    })
+    }
+  } catch {
+    // Template opcional — não bloqueia criação da org
   }
 
   return { orgId }
