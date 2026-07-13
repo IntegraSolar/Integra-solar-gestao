@@ -38,38 +38,33 @@ export const getCurrentUserData = cache(async function (): Promise<CurrentUserDa
   } = await supabase.auth.getUser()
   if (!user) return null
 
-  // Busca dados do usuário na tabela app_users (inclui org via join)
-  const { data: appUser } = await (supabase as any)
-    .from('app_users')
-    .select(`
-      id,
-      name,
-      email,
-      role_id,
-      organization_id,
-      organization:organizations(id, name, plan, status)
-    `)
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id, email, full_name')
     .eq('id', user.id)
     .single()
 
-  if (!appUser) return null
+  if (!profile) return null
 
-  const org = Array.isArray(appUser.organization)
-    ? appUser.organization[0]
-    : appUser.organization
+  const { data: membership } = await supabase
+    .from('organization_members')
+    .select(`
+      id,
+      role,
+      permissions,
+      organization:organizations(id, name, plan, status)
+    `)
+    .eq('user_id', user.id)
+    .single()
 
   return {
-    profile: {
-      id: appUser.id as string,
-      email: (appUser.email ?? user.email ?? '') as string,
-      full_name: (appUser.name ?? null) as string | null,
-    },
-    membership: org
+    profile,
+    membership: membership
       ? {
-          id: appUser.id as string,
-          role: (appUser.role_id ?? 'member') as string,
-          permissions: {} as Record<string, ModulePermission>,
-          organization: org as { id: string; name: string; plan: string; status: string },
+          id: membership.id as string,
+          role: membership.role as string,
+          permissions: (membership.permissions ?? {}) as Record<string, ModulePermission>,
+          organization: membership.organization as { id: string; name: string; plan: string; status: string },
         }
       : null,
   }

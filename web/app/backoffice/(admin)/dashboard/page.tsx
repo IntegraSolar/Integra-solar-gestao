@@ -7,7 +7,7 @@ async function getStats() {
   const admin = createAdminClient()
   const [orgs, subscriptions] = await Promise.all([
     admin.from('organizations').select('id', { count: 'exact', head: true }),
-    admin.from('assinaturas').select('status', { count: 'exact' }),
+    admin.from('subscriptions').select('status', { count: 'exact' }),
   ])
   const total = orgs.count ?? 0
   const byStatus = ((subscriptions.data ?? []) as { status: string }[]).reduce<Record<string, number>>(
