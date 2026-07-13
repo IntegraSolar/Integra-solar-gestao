@@ -1,4 +1,3 @@
-import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { verifySession } from '@/lib/backoffice/auth/session'
 
@@ -28,6 +27,14 @@ function isPublicRoute(pathname: string): boolean {
   return PUBLIC_ROUTES.some((route) => pathname.startsWith(route))
 }
 
+// Verifica presença do cookie de sessão Supabase sem chamada de rede.
+// A validação real do JWT ocorre nos Server Components (Node.js runtime).
+function hasSessionCookie(request: NextRequest): boolean {
+  return request.cookies.getAll().some(
+    ({ name, value }) => name.includes('-auth-token') && value.length > 0
+  )
+}
+
 async function middlewareHandler(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl
 
@@ -55,63 +62,30 @@ async function middlewareHandler(request: NextRequest): Promise<NextResponse> {
     return NextResponse.next()
   }
 
-  // Rotas públicas não precisam de verificação Supabase — retorna direto.
+  // ── Branch 2: Rotas públicas ───────────────────────────────────────
   if (isPublicRoute(pathname)) {
     return NextResponse.next({ request })
   }
 
-  let supabaseResponse = NextResponse.next({ request })
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          )
-          supabaseResponse = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
-        },
-      },
-    }
-  )
-
-  // getSession() lê o JWT do cookie localmente — sem chamada de rede ao Supabase.
-  // Evita timeout no Edge Runtime. A validação real ocorre nos Server Components.
-  let user = null
-  try {
-    const { data: { session } } = await supabase.auth.getSession()
-    user = session?.user ?? null
-  } catch {
-    user = null
-  }
-
-  // Rota raiz → redireciona usuário autenticado ao dashboard
+  // ── Branch 3: Rota raiz ────────────────────────────────────────────
   if (pathname === '/') {
-    if (user) {
+    if (hasSessionCookie(request)) {
       const url = request.nextUrl.clone()
       url.pathname = '/dashboard'
       return NextResponse.redirect(url)
     }
-    return supabaseResponse
+    return NextResponse.next({ request })
   }
 
-  // Usuário não autenticado tentando acessar rota protegida
-  if (!user) {
+  // ── Branch 4: Rotas protegidas ────────────────────────────────────
+  if (!hasSessionCookie(request)) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     url.searchParams.set('next', pathname)
     return NextResponse.redirect(url)
   }
 
-  return supabaseResponse
+  return NextResponse.next({ request })
 }
 
 export async function middleware(request: NextRequest): Promise<NextResponse> {
@@ -120,11 +94,9 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   } catch (err) {
     console.error('[middleware] erro não tratado:', err)
     const { pathname } = request.nextUrl
-    // Rotas públicas: permite passar mesmo com erro
     if (isPublicRoute(pathname) || pathname === '/') {
       return NextResponse.next()
     }
-    // Rotas protegidas: redireciona para login
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
@@ -133,6 +105,6 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webpo)$).*)',
   ],
 }
