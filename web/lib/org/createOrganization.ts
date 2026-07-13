@@ -21,20 +21,27 @@ export async function createOrganizationResources(
 
   const admin = createAdminClient()
 
-  // 1. Criar organização via RPC (contorna cache do PostgREST)
-  const { data: orgId, error: orgError } = await admin.rpc('create_organization', {
-    p_name: company_name,
-    p_fantasy_name: company_name,
-    p_corporate_name: company_name,
-    p_plan: plan,
-    p_status: 'active',
-    p_phone: phone ?? null,
-    p_email: email,
-  })
+  // 1. Criar organização
+  const { data: org, error: orgError } = await admin
+    .from('organizations')
+    .insert({
+      name: company_name,
+      fantasy_name: company_name,
+      corporate_name: company_name,
+      cnpj: '',
+      plan,
+      status: 'active',
+      phone: phone ?? null,
+      email,
+    })
+    .select('id')
+    .single()
 
-  if (orgError || !orgId) {
+  if (orgError || !org) {
     throw new Error('Erro ao criar empresa: ' + (orgError?.message ?? 'desconhecido'))
   }
+
+  const orgId: string = org.id
 
   // 2. Vincular user como Super Admin na app_users
   const { error: userError } = await admin
