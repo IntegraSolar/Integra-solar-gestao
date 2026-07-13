@@ -2,9 +2,19 @@
 
 import { useActionState } from 'react'
 import Image from 'next/image'
+import { useFormStatus } from 'react-dom'
 import { signInBackoffice } from '@/lib/backoffice/auth/actions'
 import { FormError } from '@/components/ui/FormError'
-import { SubmitButton } from '@/components/ui/SubmitButton'
+import { Button } from '@/components/backoffice/ui'
+
+function SubmitButton() {
+  const { pending } = useFormStatus()
+  return (
+    <Button type="submit" variant="primary" disabled={pending} className="mt-2 w-full py-3">
+      {pending ? 'Verificando...' : 'Entrar no Backoffice'}
+    </Button>
+  )
+}
 
 const initialState = { error: undefined }
 
@@ -63,12 +73,7 @@ export function BackofficeLoginForm() {
 
         <FormError message={state?.error} />
 
-        <SubmitButton
-          pendingLabel="Verificando..."
-          className="mt-2 w-full py-3 bg-[#1A3A5C] hover:bg-[#0E2236] text-white rounded-xl text-sm font-semibold transition-colors"
-        >
-          Entrar no Backoffice
-        </SubmitButton>
+        <SubmitButton />
       </form>
     </div>
   )

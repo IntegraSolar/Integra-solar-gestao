@@ -2,6 +2,7 @@
 
 import { useActionState, useRef } from 'react'
 import { criarAdmin } from '@/lib/backoffice/configuracoes/actions'
+import { Button } from '@/components/backoffice/ui'
 
 const ROLES = [
   { value: 'super_admin', label: 'Super Admin' },
@@ -54,10 +55,9 @@ export function NovoAdminForm() {
       )}
 
       <div className="md:col-span-2 flex justify-end">
-        <button type="submit" disabled={isPending}
-          className="rounded-xl bg-[#1A3A5C] text-white px-6 py-2.5 text-sm font-semibold hover:bg-[#0E2236] disabled:opacity-50 transition-colors">
+        <Button type="submit" variant="primary" disabled={isPending}>
           {isPending ? 'Criando...' : 'Criar usuário'}
-        </button>
+        </Button>
       </div>
     </form>
   )
