@@ -29,8 +29,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     (supabase as any).from('client_pos_obra').select('*').eq('client_id', clientId).maybeSingle(),
   ])
 
-  // Fetch project attachments
+  // Fetch project attachments + resolve responsible name
   let projectAttachments: any[] = []
+  let projectData = project.data ?? null
   if (project.data?.id) {
     const { data: atts } = await (supabase as any)
       .from('project_attachments')
@@ -38,6 +39,17 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       .eq('project_id', project.data.id)
       .order('uploaded_at', { ascending: true })
     projectAttachments = atts ?? []
+  }
+  // responsavel_nome stores the user UUID — resolve to display name
+  if (projectData?.responsavel_nome) {
+    const { data: profile } = await (supabase as any)
+      .from('profiles')
+      .select('full_name')
+      .eq('id', projectData.responsavel_nome)
+      .maybeSingle()
+    if (profile?.full_name) {
+      projectData = { ...projectData, responsavel_nome: profile.full_name }
+    }
   }
 
   // Fetch obra photos
@@ -79,7 +91,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     .maybeSingle()
 
   return NextResponse.json({
-    project: project.data ?? null,
+    project: projectData,
     projectAttachments,
     purchase: purchase.data ?? null,
     delivery: delivery.data ?? null,

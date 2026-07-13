@@ -193,7 +193,6 @@ export function Tab8PastaCompleta({ client }: { client: Client }) {
       <Section title="Vistoria">
         <Row label="Tipo de telhado" value={client.roof_type} />
         <Row label="Orientação" value={client.roof_orientation} />
-        <Row label="Coordenadas" value={client.maps_coordinates} />
         <Row label="Disjuntor entrada" value={client.entry_breaker} />
         <Row label="Cabo entrada" value={client.entry_cable_mm} />
         <Row label="Obras de adaptação" value={client.has_adaptation_works} />
