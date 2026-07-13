@@ -9,6 +9,7 @@ import {
   updateColaboradorPermissions,
 } from '@/lib/colaboradores/actions'
 import { Eye, EyeOff, Key, ChevronDown, ChevronUp, RotateCcw, Save } from 'lucide-react'
+import { ConfirmActionModal } from '@/components/ui/ConfirmActionModal'
 
 const inputCls =
   'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-400/60'
@@ -401,6 +402,7 @@ export default function AcessoTab({ colaboradores: initial }: { colaboradores: C
   const [resetResult, setResetResult] = useState<{ userId: string; password: string } | null>(null)
   const [resetPending, startReset] = useTransition()
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [confirmRemove, setConfirmRemove] = useState<{ id: string; user_id: string; name: string } | null>(null)
 
   // Add form state
   const [form, setForm] = useState({ full_name: '', email: '', password: '', role: 'vendedor' })
@@ -414,8 +416,14 @@ export default function AcessoTab({ colaboradores: initial }: { colaboradores: C
     setPermissions(getProfilePermissions(role))
   }
 
-  function handleRemove(id: string, user_id: string) {
-    if (!window.confirm('Remover colaborador? Esta ação não pode ser desfeita.')) return
+  function handleRemove(id: string, user_id: string, name: string) {
+    setConfirmRemove({ id, user_id, name })
+  }
+
+  function executeRemove() {
+    if (!confirmRemove) return
+    const { id, user_id } = confirmRemove
+    setConfirmRemove(null)
     startRemove(async () => {
       const res = await removeColaborador(id, user_id)
       if (res.success) {
@@ -460,6 +468,17 @@ export default function AcessoTab({ colaboradores: initial }: { colaboradores: C
   }
 
   return (
+    <>
+    <ConfirmActionModal
+      open={!!confirmRemove}
+      title="Remover colaborador"
+      description={`Esta ação remove permanentemente o acesso de ${confirmRemove?.name ?? 'este colaborador'} à plataforma. O histórico de atividades é mantido nos logs de auditoria.`}
+      phrase={confirmRemove?.name ?? ''}
+      phrasePlaceholder="Digite o nome para confirmar"
+      confirmLabel="Remover colaborador"
+      onConfirm={executeRemove}
+      onClose={() => setConfirmRemove(null)}
+    />
     <div className="space-y-6">
       {/* ── Lista de Colaboradores ────────────────────────────── */}
       <div className={cardCls} style={cardStyle}>
@@ -514,7 +533,7 @@ export default function AcessoTab({ colaboradores: initial }: { colaboradores: C
                         <button
                           className="text-xs text-red-400 hover:text-red-300 transition-colors disabled:opacity-40"
                           disabled={removePending}
-                          onClick={() => handleRemove(c.id, c.user_id)}
+                          onClick={() => handleRemove(c.id, c.user_id, c.full_name || c.email)}
                         >
                           Remover
                         </button>
@@ -651,5 +670,6 @@ export default function AcessoTab({ colaboradores: initial }: { colaboradores: C
         </div>
       </div>
     </div>
+    </>
   )
 }

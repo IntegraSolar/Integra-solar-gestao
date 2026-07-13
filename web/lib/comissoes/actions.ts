@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
 import { requirePermission } from '@/lib/org/permissions'
+import { logAction } from '@/lib/auditoria/actions'
 import type { ActionResult } from '@/lib/crm/types'
 
 export async function markCommissionPaid(
@@ -49,6 +50,7 @@ export async function markCommissionPaid(
     })
     .eq('id', commission.client_id)
 
+  await logAction('Comissão paga', `Comissão ID: ${commissionId}`)
   revalidatePath('/comissoes')
   return { success: 'Comissão marcada como paga.' }
 }

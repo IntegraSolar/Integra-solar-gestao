@@ -4,6 +4,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
+import { logAction } from '@/lib/auditoria/actions'
 
 export type ActionResult = { error?: string; success?: string }
 
@@ -53,6 +54,7 @@ export async function updateContractStatus(
     if (clientError) return { error: clientError.message }
   }
 
+  await logAction('Contrato atualizado', `Cliente ID: ${clientId} → status: ${status}`)
   revalidatePath('/contratos')
   revalidatePath(`/contratos/${clientId}`)
   return { success: status === 'assinado' ? 'Contrato confirmado. Cliente avançado para Financeiro.' : 'Status atualizado.' }

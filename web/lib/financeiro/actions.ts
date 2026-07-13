@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
 import { requirePermission } from '@/lib/org/permissions'
+import { logAction } from '@/lib/auditoria/actions'
 import { InstallmentStatus, PurchaseStatus, ProjectStatus, PipelineStage } from '@/lib/constants/status'
 import { generateReceipt } from './receipt-actions'
 
@@ -35,6 +36,7 @@ export async function confirmInstallment(installmentId: string): Promise<ActionR
     .eq('id', installmentId)
 
   if (error) return { error: error.message }
+  await logAction('Pagamento confirmado', `Parcela ID: ${installmentId}`)
 
   // If this is position 1 (entrada), activate Projetos and Compras
   if (installment.position === 1) {

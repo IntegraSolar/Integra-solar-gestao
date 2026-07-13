@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
+import { logAction } from '@/lib/auditoria/actions'
 import type { ActionResult } from '@/lib/crm/types'
 
 export async function createStockItem(data: {
@@ -25,6 +26,7 @@ export async function createStockItem(data: {
   })
 
   if (error) return { error: error.message }
+  await logAction('Item de estoque criado', `Nome: ${data.name}`)
   revalidatePath('/estoque')
   return { success: 'Item criado.' }
 }
@@ -50,6 +52,7 @@ export async function updateStockItem(
     .eq('id', id)
 
   if (error) return { error: error.message }
+  await logAction('Item de estoque atualizado', `ID: ${id}, Nome: ${data.name}`)
   revalidatePath('/estoque')
   return { success: 'Item atualizado.' }
 }
@@ -58,6 +61,7 @@ export async function deleteStockItem(id: string): Promise<ActionResult> {
   const supabase = await createClient()
   const { error } = await supabase.from('stock_items').delete().eq('id', id)
   if (error) return { error: error.message }
+  await logAction('Item de estoque excluído', `ID: ${id}`)
   revalidatePath('/estoque')
   return { success: 'Item removido.' }
 }
