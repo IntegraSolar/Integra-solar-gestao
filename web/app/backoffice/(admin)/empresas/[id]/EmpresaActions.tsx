@@ -8,8 +8,7 @@ import {
   excluirEmpresaAction,
 } from '@/lib/backoffice/empresas/actions'
 import { useRouter } from 'next/navigation'
-
-const inputCls = 'w-full rounded-xl border border-[#D0DCE8] px-4 py-2.5 text-sm text-[#1A3A5C] outline-none focus:border-[#1A3A5C] focus:ring-2 focus:ring-[#1A3A5C]/10 bg-white'
+import { Button, inputCls } from '@/components/backoffice/ui'
 
 const PLANS = ['starter', 'professional', 'enterprise']
 const STATUSES = ['active', 'trial', 'blocked', 'canceled']
@@ -46,17 +45,12 @@ export function EditarEmpresaButton({
 
   return (
     <>
-      <button
-        onClick={() => setOpen(true)}
-        className="rounded-xl border border-[#D0DCE8] bg-white px-4 py-2 text-sm font-semibold text-[#1A3A5C] hover:bg-[#F0F4F8] transition-colors"
-      >
-        Editar
-      </button>
+      <Button variant="secondary" onClick={() => setOpen(true)}>Editar</Button>
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mx-4">
-            <h3 className="text-base font-bold text-[#1A3A5C] mb-4">Editar empresa</h3>
+            <h3 className="text-base font-bold text-[#0E1B2A] mb-4">Editar empresa</h3>
 
             <div className="space-y-4">
               <div>
@@ -80,16 +74,10 @@ export function EditarEmpresaButton({
             {error && <p className="text-sm text-red-600 mt-3">{error}</p>}
 
             <div className="flex justify-end gap-3 mt-5">
-              <button onClick={() => setOpen(false)} className="px-4 py-2 text-sm text-[#6B8CA4] hover:text-[#1A3A5C]">
-                Cancelar
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={isPending}
-                className="rounded-xl bg-[#1A3A5C] text-white px-5 py-2 text-sm font-semibold hover:bg-[#0E2236] disabled:opacity-50 transition-colors"
-              >
+              <Button variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
+              <Button variant="primary" onClick={handleSave} disabled={isPending}>
                 {isPending ? 'Salvando...' : 'Salvar'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -115,18 +103,13 @@ export function ExcluirEmpresaButton({ id, name }: { id: string; name: string })
 
   return (
     <>
-      <button
-        onClick={() => setOpen(true)}
-        className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-100 transition-colors"
-      >
-        Excluir
-      </button>
+      <Button variant="danger" onClick={() => setOpen(true)}>Excluir</Button>
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mx-4">
-            <h3 className="text-base font-bold text-red-700 mb-1">Excluir empresa</h3>
-            <p className="text-sm text-[#6B8CA4] mb-4">
+            <h3 className="text-base font-bold text-[#C11B1B] mb-1">Excluir empresa</h3>
+            <p className="text-sm text-[#45586E] mb-4">
               Esta ação é <strong>irreversível</strong>. Todos os dados da empresa serão apagados permanentemente.
               Para confirmar, digite o nome da empresa abaixo:
             </p>
@@ -137,18 +120,12 @@ export function ExcluirEmpresaButton({ id, name }: { id: string; name: string })
               value={confirm}
               onChange={e => { setConfirm(e.target.value); setError(null) }}
             />
-            {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
+            {error && <p className="text-sm text-[#C11B1B] mt-2">{error}</p>}
             <div className="flex justify-end gap-3 mt-5">
-              <button onClick={() => { setOpen(false); setConfirm('') }} className="px-4 py-2 text-sm text-[#6B8CA4] hover:text-[#1A3A5C]">
-                Cancelar
-              </button>
-              <button
-                onClick={handleExcluir}
-                disabled={isPending || confirm !== name}
-                className="rounded-xl bg-red-600 text-white px-5 py-2 text-sm font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors"
-              >
+              <Button variant="ghost" onClick={() => { setOpen(false); setConfirm('') }}>Cancelar</Button>
+              <Button variant="danger" onClick={handleExcluir} disabled={isPending || confirm !== name}>
                 {isPending ? 'Excluindo...' : 'Excluir permanentemente'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -174,18 +151,13 @@ export function BloquearEmpresaButton({ id }: { id: string }) {
 
   return (
     <>
-      <button
-        onClick={() => setOpen(true)}
-        className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-100 transition-colors"
-      >
-        Bloquear empresa
-      </button>
+      <Button variant="secondary" onClick={() => setOpen(true)}>Bloquear</Button>
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mx-4">
-            <h3 className="text-base font-bold text-[#1A3A5C] mb-1">Bloquear empresa</h3>
-            <p className="text-sm text-[#6B8CA4] mb-4">
+            <h3 className="text-base font-bold text-[#0E1B2A] mb-1">Bloquear empresa</h3>
+            <p className="text-sm text-[#45586E] mb-4">
               A empresa perderá acesso à plataforma. Informe o motivo:
             </p>
             <textarea
@@ -196,19 +168,10 @@ export function BloquearEmpresaButton({ id }: { id: string }) {
               className="w-full rounded-xl border border-[#D0DCE8] px-4 py-3 text-sm text-[#1A3A5C] outline-none focus:border-red-300 focus:ring-2 focus:ring-red-100 resize-none"
             />
             <div className="flex justify-end gap-3 mt-4">
-              <button
-                onClick={() => setOpen(false)}
-                className="px-4 py-2 text-sm text-[#6B8CA4] hover:text-[#1A3A5C] transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleBloquear}
-                disabled={!motivo.trim() || isPending}
-                className="rounded-xl bg-red-600 text-white px-5 py-2 text-sm font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors"
-              >
+              <Button variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
+              <Button variant="danger" onClick={handleBloquear} disabled={!motivo.trim() || isPending}>
                 {isPending ? 'Bloqueando...' : 'Confirmar bloqueio'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -230,12 +193,8 @@ export function DesbloquearEmpresaButton({ id }: { id: string }) {
   }
 
   return (
-    <button
-      onClick={handleDesbloquear}
-      disabled={isPending}
-      className="rounded-xl border border-green-200 bg-green-50 px-4 py-2 text-sm font-semibold text-green-700 hover:bg-green-100 disabled:opacity-50 transition-colors"
-    >
-      {isPending ? 'Desbloqueando...' : 'Desbloquear empresa'}
-    </button>
+    <Button variant="success" onClick={handleDesbloquear} disabled={isPending}>
+      {isPending ? 'Desbloqueando...' : 'Desbloquear'}
+    </Button>
   )
 }

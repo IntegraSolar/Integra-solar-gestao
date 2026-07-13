@@ -1,55 +1,91 @@
 import type { Metadata } from 'next'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { PageHeader, Card, ButtonLink } from '@/components/backoffice/ui'
 
 export const metadata: Metadata = { title: 'Dashboard — Backoffice Integra Solar' }
+export const dynamic = 'force-dynamic'
 
 async function getStats() {
   const admin = createAdminClient()
-  const [orgs, subscriptions] = await Promise.all([
+  const [orgs, subs, blocked, users] = await Promise.all([
     admin.from('organizations').select('id', { count: 'exact', head: true }),
-    admin.from('subscriptions').select('status', { count: 'exact' }),
+    admin.from('subscriptions').select('status'),
+    admin.from('organizations').select('id', { count: 'exact', head: true }).not('blocked_at', 'is', null),
+    admin.from('organization_members').select('id', { count: 'exact', head: true }),
   ])
-  const total = orgs.count ?? 0
-  const byStatus = ((subscriptions.data ?? []) as { status: string }[]).reduce<Record<string, number>>(
+  const byStatus = ((subs.data ?? []) as { status: string }[]).reduce<Record<string, number>>(
     (acc, s) => ({ ...acc, [s.status]: (acc[s.status] ?? 0) + 1 }),
     {}
   )
-  return { total, byStatus }
+  return {
+    total: orgs.count ?? 0,
+    ativas: byStatus['active'] ?? 0,
+    trial: byStatus['trial'] ?? 0,
+    bloqueadas: blocked.count ?? 0,
+    usuarios: users.count ?? 0,
+  }
 }
 
-export default async function BackofficeDashboard() {
-  const { total, byStatus } = await getStats()
+const StatCard = ({ label, value, tone, icon }: { label: string; value: number; tone: string; icon: string }) => (
+  <Card className="p-5">
+    <div className="flex items-start justify-between">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wide text-[#7C8D9E]">{label}</p>
+        <p className="mt-2 text-3xl font-bold tabular-nums" style={{ color: tone }}>{value}</p>
+      </div>
+      <span className="flex h-10 w-10 items-center justify-center rounded-xl text-lg" style={{ background: `${tone}14` }}>
+        {icon}
+      </span>
+    </div>
+  </Card>
+)
 
-  const cards = [
-    { label: 'Empresas cadastradas', value: total, color: '#1A3A5C' },
-    { label: 'Assinaturas ativas', value: byStatus['active'] ?? 0, color: '#28944a' },
-    { label: 'Em trial', value: byStatus['trial'] ?? 0, color: '#f59e0b' },
-    { label: 'Bloqueadas / inativas', value: (byStatus['blocked'] ?? 0) + (byStatus['inactive'] ?? 0), color: '#dc2626' },
-  ]
+export default async function BackofficeDashboard() {
+  const s = await getStats()
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-[#0E2236] mb-1">Dashboard</h1>
-      <p className="text-sm text-[#6B8CA4] mb-8">Visão geral da plataforma</p>
+      <PageHeader
+        title="Dashboard"
+        subtitle="Visão geral da plataforma"
+        action={<ButtonLink href="/backoffice/empresas/nova" variant="primary">+ Nova Empresa</ButtonLink>}
+      />
 
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-10">
-        {cards.map((c) => (
-          <div key={c.label} className="rounded-2xl bg-white shadow-sm border border-[#E2ECF4] p-6">
-            <p className="text-xs font-semibold uppercase tracking-wide text-[#9BAEBF] mb-2">{c.label}</p>
-            <p className="text-4xl font-bold" style={{ color: c.color }}>{c.value}</p>
-          </div>
-        ))}
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+        <StatCard label="Empresas" value={s.total} tone="#1A3A5C" icon="🏢" />
+        <StatCard label="Assinaturas ativas" value={s.ativas} tone="#12805C" icon="✓" />
+        <StatCard label="Em trial" value={s.trial} tone="#B45309" icon="◷" />
+        <StatCard label="Bloqueadas" value={s.bloqueadas} tone="#C11B1B" icon="⊘" />
       </div>
 
-      <div className="rounded-2xl bg-white shadow-sm border border-[#E2ECF4] p-6">
-        <p className="text-sm font-semibold text-[#1A3A5C] mb-4">Próximas funcionalidades</p>
-        <ul className="space-y-2 text-sm text-[#6B8CA4]">
-          <li>• Listagem e gerenciamento de empresas</li>
-          <li>• Controle de assinaturas e planos</li>
-          <li>• Impersonação de contas (visualizar como cliente)</li>
-          <li>• Logs de auditoria</li>
-          <li>• Configurações globais da plataforma</li>
-        </ul>
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card className="p-6 lg:col-span-2">
+          <h2 className="text-sm font-bold text-[#0E1B2A] mb-4">Ações rápidas</h2>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <ButtonLink href="/backoffice/empresas" variant="secondary" className="justify-start">🏢 Gerenciar empresas</ButtonLink>
+            <ButtonLink href="/backoffice/assinaturas" variant="secondary" className="justify-start">💳 Gerenciar assinaturas</ButtonLink>
+            <ButtonLink href="/backoffice/usuarios" variant="secondary" className="justify-start">👥 Ver usuários</ButtonLink>
+            <ButtonLink href="/backoffice/auditoria" variant="secondary" className="justify-start">📋 Trilha de auditoria</ButtonLink>
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <h2 className="text-sm font-bold text-[#0E1B2A] mb-4">Resumo</h2>
+          <dl className="space-y-3 text-sm">
+            <div className="flex items-center justify-between">
+              <dt className="text-[#45586E]">Total de empresas</dt>
+              <dd className="font-bold text-[#0E1B2A] tabular-nums">{s.total}</dd>
+            </div>
+            <div className="flex items-center justify-between">
+              <dt className="text-[#45586E]">Usuários na plataforma</dt>
+              <dd className="font-bold text-[#0E1B2A] tabular-nums">{s.usuarios}</dd>
+            </div>
+            <div className="flex items-center justify-between">
+              <dt className="text-[#45586E]">Assinaturas ativas</dt>
+              <dd className="font-bold text-[#12805C] tabular-nums">{s.ativas}</dd>
+            </div>
+          </dl>
+        </Card>
       </div>
     </div>
   )
