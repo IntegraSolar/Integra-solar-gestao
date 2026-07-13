@@ -2,7 +2,7 @@
 
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 const FROM = 'Integra Solar <noreply@integrasolar.app.br>'
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://app.integrasolar.app.br'
 
@@ -21,6 +21,7 @@ export async function sendNewDeviceLoginEmail({
   ip: string
   time: string
 }) {
+  if (!resend) return
   const securityUrl = `${SITE}/configuracoes?tab=seguranca`
 
   await resend.emails.send({
@@ -91,6 +92,7 @@ export async function sendEmailConfirmationEmail({
   name: string
   confirmUrl: string
 }) {
+  if (!resend) return
   await resend.emails.send({
     from: FROM,
     to,

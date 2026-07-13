@@ -114,21 +114,24 @@ export async function signIn(
     rememberMe,
   })
 
-  // Notificação de novo dispositivo em background
+  // Notificação de novo dispositivo em background (não crítico)
   if (newDevice && user.email) {
-    const { sendNewDeviceLoginEmail } = await import('@/lib/email/resend')
-    const name = (user.user_metadata?.full_name as string) || user.email
-    const now = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
-    const parsed2 = parseUA(ua)
-
-    sendNewDeviceLoginEmail({
-      to: user.email,
-      name,
-      device: parsed2.device,
-      browser: parsed2.browser,
-      ip,
-      time: now,
-    }).catch(() => null)
+    try {
+      const { sendNewDeviceLoginEmail } = await import('@/lib/email/resend')
+      const name = (user.user_metadata?.full_name as string) || user.email
+      const now = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+      const parsed2 = parseUA(ua)
+      sendNewDeviceLoginEmail({
+        to: user.email,
+        name,
+        device: parsed2.device,
+        browser: parsed2.browser,
+        ip,
+        time: now,
+      }).catch(() => null)
+    } catch {
+      // Email de notificação não deve bloquear o login
+    }
   }
 
   revalidatePath('/', 'layout')
