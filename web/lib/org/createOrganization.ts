@@ -84,7 +84,7 @@ export async function createOrganizationResources(
     imposto_pct: 8,
     margem_pct: 15,
     prazo_contrato: 90,
-  }).catch(() => null)
+  }).then(null, () => null)
 
   // 5. Template padrão de proposta (se existir no storage global)
   try {
