@@ -23,7 +23,7 @@ export async function criarNovaEmpresa(input: NovaEmpresaInput): Promise<NovaEmp
   const platformUser = await getCurrentPlatformUser()
   if (!platformUser) return { error: 'Sessão administrativa inválida.' }
 
-  const { company_name, full_name, email, phone, plan = 'professional' } = input
+  const { company_name, full_name, email, phone, plan = 'professional', password } = input
 
   if (!company_name?.trim()) return { error: 'Nome da empresa é obrigatório.' }
   if (!full_name?.trim()) return { error: 'Nome do responsável é obrigatório.' }
