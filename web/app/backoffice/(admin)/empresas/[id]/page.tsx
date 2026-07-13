@@ -1,8 +1,10 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { buscarEmpresa } from '@/lib/backoffice/empresas/queries'
+import { getAssinatura } from '@/lib/backoffice/assinaturas/queries'
 import { PageHeader, Card, CardHeader, Table, EmptyRow, Badge } from '@/components/backoffice/ui'
 import { BloquearEmpresaButton, DesbloquearEmpresaButton, EditarEmpresaButton, ExcluirEmpresaButton } from './EmpresaActions'
+import { AssinaturaManager } from './AssinaturaManager'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,7 +25,7 @@ function InfoRow({ label, value }: { label: string; value?: string | null }) {
 
 export default async function EmpresaDetalhePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const empresa = await buscarEmpresa(id)
+  const [empresa, assinatura] = await Promise.all([buscarEmpresa(id), getAssinatura(id)])
   if (!empresa) notFound()
 
   const bloqueada = !!empresa.blocked_at
@@ -66,17 +68,7 @@ export default async function EmpresaDetalhePage({ params }: { params: Promise<{
 
         <Card>
           <CardHeader title="Assinatura" />
-          <div className="p-6">
-            {empresa.assinatura ? (
-              <div className="grid grid-cols-2 gap-5">
-                <InfoRow label="Plano" value={empresa.assinatura.plan} />
-                <InfoRow label="Status" value={empresa.assinatura.status} />
-                <InfoRow label="Vencimento" value={empresa.assinatura.expires_at ? new Date(empresa.assinatura.expires_at).toLocaleDateString('pt-BR') : null} />
-              </div>
-            ) : (
-              <p className="text-sm text-[#7C8D9E]">Sem assinatura registrada.</p>
-            )}
-          </div>
+          <AssinaturaManager orgId={empresa.id} sub={assinatura} />
         </Card>
       </div>
 
