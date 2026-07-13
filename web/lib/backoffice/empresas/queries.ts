@@ -110,6 +110,39 @@ export async function buscarEmpresa(id: string): Promise<EmpresaDetalhe | null> 
   }
 }
 
+export async function editarEmpresa(
+  id: string,
+  data: { name?: string; plan?: string; status?: string }
+): Promise<{ error?: string }> {
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('organizations')
+    .update({ ...data, updated_at: new Date().toISOString() })
+    .eq('id', id)
+  return error ? { error: error.message } : {}
+}
+
+export async function excluirEmpresa(id: string): Promise<{ error?: string }> {
+  const admin = createAdminClient()
+
+  // Busca todos os user_ids desta org para remover do auth
+  const { data: members } = await admin
+    .from('app_users')
+    .select('id')
+    .eq('organization_id', id)
+
+  // Remove a organização (FK cascade remove registros filhos)
+  const { error } = await admin.from('organizations').delete().eq('id', id)
+  if (error) return { error: error.message }
+
+  // Remove usuários do auth
+  for (const m of members ?? []) {
+    await admin.auth.admin.deleteUser(m.id).catch(() => null)
+  }
+
+  return {}
+}
+
 export async function bloquearEmpresa(id: string, motivo: string): Promise<{ error?: string }> {
   const admin = createAdminClient()
   const { error } = await admin

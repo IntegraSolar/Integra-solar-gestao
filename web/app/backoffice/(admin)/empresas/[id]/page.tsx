@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { buscarEmpresa } from '@/lib/backoffice/empresas/queries'
-import { BloquearEmpresaButton, DesbloquearEmpresaButton } from './EmpresaActions'
+import { BloquearEmpresaButton, DesbloquearEmpresaButton, EditarEmpresaButton, ExcluirEmpresaButton } from './EmpresaActions'
 
 export const dynamic = 'force-dynamic'
 
@@ -40,11 +40,18 @@ export default async function EmpresaDetalhePage({ params }: { params: Promise<{
         </div>
 
         <div className="flex items-center gap-2">
+          <EditarEmpresaButton
+            id={empresa.id}
+            currentName={empresa.name}
+            currentPlan={empresa.plan}
+            currentStatus={empresa.status}
+          />
           {bloqueada ? (
             <DesbloquearEmpresaButton id={empresa.id} />
           ) : (
             <BloquearEmpresaButton id={empresa.id} />
           )}
+          <ExcluirEmpresaButton id={empresa.id} name={empresa.name} />
         </div>
       </div>
 

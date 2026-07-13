@@ -1,8 +1,9 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
-import { bloquearEmpresa, desbloquearEmpresa } from './queries'
+import { bloquearEmpresa, desbloquearEmpresa, editarEmpresa, excluirEmpresa } from './queries'
 import { verifySession, SESSION_COOKIE } from '@/lib/backoffice/auth/session'
 import { registrarAuditoria } from '@/lib/backoffice/auditoria/queries'
 
@@ -41,6 +42,41 @@ export async function desbloquearEmpresaAction(id: string) {
     })
     revalidatePath(`/backoffice/empresas/${id}`)
     revalidatePath('/backoffice/auditoria')
+  }
+  return result
+}
+
+export async function editarEmpresaAction(
+  id: string,
+  data: { name?: string; plan?: string; status?: string }
+): Promise<{ error?: string }> {
+  const result = await editarEmpresa(id, data)
+  if (!result.error) {
+    const adminName = await getAdminName()
+    await registrarAuditoria({
+      organization_id: id,
+      user_name: adminName,
+      action: 'editar_empresa',
+      description: `Dados editados: ${Object.keys(data).join(', ')}`,
+    })
+    revalidatePath(`/backoffice/empresas/${id}`)
+    revalidatePath('/backoffice/empresas')
+  }
+  return result
+}
+
+export async function excluirEmpresaAction(id: string): Promise<{ error?: string }> {
+  const adminName = await getAdminName()
+  const result = await excluirEmpresa(id)
+  if (!result.error) {
+    await registrarAuditoria({
+      organization_id: id,
+      user_name: adminName,
+      action: 'excluir_empresa',
+      description: 'Empresa excluída permanentemente.',
+    }).catch(() => null)
+    revalidatePath('/backoffice/empresas')
+    redirect('/backoffice/empresas')
   }
   return result
 }
