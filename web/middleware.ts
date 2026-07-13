@@ -60,6 +60,14 @@ const PUBLIC_ROUTES = [
   '/termos',
   '/privacidade',
   '/subscription-expired',
+  '/agendar-demo',
+  // Portais públicos com acesso por token (segurança via DB, não por sessão)
+  '/instalador',
+  '/projetista',
+  '/cliente',
+  '/api/instalador',
+  '/api/projetista',
+  '/api/cliente',
 ]
 
 const API_ROUTES_PREFIX = '/api/'
