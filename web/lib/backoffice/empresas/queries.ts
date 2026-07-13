@@ -40,7 +40,7 @@ export async function listarEmpresas(search?: string): Promise<EmpresaRow[]> {
       .select('organization_id, plano, status, data_fim')
       .in('organization_id', orgIds),
     admin
-      .from('app_users')
+      .from('app_users' as any)
       .select('organization_id')
       .in('organization_id', orgIds),
   ])
@@ -80,7 +80,7 @@ export async function buscarEmpresa(id: string): Promise<EmpresaDetalhe | null> 
       .order('created_at', { ascending: false })
       .limit(1),
     admin
-      .from('app_users')
+      .from('app_users' as any)
       .select('id, name, email, role_id, created_at')
       .eq('organization_id', id)
       .order('created_at'),
@@ -131,7 +131,7 @@ export async function excluirEmpresa(id: string): Promise<{ error?: string }> {
 
   // Remove membros da app_users primeiro (evita FK violations)
   if (userIds.length) {
-    await admin.from('app_users').delete().in('id', userIds)
+    await admin.from('app_users' as any).delete().in('id', userIds)
   }
 
   // Remove a organização

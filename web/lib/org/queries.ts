@@ -39,7 +39,7 @@ export const getCurrentUserData = cache(async function (): Promise<CurrentUserDa
   if (!user) return null
 
   // Busca dados do usuário na tabela app_users (inclui org via join)
-  const { data: appUser } = await supabase
+  const { data: appUser } = await (supabase as any)
     .from('app_users')
     .select(`
       id,

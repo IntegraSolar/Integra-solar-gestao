@@ -44,7 +44,7 @@ export async function createOrganizationResources(
 
   // 2. Vincular user como Super Admin na app_users
   const { error: userError } = await admin
-    .from('app_users')
+    .from('app_users' as any)
     .insert({
       id: userId,
       organization_id: orgId,
