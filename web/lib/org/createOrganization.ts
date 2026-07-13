@@ -26,8 +26,6 @@ export async function createOrganizationResources(
     .from('organizations')
     .insert({
       name: company_name,
-      fantasy_name: company_name,
-      corporate_name: company_name,
       plan,
       status: 'active',
       phone: phone ?? null,
