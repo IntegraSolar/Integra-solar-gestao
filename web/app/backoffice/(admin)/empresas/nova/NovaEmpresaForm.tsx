@@ -21,6 +21,7 @@ export function NovaEmpresaForm() {
 
   const [form, setForm] = useState({
     company_name: '',
+    cnpj: '',
     full_name: '',
     email: '',
     phone: '',
@@ -73,6 +74,15 @@ export function NovaEmpresaForm() {
               onChange={e => setField('company_name', e.target.value)}
               placeholder="Ex: Integra Solar Tocantins"
               required
+            />
+          </div>
+          <div>
+            <label className={labelCls}>CNPJ <span className="text-[#9BAEBF] font-normal">(opcional)</span></label>
+            <input
+              className={inputCls}
+              value={form.cnpj}
+              onChange={e => setField('cnpj', e.target.value)}
+              placeholder="00.000.000/0000-00"
             />
           </div>
           <div>

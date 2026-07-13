@@ -1,6 +1,6 @@
 'use client'
 
-import { useFormState } from 'react-dom'
+import { useActionState } from 'react'
 import Image from 'next/image'
 import { signInBackoffice } from '@/lib/backoffice/auth/actions'
 import { FormError } from '@/components/ui/FormError'
@@ -9,7 +9,7 @@ import { SubmitButton } from '@/components/ui/SubmitButton'
 const initialState = { error: undefined }
 
 export function BackofficeLoginForm() {
-  const [state, action] = useFormState(signInBackoffice, initialState)
+  const [state, action] = useActionState(signInBackoffice, initialState)
 
   return (
     <div className="w-full max-w-md rounded-2xl bg-white p-10 shadow-[0_32px_80px_rgba(0,0,0,.45)]">

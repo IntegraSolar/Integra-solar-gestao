@@ -6,6 +6,7 @@ import { getCurrentPlatformUser } from '@/lib/backoffice/auth/getCurrentPlatform
 
 export type NovaEmpresaInput = {
   company_name: string
+  cnpj?: string
   full_name: string
   email: string
   phone?: string
@@ -23,73 +24,81 @@ export async function criarNovaEmpresa(input: NovaEmpresaInput): Promise<NovaEmp
   const platformUser = await getCurrentPlatformUser()
   if (!platformUser) return { error: 'Sessão administrativa inválida.' }
 
-  const { company_name, full_name, email, phone, plan = 'professional', password } = input
+  const {
+    company_name,
+    cnpj,
+    full_name,
+    email,
+    phone,
+    plan = 'professional',
+    password,
+  } = input
 
   if (!company_name?.trim()) return { error: 'Nome da empresa é obrigatório.' }
-  if (!full_name?.trim()) return { error: 'Nome do responsável é obrigatório.' }
-  if (!email?.trim()) return { error: 'E-mail é obrigatório.' }
+  if (!full_name?.trim())    return { error: 'Nome do responsável é obrigatório.' }
+  if (!email?.trim())        return { error: 'E-mail é obrigatório.' }
 
   const adminClient = createAdminClient()
+  const normalizedEmail = email.trim().toLowerCase()
 
+  // 1. Criar usuário no Supabase Auth
+  //    - Com senha: acesso imediato (email_confirm: true), sem e-mail de convite
+  //    - Sem senha: envia convite por e-mail → usuário define a própria senha
   let userId: string
 
   if (password?.trim()) {
-    // Cria o usuário com senha definida — acesso imediato, sem e-mail de convite
-    const { data: createData, error: createError } = await adminClient.auth.admin.createUser({
-      email: email.trim().toLowerCase(),
+    const { data, error } = await adminClient.auth.admin.createUser({
+      email: normalizedEmail,
       password: password.trim(),
       email_confirm: true,
       user_metadata: { full_name: full_name.trim() },
     })
-
-    if (createError || !createData?.user) {
-      const msg = createError?.message ?? 'Erro ao criar usuário.'
+    if (error || !data?.user) {
+      const msg = error?.message ?? ''
       if (msg.toLowerCase().includes('already')) {
         return { error: 'Este e-mail já possui uma conta na plataforma.' }
       }
-      return { error: msg }
+      return { error: 'Erro ao criar usuário: ' + msg }
     }
-
-    userId = createData.user.id
+    userId = data.user.id
   } else {
-    // Envia convite por e-mail — o usuário define a própria senha ao clicar no link
-    const { data: inviteData, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(
-      email.trim().toLowerCase(),
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? ''
+    const { data, error } = await adminClient.auth.admin.inviteUserByEmail(
+      normalizedEmail,
       {
         data: { full_name: full_name.trim() },
-        redirectTo: process.env.NEXT_PUBLIC_SITE_URL
-          ? `${process.env.NEXT_PUBLIC_SITE_URL}/login`
-          : undefined,
+        redirectTo: siteUrl ? `${siteUrl}/auth/callback?type=invite&next=/update-password` : undefined,
       }
     )
-
-    if (inviteError || !inviteData?.user) {
-      const msg = inviteError?.message ?? 'Erro ao criar convite.'
+    if (error || !data?.user) {
+      const msg = error?.message ?? ''
       if (msg.toLowerCase().includes('already')) {
         return { error: 'Este e-mail já possui uma conta na plataforma.' }
       }
-      return { error: msg }
+      return { error: 'Erro ao enviar convite: ' + msg }
     }
-
-    userId = inviteData.user.id
+    userId = data.user.id
   }
 
+  // 2. Criar organização completa (transação atômica via SQL)
   try {
     const { orgId } = await createOrganizationResources({
       userId,
-      email: email.trim().toLowerCase(),
+      email: normalizedEmail,
       full_name: full_name.trim(),
       company_name: company_name.trim(),
+      cnpj: cnpj?.trim() || '',
       phone: phone?.trim() || undefined,
       plan,
     })
 
-    const successMsg = password?.trim()
-      ? `Empresa criada! Acesso imediato com o e-mail ${email}.`
-      : `Empresa criada! Convite enviado para ${email}.`
-    return { success: successMsg, orgId }
-  } catch (err: unknown) {
-    // Rollback: remove o auth user se a org falhou
+    const msg = password?.trim()
+      ? `Empresa criada com sucesso! Login disponível com o e-mail ${normalizedEmail}.`
+      : `Empresa criada! Convite enviado para ${normalizedEmail}.`
+
+    return { success: msg, orgId }
+  } catch (err) {
+    // Rollback: remove o auth user se a criação da org falhou
     await adminClient.auth.admin.deleteUser(userId)
     return { error: err instanceof Error ? err.message : 'Erro ao criar organização.' }
   }

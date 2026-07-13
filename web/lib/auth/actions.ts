@@ -32,17 +32,6 @@ const updatePasswordSchema = z.object({
   path: ['confirmPassword'],
 })
 
-const registerSchema = z.object({
-  company_name: z.string().min(2, 'Nome da empresa é obrigatório.'),
-  full_name: z.string().min(2, 'Nome completo é obrigatório.'),
-  email: z.string().email('E-mail inválido.'),
-  phone: z.string().optional(),
-  password: z
-    .string()
-    .min(8, 'Senha deve ter pelo menos 8 caracteres.')
-    .regex(PASSWORD_REGEX, 'A senha precisa ter maiúscula, minúscula e número.'),
-})
-
 // ── Tipos de retorno ─────────────────────────────────────────────────────────
 
 type ActionResult = {
@@ -147,77 +136,6 @@ function parseUA(ua: string) {
   else if (ua.includes('Safari') && !ua.includes('Chrome')) browser = 'Safari'
   else if (ua.includes('Edg')) browser = 'Edge'
   return { browser, device }
-}
-
-// ── Registro de nova empresa ─────────────────────────────────────────────────
-
-export async function registerCompany(
-  _prev: ActionResult,
-  formData: FormData
-): Promise<ActionResult> {
-  const ip = await getClientIp()
-
-  // Rate limit por IP: 3 registros/hora
-  const ok = await rateLimit(`register_ip:${ip}`, 3, 60 * 60 * 1000)
-  if (!ok) {
-    return { error: 'Muitas tentativas de cadastro a partir deste endereço. Tente em 1 hora.' }
-  }
-
-  const parsed = registerSchema.safeParse({
-    company_name: formData.get('company_name'),
-    full_name: formData.get('full_name'),
-    email: formData.get('email'),
-    phone: formData.get('phone'),
-    password: formData.get('password'),
-  })
-
-  if (!parsed.success) {
-    return { error: parsed.error.issues[0].message }
-  }
-
-  const { company_name, full_name, email, phone, password } = parsed.data
-
-  const { createAdminClient } = await import('@/lib/supabase/admin')
-  const adminClient = createAdminClient()
-
-  // email_confirm: false → Supabase envia e-mail de confirmação
-  const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-    user_metadata: { full_name },
-  })
-
-  if (authError) {
-    if (authError.message.includes('already been registered') || authError.message.includes('already exists')) {
-      return { error: 'Este e-mail já está cadastrado.' }
-    }
-    return { error: 'Erro ao criar conta. Tente novamente.' }
-  }
-
-  const userId = authData.user.id
-
-  const { createOrganizationResources } = await import('@/lib/org/createOrganization')
-  try {
-    await createOrganizationResources({ userId, email, full_name, company_name, phone })
-  } catch (err) {
-    await adminClient.auth.admin.deleteUser(userId)
-    return { error: err instanceof Error ? err.message : 'Erro ao configurar empresa.' }
-  }
-
-  // Login automático após registro
-  const supabase = await createClient()
-  const { error: loginError } = await supabase.auth.signInWithPassword({ email, password })
-
-  if (loginError) {
-    // Se não conseguiu logar automaticamente (ex: email confirmation habilitado no Supabase),
-    // redireciona para login com mensagem de sucesso
-    revalidatePath('/', 'layout')
-    redirect('/login?registered=1')
-  }
-
-  revalidatePath('/', 'layout')
-  redirect('/dashboard')
 }
 
 // ── Logout ───────────────────────────────────────────────────────────────────

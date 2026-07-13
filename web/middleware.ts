@@ -3,7 +3,6 @@ import { verifySession } from '@/lib/backoffice/auth/session'
 
 const PUBLIC_ROUTES = [
   '/login',
-  '/register',
   '/reset-password',
   '/update-password',
   '/accept-invite',
