@@ -103,6 +103,20 @@ async function middlewareHandler(request: NextRequest): Promise<NextResponse> {
     return NextResponse.next()
   }
 
+  // Rotas públicas não precisam de verificação Supabase — retorna direto.
+  // (Usuário autenticado em /login vai ao dashboard após o form redirect, não antes.)
+  if (isPublicRoute(pathname)) {
+    return NextResponse.next({ request })
+  }
+
+  // Rota raiz sem cookie de sessão → landing ou login, sem chamar Supabase
+  if (pathname === '/') {
+    const hasSession = request.cookies.getAll().some(
+      (c) => c.name.startsWith('sb-') && c.name.endsWith('-auth-token')
+    )
+    if (!hasSession) return NextResponse.next({ request })
+  }
+
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -131,11 +145,10 @@ async function middlewareHandler(request: NextRequest): Promise<NextResponse> {
     const { data } = await supabase.auth.getUser()
     user = data.user
   } catch {
-    // Se o Supabase lançar exceção (rede instável, cold start), trata como não autenticado
     user = null
   }
 
-  // Rota raiz → only redirect if authenticated
+  // Rota raiz com sessão → redireciona ao dashboard
   if (pathname === '/') {
     if (user) {
       const url = request.nextUrl.clone()
@@ -146,17 +159,10 @@ async function middlewareHandler(request: NextRequest): Promise<NextResponse> {
   }
 
   // Usuário não autenticado tentando acessar rota protegida
-  if (!user && !isPublicRoute(pathname)) {
+  if (!user) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     url.searchParams.set('next', pathname)
-    return NextResponse.redirect(url)
-  }
-
-  // Usuário autenticado tentando acessar página de login
-  if (user && pathname === '/login') {
-    const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
     return NextResponse.redirect(url)
   }
 
