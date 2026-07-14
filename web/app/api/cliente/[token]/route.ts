@@ -76,7 +76,7 @@ export async function GET(
     deliveryRes, obraRes, obraDeliveryRes, posObraRes,
     installmentsRes, attachmentsRes, proposalRes, latestReceiptRes
   ] = await Promise.all([
-    (supabase as any).from('client_sales').select('*').eq('client_id', clientId).maybeSingle(),
+    (supabase as any).from('client_sale').select('*').eq('client_id', clientId).maybeSingle(),
     (supabase as any).from('client_contracts').select('*').eq('client_id', clientId).maybeSingle(),
     (supabase as any).from('client_projects').select('*').eq('client_id', clientId).maybeSingle(),
     (supabase as any).from('client_purchases').select('*').eq('client_id', clientId).maybeSingle(),

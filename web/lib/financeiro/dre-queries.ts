@@ -46,7 +46,7 @@ export async function getDREByClient(clientId: string): Promise<DREData | null> 
   if (!client) return null
 
   const { data: sale } = await (supabase as any)
-    .from('client_sales')
+    .from('client_sale')
     .select('sale_value, commission_pct, payment_method')
     .eq('client_id', clientId)
     .maybeSingle()
@@ -117,7 +117,7 @@ export async function getDRESummary(): Promise<DRESummary> {
   const supabase = await createClient()
 
   const { data: sales } = await (supabase as any)
-    .from('client_sales')
+    .from('client_sale')
     .select('client_id, sale_value, commission_pct, clients!client_id(name)')
     .eq('organization_id', orgId)
 

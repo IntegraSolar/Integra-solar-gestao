@@ -83,16 +83,16 @@ export async function upsertPurchase(
       vendedorId = lead?.assigned_to_user_id ?? null
     }
 
-    // Calculate commission value from client_sales
+    // Calcula a comissão a partir da venda (client_sale)
     let valorComissao = 0
     const { data: sale } = await (supabase as any)
-      .from('client_sales')
-      .select('final_value, commission_pct')
+      .from('client_sale')
+      .select('sale_value, commission_pct')
       .eq('client_id', clientId)
       .maybeSingle()
 
-    if (sale?.final_value && sale?.commission_pct) {
-      valorComissao = (sale.final_value * sale.commission_pct) / 100
+    if (sale?.sale_value && sale?.commission_pct) {
+      valorComissao = (sale.sale_value * sale.commission_pct) / 100
     }
 
     // Create commission record
