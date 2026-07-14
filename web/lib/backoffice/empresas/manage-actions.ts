@@ -6,6 +6,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { verifySession, SESSION_COOKIE } from '@/lib/backoffice/auth/session'
 import { registrarAuditoria } from '@/lib/backoffice/auditoria/queries'
 import { getOwnerInfo, type OrgConfig } from './queries'
+import { newRequestId, logOk, reportError } from '@/lib/observability'
 
 async function getAdminName(): Promise<string> {
   const token = (await cookies()).get(SESSION_COOKIE)?.value
@@ -144,6 +145,7 @@ export async function impersonarEmpresa(orgId: string): Promise<{ error?: string
   const owner = await getOwnerInfo(orgId)
   if (!owner?.email) return { error: 'Empresa sem responsável para impersonar.' }
 
+  const ctx = { requestId: newRequestId(), module: 'backoffice.empresas', action: 'impersonarEmpresa', tenant: orgId, user: owner.userId }
   const admin = createAdminClient()
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? ''
   const { data, error } = await admin.auth.admin.generateLink({
@@ -152,9 +154,11 @@ export async function impersonarEmpresa(orgId: string): Promise<{ error?: string
     options: { redirectTo: siteUrl ? `${siteUrl}/dashboard` : undefined },
   })
   if (error || !data?.properties?.action_link) {
-    return { error: 'Não foi possível gerar o acesso: ' + (error?.message ?? 'desconhecido') }
+    return { error: 'Não foi possível gerar o acesso: ' + reportError(ctx, error ?? new Error('sem action_link')) }
   }
 
+  // Evento de segurança — sempre registrado (auditoria + log estruturado)
+  logOk(ctx)
   await registrarAuditoria({
     organization_id: orgId, user_name: await getAdminName(),
     action: 'impersonar_empresa', description: `Acesso como responsável (${owner.email}).`,

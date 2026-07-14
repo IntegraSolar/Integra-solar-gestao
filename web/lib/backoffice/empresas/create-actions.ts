@@ -3,6 +3,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createOrganizationResources } from '@/lib/org/createOrganization'
 import { getCurrentPlatformUser } from '@/lib/backoffice/auth/getCurrentPlatformUser'
+import { newRequestId, logStart, logOk, reportError } from '@/lib/observability'
 
 export type NovaEmpresaInput = {
   company_name: string
@@ -37,6 +38,14 @@ export async function criarNovaEmpresa(input: NovaEmpresaInput): Promise<NovaEmp
   if (!company_name?.trim()) return { error: 'Nome da empresa é obrigatório.' }
   if (!full_name?.trim())    return { error: 'Nome do responsável é obrigatório.' }
   if (!email?.trim())        return { error: 'E-mail é obrigatório.' }
+
+  const ctx = {
+    requestId: newRequestId(),
+    module: 'backoffice.empresas',
+    action: 'criarNovaEmpresa',
+    user: platformUser.id,
+  }
+  logStart(ctx, { modo: password?.trim() ? 'senha' : 'convite' })
 
   const adminClient = createAdminClient()
   const normalizedEmail = email.trim().toLowerCase()
@@ -92,12 +101,15 @@ export async function criarNovaEmpresa(input: NovaEmpresaInput): Promise<NovaEmp
       plan,
     })
 
+    logOk(ctx, { tenant: orgId })
+
     const msg = password?.trim()
       ? `Empresa criada com sucesso! Login disponível com o e-mail ${normalizedEmail}.`
       : `Empresa criada! Convite enviado para ${normalizedEmail}.`
 
     return { success: msg, orgId }
   } catch (err) {
+    reportError(ctx, err, { userId })
     // Rollback: remove o auth user se a criação da org falhou
     await adminClient.auth.admin.deleteUser(userId)
     return { error: err instanceof Error ? err.message : 'Erro ao criar organização.' }

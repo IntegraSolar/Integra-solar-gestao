@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
+import * as Sentry from '@sentry/nextjs'
 
 export default function DashboardError({
   error,
@@ -11,8 +12,7 @@ export default function DashboardError({
   reset: () => void
 }) {
   useEffect(() => {
-    // Loga apenas mensagem e digest — sem stack trace em produção
-    console.error('[DashboardError]', { message: error.message, digest: error.digest })
+    Sentry.captureException(error)
   }, [error])
 
   return (
