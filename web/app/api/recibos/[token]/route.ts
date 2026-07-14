@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { enforceRate, getClientIp, RATE_POLICIES } from '@/lib/security/rate-policies'
+import { guardPublicToken } from '@/lib/security/rate-policies'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { generateReceiptPdf } from '@/lib/financeiro/receipt-pdf'
 import type { ReceiptData } from '@/lib/financeiro/receipt-pdf'
@@ -18,7 +18,7 @@ async function fetchLogoBase64(logoUrl: string | null): Promise<string | null> {
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
-  const blocked = await enforceRate(`pub:recibos:${await getClientIp()}`, RATE_POLICIES.publicToken)
+  const blocked = await guardPublicToken('recibos')
   if (blocked) return blocked
   const admin = createAdminClient()
 

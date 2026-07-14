@@ -7,6 +7,7 @@ import { calcularPreco } from '@/lib/proposals/pricing'
 import { buildPlaceholders } from '@/lib/proposals/placeholders'
 import { rateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { acquireSlot } from '@/lib/security/concurrency'
+import { logSecurityEvent } from '@/lib/security/rate-policies'
 import { logger } from '@/lib/logger'
 
 const CONVERT_TIMEOUT_MS = 90_000
@@ -167,6 +168,7 @@ export async function POST(
     // (operação pesada — conversão externa de até 90s). Evita exaustão de recursos.
     const slot = await acquireSlot(`pdf-concurrency:${orgId}`, 2, 120)
     if (!slot.ok) {
+      logSecurityEvent('pdf_concurrency_blocked', { org: orgId.slice(0, 8) })
       return NextResponse.json(
         { error: 'Muitas gerações de PDF em andamento. Aguarde concluir e tente novamente.' },
         { status: 429, headers: { 'Retry-After': '30' } },

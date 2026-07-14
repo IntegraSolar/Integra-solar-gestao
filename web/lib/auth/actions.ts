@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/server'
 import { rateLimit } from '@/lib/rate-limit'
 import { checkBruteForce, recordLoginAttempt, recordSession } from '@/lib/auth/brute-force'
 import { incrWithWindow, resetCount } from '@/lib/security/concurrency'
+import { logSecurityEvent } from '@/lib/security/rate-policies'
 
 // ── Schemas de validação ─────────────────────────────────────────────────────
 
@@ -92,6 +93,7 @@ export async function signIn(
     const fails = await incrWithWindow(`login_backoff:${email.toLowerCase()}`, 15 * 60)
     const delayMs = Math.min((fails - 1) * 400, 3000)
     if (delayMs > 0) await new Promise((r) => setTimeout(r, delayMs))
+    if (fails >= 3) logSecurityEvent('login_backoff', { fails, ip })
     return { error: 'E-mail ou senha incorretos. Verifique os dados e tente novamente.' }
   }
 
