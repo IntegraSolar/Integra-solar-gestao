@@ -27,6 +27,14 @@ export async function processCheckout(
   _prev: ActionResult,
   formData: FormData
 ): Promise<ActionResult> {
+  // Cadastro público DESATIVADO. No modelo atual, apenas o backoffice cria
+  // empresas. Este fluxo é mantido para reaproveitamento na integração de
+  // pagamentos (Fase D) e só é habilitado via flag de ambiente.
+  // Guard no servidor (defesa real) + /checkout removido das rotas públicas.
+  if (process.env.ENABLE_PUBLIC_CHECKOUT !== 'true') {
+    return { error: 'O cadastro público está desativado. Entre em contato com a Integra Solar.' }
+  }
+
   const parsed = checkoutSchema.safeParse(Object.fromEntries(formData))
   if (!parsed.success) return { error: parsed.error.issues[0].message }
 

@@ -8,7 +8,6 @@ const PUBLIC_ROUTES = [
   '/accept-invite',
   '/auth/callback',
   '/api/webhooks',
-  '/checkout',
   '/termos',
   '/privacidade',
   '/subscription-expired',
