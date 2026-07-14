@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import type { PosObraClient as POClient } from '@/lib/pos-obra/queries'
 import { SearchBar, filterBySearch } from '@/components/ui/SearchBar'
+import { TruncationNotice } from '@/components/ui/TruncationNotice'
 import { HelpTooltip } from '@/components/ui/HelpTooltip'
 
 function StatusBadge({ status }: { status: string }) {
@@ -25,6 +26,7 @@ export default function PosObraClientComponent({ posObras }: { posObras: POClien
 
   return (
     <div className="p-6 space-y-6">
+      <TruncationNotice count={posObras.length} />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-white">Pos-Obra</h1>

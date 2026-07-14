@@ -1,4 +1,5 @@
 ﻿import { createClient } from '@/lib/supabase/server'
+import { OPERACIONAL_MAX } from '@/lib/constants/limits'
 import { getCurrentUserData } from '@/lib/org/queries'
 
 export type PosObraClient = {
@@ -39,6 +40,8 @@ export async function getPosObras(): Promise<PosObraClient[]> {
     `)
     .eq('organization_id', orgId)
     .neq('status', 'concluida')
+    .order('created_at', { ascending: false })
+    .limit(OPERACIONAL_MAX)
 
   if (error || !data) return []
 

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import type { ContratoClient } from '@/lib/contratos/queries'
 import { formatDate } from '@/lib/format'
 import { SearchBar, filterBySearch } from '@/components/ui/SearchBar'
+import { TruncationNotice } from '@/components/ui/TruncationNotice'
 
 const STATUS_LABELS: Record<string, string> = {
   aguardando_assinatura: 'Aguardando assinatura',
@@ -67,6 +68,7 @@ export default function ContratosClient({ clients }: { clients: ContratoClient[]
 
   return (
     <div className="flex flex-col h-full">
+      <div className="px-6 pt-4"><TruncationNotice count={clients.length} /></div>
       <div
         className="flex items-center justify-between px-6 py-4 flex-shrink-0"
         style={{ borderBottom: '1px solid var(--theme-border)' }}

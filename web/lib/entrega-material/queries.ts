@@ -1,4 +1,5 @@
 ﻿import { createClient } from '@/lib/supabase/server'
+import { OPERACIONAL_MAX } from '@/lib/constants/limits'
 import { getCurrentUserData } from '@/lib/org/queries'
 
 export type EntregaMaterialChecklist = {
@@ -44,6 +45,8 @@ export async function getEntregasMaterial(): Promise<EntregaMaterialClient[]> {
     `)
     .eq('organization_id', orgId)
     .neq('status', 'concluida')
+    .order('created_at', { ascending: false })
+    .limit(OPERACIONAL_MAX)
 
   if (error || !data) return []
 

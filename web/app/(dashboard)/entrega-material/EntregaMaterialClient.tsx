@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import type { EntregaMaterialClient as EMClient } from '@/lib/entrega-material/queries'
 import { SearchBar, filterBySearch } from '@/components/ui/SearchBar'
+import { TruncationNotice } from '@/components/ui/TruncationNotice'
 import { HelpTooltip } from '@/components/ui/HelpTooltip'
 
 function StatusBadge({ status }: { status: string }) {
@@ -27,6 +28,7 @@ export default function EntregaMaterialClientComponent({ entregas }: { entregas:
 
   return (
     <div className="p-6 space-y-6">
+      <TruncationNotice count={entregas.length} />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-white">Entrega do Material</h1>

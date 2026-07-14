@@ -5,6 +5,7 @@ import Link from 'next/link'
 import type { CompraClient } from '@/lib/compras/queries'
 import { formatCurrency, formatDate } from '@/lib/format'
 import { SearchBar, filterBySearch } from '@/components/ui/SearchBar'
+import { TruncationNotice } from '@/components/ui/TruncationNotice'
 import { HelpTooltip } from '@/components/ui/HelpTooltip'
 
 function StatusBadge({ status }: { status: string }) {
@@ -32,6 +33,7 @@ export default function ComprasClient({ compras }: { compras: CompraClient[] }) 
 
   return (
     <div className="p-6 space-y-6">
+      <TruncationNotice count={compras.length} />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-white">Compras</h1>

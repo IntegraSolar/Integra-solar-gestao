@@ -1,5 +1,6 @@
 ﻿// web/lib/projetos/queries.ts
 import { createClient } from '@/lib/supabase/server'
+import { OPERACIONAL_MAX } from '@/lib/constants/limits'
 import { getCurrentUserData } from '@/lib/org/queries'
 
 export type ProjetoChecklist = {
@@ -70,6 +71,8 @@ export async function getProjetos(): Promise<ProjetoClient[]> {
     `)
     .eq('organization_id', orgId)
     .neq('status', 'aprovado')
+    .order('created_at', { ascending: false })
+    .limit(OPERACIONAL_MAX)
 
   if (error || !data) return []
 

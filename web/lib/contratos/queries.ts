@@ -1,5 +1,6 @@
 ﻿// web/lib/contratos/queries.ts
 import { createClient } from '@/lib/supabase/server'
+import { OPERACIONAL_MAX } from '@/lib/constants/limits'
 import { getCurrentUserData } from '@/lib/org/queries'
 
 export type ContratoClient = {
@@ -31,6 +32,7 @@ export async function getContratos(): Promise<ContratoClient[]> {
     .eq('organization_id', user.membership.organization.id)
     .eq('pipeline_stage', 'contratos')
     .order('created_at', { ascending: false })
+    .limit(OPERACIONAL_MAX)
   return ((data ?? []) as any[]).map(normalizeContrato)
 }
 

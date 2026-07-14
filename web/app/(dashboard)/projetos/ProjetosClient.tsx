@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import type { ProjetoClient } from '@/lib/projetos/queries'
 import { SearchBar, filterBySearch } from '@/components/ui/SearchBar'
+import { TruncationNotice } from '@/components/ui/TruncationNotice'
 import { HelpTooltip } from '@/components/ui/HelpTooltip'
 
 function StatusBadge({ status }: { status: string }) {
@@ -33,6 +34,7 @@ export default function ProjetosClient({ projetos }: { projetos: ProjetoClient[]
 
   return (
     <div className="p-6 space-y-6">
+      <TruncationNotice count={projetos.length} />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-white">Projetos</h1>

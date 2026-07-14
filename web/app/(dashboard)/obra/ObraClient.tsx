@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import type { ObraClient as OClient } from '@/lib/obra/queries'
 import { SearchBar, filterBySearch } from '@/components/ui/SearchBar'
+import { TruncationNotice } from '@/components/ui/TruncationNotice'
 import { HelpTooltip } from '@/components/ui/HelpTooltip'
 
 function StatusBadge({ status }: { status: string }) {
@@ -26,6 +27,7 @@ export default function ObraClientComponent({ obras }: { obras: OClient[] }) {
 
   return (
     <div className="p-6 space-y-6">
+      <TruncationNotice count={obras.length} />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-white">Obra</h1>
