@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useMemo, memo, useCallback } from 'react'
+import { useState, useEffect, memo, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type { Client } from '@/lib/clients/types'
 import type { ClientsFilters, ClientsFilterOptions } from '@/lib/clients/queries'
-import { SearchBar, filterBySearch } from '@/components/ui/SearchBar'
+import { SearchBar } from '@/components/ui/SearchBar'
 import { FilterBar, FilterField } from '@/components/ui/filters/FilterBar'
 import { SelectFilter } from '@/components/ui/filters/SelectFilter'
 import { RangeSlider } from '@/components/ui/filters/RangeSlider'
@@ -105,6 +105,7 @@ export default function ClientesClient({
   pageSize,
   filterOptions,
   filters,
+  search,
   portalTokens,
 }: {
   clients: Client[]
@@ -113,15 +114,28 @@ export default function ClientesClient({
   pageSize: number
   filterOptions: ClientsFilterOptions
   filters: ClientsFilters
+  search: string
   portalTokens?: Record<string, string>
 }) {
-  const [search, setSearch] = useState('')
   const router = useRouter()
+  // Input local para digitação fluida; a busca real acontece no SERVIDOR via
+  // o parâmetro `q` na URL (debounce abaixo). `search` é o valor vigente na URL.
+  const [searchInput, setSearchInput] = useState(search)
 
-  const filtered = useMemo(
-    () => filterBySearch(clients, search, ['name', 'phone', 'city', 'cpf_cnpj', 'email']),
-    [clients, search]
-  )
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const currentQ = new URLSearchParams(window.location.search).get('q') ?? ''
+      const next = searchInput.trim()
+      if (next === currentQ) return
+      const sp = new URLSearchParams(window.location.search)
+      if (next) sp.set('q', next)
+      else sp.delete('q')
+      sp.delete('page') // nova busca reinicia a paginação
+      router.push(`/clientes${sp.toString() ? `?${sp.toString()}` : ''}`)
+    }, 400)
+    return () => clearTimeout(t)
+  }, [searchInput, router])
+
   const totalPages = Math.ceil(total / pageSize)
 
   const kwpValue: [number, number] = [
@@ -145,10 +159,12 @@ export default function ClientesClient({
     if (next.kwpMax !== undefined && next.kwpMax !== filterOptions.kwpBounds[1]) sp.set('kwpMax', String(next.kwpMax))
     if (next.inverterPowerMin !== undefined && next.inverterPowerMin !== filterOptions.inverterPowerBounds[0]) sp.set('inverterPowerMin', String(next.inverterPowerMin))
     if (next.inverterPowerMax !== undefined && next.inverterPowerMax !== filterOptions.inverterPowerBounds[1]) sp.set('inverterPowerMax', String(next.inverterPowerMax))
+    if (search) sp.set('q', search) // preserva a busca ativa ao mexer nos filtros
     router.push(`/clientes${sp.toString() ? `?${sp.toString()}` : ''}`)
-  }, [filters, filterOptions, router])
+  }, [filters, filterOptions, search, router])
 
   const clearAll = useCallback(() => {
+    setSearchInput('')
     router.push('/clientes')
   }, [router])
 
@@ -245,12 +261,12 @@ export default function ClientesClient({
         </div>
 
         <FilterBar activeCount={activeCount} onClear={clearAll} advanced={advanced}>
-          <SearchBar value={search} onChange={setSearch} placeholder="Buscar cliente..." />
+          <SearchBar value={searchInput} onChange={setSearchInput} placeholder="Buscar cliente..." />
         </FilterBar>
       </div>
 
       <div className="flex-1 overflow-auto px-6 py-4">
-        {filtered.length === 0 ? (
+        {clients.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full gap-3">
             <p className="text-sm" style={{ color: 'var(--theme-text-subtle)' }}>
               {search || activeCount > 0 ? 'Nenhum cliente encontrado com os filtros aplicados.' : 'Nenhum cliente com cadastro completo ainda.'}
@@ -258,12 +274,12 @@ export default function ClientesClient({
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            {filtered.map((client) => <ClientRow key={client.id} client={client} portalToken={portalTokens?.[client.id]} />)}
+            {clients.map((client) => <ClientRow key={client.id} client={client} portalToken={portalTokens?.[client.id]} />)}
           </div>
         )}
       </div>
 
-      {!search && totalPages > 1 && (
+      {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2 px-6 py-3 flex-shrink-0" style={{ borderTop: '1px solid var(--theme-border)' }}>
           <button
             onClick={() => {

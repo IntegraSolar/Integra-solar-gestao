@@ -10,6 +10,7 @@ export default async function ClientesPage({
 }: {
   searchParams: Promise<{
     page?: string
+    q?: string
     city?: string
     kwpMin?: string
     kwpMax?: string
@@ -23,6 +24,7 @@ export default async function ClientesPage({
 }) {
   const sp = await searchParams
   const page = Math.max(0, parseInt(sp.page ?? '0', 10) || 0)
+  const search = (sp.q ?? '').trim()
 
   const filters: ClientsFilters = {
     city: sp.city || undefined,
@@ -38,7 +40,7 @@ export default async function ClientesPage({
 
   const [user, { clients, total }, filterOptions] = await Promise.all([
     getCurrentUserData(),
-    getClients(page, filters),
+    getClients(page, filters, search),
     getClientsFilterOptions(),
   ])
 
@@ -68,6 +70,7 @@ export default async function ClientesPage({
       pageSize={CLIENTS_PAGE_SIZE}
       filterOptions={filterOptions}
       filters={filters}
+      search={search}
       portalTokens={portalTokens}
     />
   )

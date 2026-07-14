@@ -43,6 +43,7 @@ export type ClientsFilterOptions = {
 export async function getClients(
   page = 0,
   filters: ClientsFilters = {},
+  search = '',
 ): Promise<{ clients: Client[]; total: number }> {
   const user = await getCurrentUserData()
   if (!user?.membership) return { clients: [], total: 0 }
@@ -80,6 +81,17 @@ export async function getClients(
   if (filters.inverterPowerMax !== undefined) query = query.lte('inverter_power_w', filters.inverterPowerMax)
   if (filters.origemId)          query = query.eq('lead.lead_source_id', filters.origemId)
   if (filters.paymentMethod)     query = query.eq('sale.payment_method', filters.paymentMethod)
+
+  // Busca textual no BANCO (antes era filtrada só na página carregada no client,
+  // então buscar um cliente fora das 50 primeiras linhas não o encontrava).
+  // Usa a sintaxe de querystring do PostgREST no .or(): wildcard é `*`.
+  const term = search.trim().replace(/[%,()*\\]/g, '').slice(0, 80)
+  if (term) {
+    const like = `*${term}*`
+    query = query.or(
+      `name.ilike.${like},phone.ilike.${like},email.ilike.${like},cpf_cnpj.ilike.${like},city.ilike.${like}`
+    )
+  }
 
   const { data, count } = await query
     .order('created_at', { ascending: false })
