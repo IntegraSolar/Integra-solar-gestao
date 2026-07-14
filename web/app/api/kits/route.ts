@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { enforceRate, RATE_POLICIES } from '@/lib/security/rate-policies'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
 
@@ -6,6 +7,9 @@ export async function GET() {
   const user = await getCurrentUserData()
   const orgId = user?.membership?.organization.id ?? null
   if (!orgId) return NextResponse.json({ kits: [] })
+
+  const blocked = await enforceRate(`api:kits:${orgId}`, RATE_POLICIES.sensitiveApi)
+  if (blocked) return blocked
 
   const supabase = await createClient()
 

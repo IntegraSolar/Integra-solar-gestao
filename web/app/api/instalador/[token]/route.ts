@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { enforceRate, getClientIp, RATE_POLICIES } from '@/lib/security/rate-policies'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function GET(
@@ -6,6 +7,8 @@ export async function GET(
   { params }: { params: Promise<{ token: string }> }
 ) {
   const { token } = await params
+  const blocked = await enforceRate(`pub:instalador:${await getClientIp()}`, RATE_POLICIES.publicToken)
+  if (blocked) return blocked
   if (!token || token.length < 16) {
     return NextResponse.json({ error: 'Token inválido' }, { status: 400 })
   }

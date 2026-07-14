@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { enforceRate, RATE_POLICIES } from '@/lib/security/rate-policies'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
 
@@ -7,6 +8,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const user = await getCurrentUserData()
   const orgId = user?.membership?.organization.id
   if (!orgId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+
+  const blocked = await enforceRate(`api:tpl-download:${orgId}`, RATE_POLICIES.sensitiveApi)
+  if (blocked) return blocked
 
   const supabase = await createClient()
 

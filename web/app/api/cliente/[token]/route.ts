@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { enforceRate, getClientIp, RATE_POLICIES } from '@/lib/security/rate-policies'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 type TimelineStage = {
@@ -25,6 +26,9 @@ export async function GET(
   if (!token || token.length < 16) {
     return NextResponse.json({ error: 'Token inválido' }, { status: 400 })
   }
+
+  const blocked = await enforceRate(`pub:cliente:${await getClientIp()}`, RATE_POLICIES.publicToken)
+  if (blocked) return blocked
 
   const supabase = createAdminClient()
 

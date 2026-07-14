@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import PizZip from 'pizzip'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
+import { enforceRate, RATE_POLICIES } from '@/lib/security/rate-policies'
 
 const KNOWN_PLACEHOLDERS = [
   'cliente_nome', 'cliente_cidade', 'cliente_telefone',
@@ -88,6 +89,9 @@ export async function GET(
     const user = await getCurrentUserData()
     const orgId = user?.membership?.organization.id
     if (!orgId) return NextResponse.json({ error: 'Não autenticado.' }, { status: 401 })
+
+    const blocked = await enforceRate(`api:tpl-diagnose:${orgId}`, RATE_POLICIES.sensitiveApi)
+    if (blocked) return blocked
 
     const supabase = await createClient()
 
