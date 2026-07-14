@@ -1,5 +1,6 @@
 'use server'
 
+import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
@@ -47,10 +48,23 @@ export async function getCostsByClient(clientId: string): Promise<ProjectCost[]>
   return getProjectCosts({ clientId })
 }
 
+// C1: valida a entrada de custos (valor > 0, data válida) — antes gravava direto.
+const costSchema = z.object({
+  client_id: z.string().min(1, 'Cliente é obrigatório.'),
+  description: z.string().min(1, 'Descrição é obrigatória.'),
+  category: z.string().min(1, 'Categoria é obrigatória.'),
+  amount: z.coerce.number().positive('O valor do custo deve ser maior que zero.'),
+  cost_date: z.string().refine((d) => !Number.isNaN(new Date(d).getTime()), 'Data do custo inválida.'),
+  notes: z.string().nullish(),
+})
+
 export async function createCost(data: UpsertCostData): Promise<ActionResult> {
   const user = await getCurrentUserData()
   const orgId = user?.membership?.organization.id ?? null
   if (!orgId) return { error: 'Sem organização ativa.' }
+
+  const parsed = costSchema.safeParse(data)
+  if (!parsed.success) return { error: parsed.error.issues[0].message }
 
   const supabase = await createClient()
   const { error } = await (supabase as any)
@@ -75,6 +89,9 @@ export async function updateCost(id: string, data: UpsertCostData): Promise<Acti
   const user = await getCurrentUserData()
   const orgId = user?.membership?.organization.id ?? null
   if (!orgId) return { error: 'Sem organização ativa.' }
+
+  const parsed = costSchema.safeParse(data)
+  if (!parsed.success) return { error: parsed.error.issues[0].message }
 
   const supabase = await createClient()
   const { error } = await (supabase as any)

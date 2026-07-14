@@ -1,9 +1,21 @@
 ﻿'use server'
 
+import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
 import type { ActionResult } from '@/lib/crm/types'
+
+// C1: valida a entrada da compra (valor >= 0, data prevista válida quando houver).
+const purchaseSchema = z.object({
+  fornecedor: z.string().nullish(),
+  itens: z.string().nullish(),
+  valor: z.coerce.number().nonnegative('Valor da compra inválido.').nullish(),
+  data_prevista: z.string().refine((d) => !d || !Number.isNaN(new Date(d).getTime()), 'Data prevista inválida.').nullish(),
+  status: z.string().min(1, 'Status é obrigatório.'),
+  nf_url: z.string().nullish(),
+  comprovante_url: z.string().nullish(),
+})
 
 type UpsertPurchaseData = {
   fornecedor?: string | null
@@ -22,6 +34,9 @@ export async function upsertPurchase(
   const user = await getCurrentUserData()
   const orgId = user?.membership?.organization.id ?? null
   if (!orgId) return { error: 'Sem organização ativa.' }
+
+  const parsed = purchaseSchema.safeParse(data)
+  if (!parsed.success) return { error: parsed.error.issues[0].message }
 
   const supabase = await createClient()
 
