@@ -55,14 +55,16 @@ export async function getClients(
   const needsLeadInner = !!filters.origemId
   const needsSaleInner = !!filters.paymentMethod
 
-  const selectStr = `
-    *,
-    sale:client_sale${needsSaleInner ? '!inner' : ''}(id, client_id, sale_value, payment_method, nf_notes, commission_pct),
-    installments:client_installments(id, client_id, position, due_date, amount, notes, status, payment_proof_url, confirmed_at),
-    attachments:client_attachments(id, client_id, type, file_url, uploaded_at),
-    contract:client_contracts(id, client_id, contract_url, power_of_attorney_url, signed, signed_at)
-    ${needsLeadInner ? ',lead:leads!inner(id, lead_source_id)' : ''}
-  `
+  // A listagem exibe apenas colunas escalares do cliente (ver ClientRow, PrazoBadge
+  // e a busca por name/phone/city/cpf_cnpj/email). Os embeds pesados
+  // (installments — ~14 linhas/cliente —, attachments, contract, sale) não são
+  // usados pela UI, então não são trazidos. sale/lead entram só como INNER JOIN
+  // mínimo quando há filtro por eles. normalizeClient já preenche os embeds
+  // ausentes com []/null.
+  const embeds: string[] = []
+  if (needsSaleInner) embeds.push('sale:client_sale!inner(client_id,payment_method)')
+  if (needsLeadInner) embeds.push('lead:leads!inner(id,lead_source_id)')
+  const selectStr = ['*', ...embeds].join(',')
 
   let query = supabase
     .from('clients')
