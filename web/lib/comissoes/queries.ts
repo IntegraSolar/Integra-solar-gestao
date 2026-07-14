@@ -1,5 +1,6 @@
 // web/lib/comissoes/queries.ts
 import { createClient } from '@/lib/supabase/server'
+import { getCurrentUserData } from '@/lib/org/queries'
 import { getMonthRangeBRT } from '@/lib/utils/date-range'
 
 export type ComissaoItem = {
@@ -131,10 +132,25 @@ export async function getComissaoById(commissionId: string): Promise<ComissaoIte
 }
 
 export async function getComissoesMembers(): Promise<ComissaoMember[]> {
+  const user = await getCurrentUserData()
+  const orgId = user?.membership?.organization.id ?? null
+  if (!orgId) return []
+
   const supabase = await createClient()
+  // Membros da org atual (evita vazar profiles de outras empresas)
+  const { data: members } = await supabase
+    .from('organization_members')
+    .select('user_id')
+    .eq('organization_id', orgId)
+  const ids = (members ?? []).map((m: any) => m.user_id)
+  if (ids.length === 0) return []
+
   const { data } = await supabase
     .from('profiles')
     .select('id, full_name')
+    .in('id', ids)
     .order('full_name')
-  return (data ?? []).map((p: any) => ({ id: p.id, name: p.full_name }))
+  return (data ?? [])
+    .filter((p: any) => p.full_name)
+    .map((p: any) => ({ id: p.id, name: p.full_name }))
 }

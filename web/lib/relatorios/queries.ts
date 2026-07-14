@@ -116,8 +116,9 @@ export async function getComercialData(filter: RelatorioFilter): Promise<Comerci
     const sale = Array.isArray(c.client_sale) ? c.client_sale[0] : c.client_sale
     const valor = sale?.sale_value ?? 0
     valor_total += valor
-    if (c.type === 'pf') pf++
-    else if (c.type === 'pj') pj++
+    const tipo = (c.type ?? '').toLowerCase()
+    if (tipo === 'pf') pf++
+    else if (tipo === 'pj') pj++
     if (c.contract_date) {
       const key = c.contract_date.substring(0, 7)
       if (!mesBucket[key]) mesBucket[key] = { label: mesLabel(c.contract_date), qtd: 0, valor: 0 }
@@ -161,24 +162,23 @@ export async function getLeadsData(filter: RelatorioFilter): Promise<{ origens: 
     .map(([origem, v]) => ({ origem, total_leads: v.total, leads_convertidos: v.convertidos, taxa_conversao: v.total > 0 ? (v.convertidos / v.total) * 100 : 0 }))
 
   let rankQuery = supabase.from('clients')
-    .select('id, contract_date, responsible_id, profiles!responsible_id(full_name, email), client_sale(sale_value)')
+    .select('id, contract_date, client_sale(sale_value, commission_seller)')
     .eq('organization_id', orgId)
   if (filter.dateFrom) rankQuery = rankQuery.gte('created_at', filter.dateFrom)
   if (filter.dateTo) rankQuery = rankQuery.lte('created_at', filter.dateTo + 'T23:59:59')
   const { data: clientsData } = await rankQuery
 
+  // Vendedor vem de client_sale.commission_seller (texto). Não existe clients.responsible_id.
   const vendedorMap: Record<string, { nome: string; qtd_leads: number; qtd_contratos: number; valor: number }> = {}
   for (const c of (clientsData ?? []) as any[]) {
-    const profile = c.profiles
-    if (!profile) continue
-    const nome = profile.full_name ?? profile.email ?? 'Desconhecido'
-    const id = c.responsible_id ?? nome
-    if (!vendedorMap[id]) vendedorMap[id] = { nome, qtd_leads: 0, qtd_contratos: 0, valor: 0 }
-    vendedorMap[id].qtd_leads++
+    const sale = Array.isArray(c.client_sale) ? c.client_sale[0] : c.client_sale
+    const nome = (sale?.commission_seller ?? '').trim()
+    if (!nome) continue
+    if (!vendedorMap[nome]) vendedorMap[nome] = { nome, qtd_leads: 0, qtd_contratos: 0, valor: 0 }
+    vendedorMap[nome].qtd_leads++
     if (c.contract_date) {
-      vendedorMap[id].qtd_contratos++
-      const sale = Array.isArray(c.client_sale) ? c.client_sale[0] : c.client_sale
-      vendedorMap[id].valor += sale?.sale_value ?? 0
+      vendedorMap[nome].qtd_contratos++
+      vendedorMap[nome].valor += sale?.sale_value ?? 0
     }
   }
   const ranking = Object.values(vendedorMap).sort((a, b) => b.valor - a.valor)
@@ -204,7 +204,7 @@ export async function getFinanceiroData(filter: RelatorioFilter): Promise<Financ
 
   let q = supabase
     .from('clients')
-    .select('id, contract_date, created_at, responsible_id, profiles!responsible_id(full_name, email), client_sale(sale_value, commission_pct)')
+    .select('id, contract_date, created_at, client_sale(sale_value, commission_pct, commission_seller)')
     .eq('organization_id', orgId)
     .order('created_at', { ascending: true })
     .limit(2000)
@@ -229,17 +229,15 @@ export async function getFinanceiroData(filter: RelatorioFilter): Promise<Financ
 
   const comMap: Record<string, { nome: string; qtd: number; valor: number; comissao: number }> = {}
   for (const c of filtrados) {
-    const profile = c.profiles
-    if (!profile) continue
-    const nome = profile.full_name ?? profile.email ?? 'Desconhecido'
-    const id = c.responsible_id ?? nome
-    if (!comMap[id]) comMap[id] = { nome, qtd: 0, valor: 0, comissao: 0 }
-    comMap[id].qtd++
     const sale = Array.isArray(c.client_sale) ? c.client_sale[0] : c.client_sale
+    const nome = (sale?.commission_seller ?? '').trim()
+    if (!nome) continue
+    if (!comMap[nome]) comMap[nome] = { nome, qtd: 0, valor: 0, comissao: 0 }
+    comMap[nome].qtd++
     const valor = sale?.sale_value ?? 0
     const pct = Number(sale?.commission_pct ?? 0)
-    comMap[id].valor += valor
-    comMap[id].comissao += valor * pct / 100
+    comMap[nome].valor += valor
+    comMap[nome].comissao += valor * pct / 100
   }
   const comissoes = Object.values(comMap).sort((a, b) => b.comissao - a.comissao)
     .map((v) => ({ nome: v.nome, qtd_contratos: v.qtd, valor_total: v.valor, comissao: v.comissao }))
