@@ -15,7 +15,7 @@ export function DashboardShell({
   children: React.ReactNode
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false)
-  const { grouped, badgeCount, refetch } = useFollowUpNotifications()
+  const { grouped, badgeCount, refetch } = useFollowUpNotifications(user.membership?.organization.id)
   const router = useRouter()
 
   function handleLeadClick(leadId: string) {

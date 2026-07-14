@@ -173,61 +173,52 @@ export async function GET(
   const startDate = client.delivery_start_date ?? client.contract_date ?? null
   const maxDays = client.contract_max_days ?? null
 
-  // Signed URLs for documents
-  const documents: { type: string; label: string; url: string }[] = []
-
-  // Contract
-  if (contract?.contract_url) {
-    const signed = await signUrl(supabase, contract.contract_url)
-    if (signed) documents.push({ type: 'contrato', label: 'Contrato', url: signed })
+  // ── Assinatura de URLs em PARALELO ────────────────────────────────
+  // Antes cada documento era assinado em série (N+1 no storage). Agora todas
+  // as chamadas disparam juntas e só aguardamos uma vez, preservando a ordem.
+  const ATT_LABELS: Record<string, string> = {
+    procuracao: 'Procuração', conta_luz: 'Conta de Luz', rg_cnh: 'RG / CNH',
+    foto_disjuntor: 'Foto do Disjuntor', foto_maps: 'Foto Aérea',
+    foto_frente: 'Foto da Frente', proposta_formalizada: 'Proposta Comercial',
+    cotacao_material: 'Cotação de Material',
   }
-  if (contract?.power_of_attorney_url) {
-    const signed = await signUrl(supabase, contract.power_of_attorney_url)
-    if (signed) documents.push({ type: 'procuracao', label: 'Procuração', url: signed })
+  const signProjectDoc = async (path: string): Promise<string | null> => {
+    const { data } = await supabase.storage.from('project-docs').createSignedUrl(path, 3600)
+    return data?.signedUrl ?? null
   }
 
-  // Client attachments
+  // Documentos (contrato + procuração + anexos do cliente)
+  const documentTasks: Promise<{ type: string; label: string; url: string } | null>[] = []
+  if (contract?.contract_url) documentTasks.push(signUrl(supabase, contract.contract_url).then((url) => url ? { type: 'contrato', label: 'Contrato', url } : null))
+  if (contract?.power_of_attorney_url) documentTasks.push(signUrl(supabase, contract.power_of_attorney_url).then((url) => url ? { type: 'procuracao', label: 'Procuração', url } : null))
   for (const att of attachments) {
     if (!att.file_url) continue
-    const signed = await signUrl(supabase, att.file_url)
-    if (signed) {
-      const labels: Record<string, string> = {
-        procuracao: 'Procuração', conta_luz: 'Conta de Luz', rg_cnh: 'RG / CNH',
-        foto_disjuntor: 'Foto do Disjuntor', foto_maps: 'Foto Aérea',
-        foto_frente: 'Foto da Frente', proposta_formalizada: 'Proposta Comercial',
-        cotacao_material: 'Cotação de Material',
-      }
-      documents.push({ type: att.type, label: labels[att.type] ?? att.type, url: signed })
-    }
+    documentTasks.push(signUrl(supabase, att.file_url).then((url) => url ? { type: att.type, label: ATT_LABELS[att.type] ?? att.type, url } : null))
   }
 
-  // Project attachments with signed URLs
-  const projDocs: { name: string; url: string }[] = []
+  // Docs de projeto (anexos + legados ART/projeto/parecer)
+  const projDocTasks: Promise<{ name: string; url: string } | null>[] = []
   for (const att of projectAttachments) {
-    const { data: signed } = await supabase.storage.from('project-docs').createSignedUrl(att.file_path, 3600)
-    if (signed?.signedUrl) projDocs.push({ name: att.file_name, url: signed.signedUrl })
+    projDocTasks.push(signProjectDoc(att.file_path).then((url) => url ? { name: att.file_name, url } : null))
   }
+  if (project?.art_url) projDocTasks.push(signUrl(supabase, project.art_url).then((url) => url ? { name: 'ART', url } : null))
+  if (project?.projeto_url) projDocTasks.push(signUrl(supabase, project.projeto_url).then((url) => url ? { name: 'Projeto Elétrico', url } : null))
+  if (project?.parecer_acesso_url) projDocTasks.push(signUrl(supabase, project.parecer_acesso_url).then((url) => url ? { name: 'Parecer de Acesso', url } : null))
 
-  // Legacy project docs
-  if (project?.art_url) {
-    const signed = await signUrl(supabase, project.art_url)
-    if (signed) projDocs.push({ name: 'ART', url: signed })
-  }
-  if (project?.projeto_url) {
-    const signed = await signUrl(supabase, project.projeto_url)
-    if (signed) projDocs.push({ name: 'Projeto Elétrico', url: signed })
-  }
-  if (project?.parecer_acesso_url) {
-    const signed = await signUrl(supabase, project.parecer_acesso_url)
-    if (signed) projDocs.push({ name: 'Parecer de Acesso', url: signed })
-  }
+  // Fotos da obra
+  const photoTasks = obraPhotos.map((photo: any) =>
+    signProjectDoc(photo.file_path).then((url) => url ? { name: photo.file_name, url } : null)
+  )
 
-  // Obra photos with signed URLs
-  const photos: { name: string; url: string }[] = []
-  for (const photo of obraPhotos) {
-    const { data: signed } = await supabase.storage.from('project-docs').createSignedUrl(photo.file_path, 3600)
-    if (signed?.signedUrl) photos.push({ name: photo.file_name, url: signed.signedUrl })
-  }
+  const [documentsRaw, projDocsRaw, photosRaw] = await Promise.all([
+    Promise.all(documentTasks),
+    Promise.all(projDocTasks),
+    Promise.all(photoTasks),
+  ])
+
+  const documents = documentsRaw.filter((d): d is { type: string; label: string; url: string } => d !== null)
+  const projDocs = projDocsRaw.filter((d): d is { name: string; url: string } => d !== null)
+  const photos = photosRaw.filter((d): d is { name: string; url: string } => d !== null)
 
   return NextResponse.json({
     organization: {

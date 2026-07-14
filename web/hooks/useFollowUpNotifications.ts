@@ -38,7 +38,7 @@ function groupByUrgency(followups: FollowUpNotification[]): GroupedFollowUps {
   return { overdue, today, upcoming }
 }
 
-export function useFollowUpNotifications() {
+export function useFollowUpNotifications(organizationId?: string) {
   const [followups, setFollowups] = useState<FollowUpNotification[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const channelRef = useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null)
@@ -60,12 +60,15 @@ export function useFollowUpNotifications() {
 
     const supabase = createClient()
 
-    // Subscribe to task inserts/updates/deletes — refetch on any change
+    // Assina mudanças em `tasks` apenas da organização atual — evita refetch
+    // por alterações de outras empresas (multi-tenant).
     const channel = supabase
       .channel('tasks-realtime')
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'tasks' },
+        organizationId
+          ? { event: '*', schema: 'public', table: 'tasks', filter: `organization_id=eq.${organizationId}` }
+          : { event: '*', schema: 'public', table: 'tasks' },
         () => { fetchFollowups() }
       )
       .subscribe()
@@ -75,7 +78,7 @@ export function useFollowUpNotifications() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [fetchFollowups])
+  }, [fetchFollowups, organizationId])
 
   const grouped = groupByUrgency(followups)
   const badgeCount = grouped.overdue.length + grouped.today.length
