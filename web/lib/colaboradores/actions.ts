@@ -97,11 +97,28 @@ export async function resetColaboradorPassword(
   userId: string
 ): Promise<ActionResult & { newPassword?: string }> {
   try { await requirePermission('configuracoes', 'edit') } catch { return { error: 'Sem permissão para redefinir senhas.' } }
+
+  const user = await getCurrentUserData()
+  const orgId = user?.membership?.organization.id
+  if (!orgId) return { error: 'Sem organização ativa.' }
+
+  const adminClient = createAdminClient()
+
+  // Isolamento de tenant: o alvo precisa pertencer à organização do solicitante.
+  // Sem esta checagem, um admin poderia redefinir a senha de usuários de OUTRA
+  // empresa passando um userId arbitrário (IDOR → account takeover).
+  const { data: member } = await (adminClient as any)
+    .from('organization_members')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('organization_id', orgId)
+    .maybeSingle()
+  if (!member) return { error: 'Colaborador não encontrado.' }
+
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'
   const bytes = randomBytes(10)
   const newPassword = Array.from(bytes).map(b => chars[b % chars.length]).join('')
 
-  const adminClient = createAdminClient()
   const { error } = await adminClient.auth.admin.updateUserById(userId, { password: newPassword })
 
   if (error) return { error: 'Erro ao redefinir senha: ' + error.message }
