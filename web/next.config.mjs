@@ -3,6 +3,8 @@ import { withSentryConfig } from '@sentry/nextjs'
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
+    // Serve AVIF/WebP (menores) para imagens via next/image quando o browser suporta.
+    formats: ['image/avif', 'image/webp'],
     remotePatterns: [
       {
         protocol: 'https',

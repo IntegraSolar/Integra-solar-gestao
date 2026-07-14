@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 export type FollowUpNotification = {
@@ -80,7 +80,9 @@ export function useFollowUpNotifications(organizationId?: string) {
     }
   }, [fetchFollowups, organizationId])
 
-  const grouped = groupByUrgency(followups)
+  // Evita reagrupar a cada render (ex.: abrir/fechar o drawer) — só quando os
+  // follow-ups mudam de fato.
+  const grouped = useMemo(() => groupByUrgency(followups), [followups])
   const badgeCount = grouped.overdue.length + grouped.today.length
 
   return { followups, grouped, badgeCount, isLoading, refetch: fetchFollowups }
