@@ -1,16 +1,83 @@
 @media print {
+  /* Página A4 com margem física; deixa a impressora cuidar das margens */
+  @page {
+    size: A4 portrait;
+    margin: 12mm;
+  }
+
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Remove o deslocamento do shell do dashboard (sidebar + topbar fixos) */
+  .ml-56 { margin-left: 0 !important; }
+  .pt-14 { padding-top: 0 !important; }
+
+  /* Zera o padding dos contêineres que envolvem o relatório para usar a largura toda */
+  .p-6 { padding: 0 !important; }
+  .p-5 { padding: 0 !important; }
+
+  /* Isola a área de impressão — mas mantém o FLUXO normal (position: static),
+     para que relatórios longos paginem em vez de serem cortados */
   body * { visibility: hidden !important; }
   #print-area, #print-area * { visibility: visible !important; }
+
   #print-area {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    color: black !important;
-    background: white !important;
+    position: static !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    color: #000 !important;
+    background: #fff !important;
   }
-  #print-area table { width: 100%; border-collapse: collapse; }
-  #print-area th, #print-area td { border: 1px solid #ccc; padding: 6px 10px; font-size: 12px; }
-  #print-area th { background: #f0f0f0; }
+
   .no-print { display: none !important; }
+
+  /* Texto sempre legível no papel */
+  #print-area * { color: #000 !important; }
+  #print-area h1, #print-area h2, #print-area h3 {
+    color: #000 !important;
+    page-break-after: avoid;
+  }
+
+  /* Tabelas: largura total, sem quebrar linha no meio */
+  #print-area table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    page-break-inside: auto;
+    margin-bottom: 12px;
+  }
+  #print-area thead { display: table-header-group; }
+  #print-area tr { page-break-inside: avoid; }
+  #print-area th, #print-area td {
+    border: 1px solid #ccc !important;
+    padding: 6px 10px !important;
+    font-size: 11px !important;
+    text-align: left !important;
+    color: #000 !important;
+    background: #fff !important;
+  }
+  #print-area th { background: #f0f0f0 !important; font-weight: 600; }
+
+  /* Wrappers de tabela roláveis na tela não devem cortar na impressão */
+  #print-area .overflow-x-auto,
+  #print-area [class*="overflow"] {
+    overflow: visible !important;
+  }
+
+  /* Cartões de KPI: fundo branco, borda cinza, sem sombra — e não quebrar no meio */
+  #print-area [class*="rounded"] {
+    background: #fff !important;
+    border: 1px solid #ddd !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Grids de KPI mantêm colunas na impressão */
+  #print-area .grid { display: grid !important; gap: 8px !important; }
 }
