@@ -7,6 +7,7 @@ import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { rateLimit } from '@/lib/rate-limit'
 import { checkBruteForce, recordLoginAttempt, recordSession } from '@/lib/auth/brute-force'
+import { incrWithWindow, resetCount } from '@/lib/security/concurrency'
 
 // ── Schemas de validação ─────────────────────────────────────────────────────
 
@@ -86,8 +87,16 @@ export async function signIn(
   if (error) {
     await recordLoginAttempt({ identifier: email.toLowerCase(), kind: 'email', success: false })
     await recordLoginAttempt({ identifier: ip, kind: 'ip', success: false })
+    // Backoff progressivo: atraso capado, proporcional às falhas recentes —
+    // desacelera credential stuffing sem penalizar um erro isolado de digitação.
+    const fails = await incrWithWindow(`login_backoff:${email.toLowerCase()}`, 15 * 60)
+    const delayMs = Math.min((fails - 1) * 400, 3000)
+    if (delayMs > 0) await new Promise((r) => setTimeout(r, delayMs))
     return { error: 'E-mail ou senha incorretos. Verifique os dados e tente novamente.' }
   }
+
+  // Login bem-sucedido: zera o backoff.
+  await resetCount(`login_backoff:${email.toLowerCase()}`)
 
   const user = data.user
   const session = data.session

@@ -6,6 +6,7 @@ import { getOrgConfig } from '@/lib/configuracoes/queries'
 import { calcularPreco } from '@/lib/proposals/pricing'
 import { buildPlaceholders } from '@/lib/proposals/placeholders'
 import { rateLimit, rateLimitResponse } from '@/lib/rate-limit'
+import { acquireSlot } from '@/lib/security/concurrency'
 import { logger } from '@/lib/logger'
 
 const CONVERT_TIMEOUT_MS = 90_000
@@ -107,6 +108,7 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let releaseSlot: (() => Promise<void>) | null = null
   try {
     await params // params not used in this handler (proposalId comes from body)
     const body = await req.json() as {
@@ -160,6 +162,17 @@ export async function POST(
 
     // 5 gerações por minuto por organização
     if (!await rateLimit(`generate:${orgId}`, 5, 60_000)) return rateLimitResponse()
+
+    // Limite de CONCORRÊNCIA: no máx. 2 gerações simultâneas por organização
+    // (operação pesada — conversão externa de até 90s). Evita exaustão de recursos.
+    const slot = await acquireSlot(`pdf-concurrency:${orgId}`, 2, 120)
+    if (!slot.ok) {
+      return NextResponse.json(
+        { error: 'Muitas gerações de PDF em andamento. Aguarde concluir e tente novamente.' },
+        { status: 429, headers: { 'Retry-After': '30' } },
+      )
+    }
+    releaseSlot = slot.release
 
     const supabase = await createClient()
 
@@ -367,5 +380,7 @@ export async function POST(
   } catch (err: any) {
     logger.error('proposals/generate', 'Erro interno inesperado', err)
     return NextResponse.json({ error: 'Erro interno ao gerar proposta.', step: 'unknown' }, { status: 500 })
+  } finally {
+    if (releaseSlot) await releaseSlot()
   }
 }
