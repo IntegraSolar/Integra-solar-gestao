@@ -245,14 +245,24 @@ export async function getLeadsPorOrigem(): Promise<LeadOrigemItem[]> {
   if (!orgId) return []
 
   const supabase = await createClient()
-  const { data } = await supabase
+
+  // Agrega no banco (RPC) — retorna 1 linha por origem em vez de trazer todos
+  // os leads e contar no Node (antes .limit(2000), que truncava e transferia
+  // tudo a cada carga do dashboard).
+  const { data, error } = await (supabase as any).rpc('leads_por_origem', { p_org: orgId })
+  if (!error && data) {
+    return (data as any[]).map((r) => ({ name: r.name as string, count: Number(r.total) }))
+  }
+
+  // Fallback (janela entre deploy e migração da função): contagem em JS.
+  const { data: rows } = await supabase
     .from('leads')
     .select('lead_source_id, lead_sources!lead_source_id(name)')
     .eq('organization_id', orgId)
     .limit(2000)
 
   const map: Record<string, { name: string; count: number }> = {}
-  for (const row of (data ?? []) as any[]) {
+  for (const row of (rows ?? []) as any[]) {
     const name = row.lead_sources?.name ?? 'Sem origem'
     if (!map[name]) map[name] = { name, count: 0 }
     map[name].count++

@@ -202,17 +202,25 @@ export async function getFinanceiroData(filter: RelatorioFilter): Promise<Financ
   const effectiveFrom = filter.dateFrom ?? defaultFrom
   const effectiveTo = filter.dateTo ?? now.toISOString().split('T')[0]
 
-  let q = supabase
-    .from('clients')
-    .select('id, contract_date, created_at, client_sale(sale_value, commission_pct, commission_seller)')
-    .eq('organization_id', orgId)
-    .order('created_at', { ascending: true })
-    .limit(2000)
-
-  // Filtra por contract_date quando disponível; fallback para created_at é feito em JS
-  q = q.gte('created_at', effectiveFrom).lte('created_at', effectiveTo + 'T23:59:59')
-
-  const { data: allContracts } = await q
+  // Busca TODOS os contratos do período em blocos (antes .limit(2000), que
+  // truncava silenciosamente relatórios de empresas grandes). Colunas mínimas;
+  // a agregação em JS abaixo permanece idêntica (zero mudança de comportamento).
+  const CHUNK = 1000
+  const MAX_CHUNKS = 50 // trava de segurança (até 50k linhas)
+  const allContracts: any[] = []
+  for (let i = 0; i < MAX_CHUNKS; i++) {
+    const { data: chunk, error } = await supabase
+      .from('clients')
+      .select('id, contract_date, created_at, client_sale(sale_value, commission_pct, commission_seller)')
+      .eq('organization_id', orgId)
+      .gte('created_at', effectiveFrom)
+      .lte('created_at', effectiveTo + 'T23:59:59')
+      .order('created_at', { ascending: true })
+      .range(i * CHUNK, i * CHUNK + CHUNK - 1)
+    if (error || !chunk || chunk.length === 0) break
+    allContracts.push(...chunk)
+    if (chunk.length < CHUNK) break
+  }
 
   const todos = ((allContracts ?? []) as any[]).filter((c: any) => {
     const sale = Array.isArray(c.client_sale) ? c.client_sale[0] : c.client_sale
