@@ -1,9 +1,20 @@
 'use server'
 
+import { z } from 'zod'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createOrganizationResources } from '@/lib/org/createOrganization'
 import { getCurrentPlatformUser } from '@/lib/backoffice/auth/getCurrentPlatformUser'
 import { newRequestId, logStart, logOk, reportError } from '@/lib/observability'
+
+const novaEmpresaSchema = z.object({
+  company_name: z.string().trim().min(2, 'Nome da empresa é obrigatório.'),
+  full_name: z.string().trim().min(2, 'Nome do responsável é obrigatório.'),
+  email: z.string().trim().email('E-mail inválido.'),
+  phone: z.string().trim().optional(),
+  cnpj: z.string().trim().optional(),
+  plan: z.enum(['starter', 'professional', 'enterprise']).optional(),
+  password: z.string().min(8, 'A senha inicial deve ter ao menos 8 caracteres.').optional().or(z.literal('')),
+})
 
 export type NovaEmpresaInput = {
   company_name: string
@@ -25,6 +36,9 @@ export async function criarNovaEmpresa(input: NovaEmpresaInput): Promise<NovaEmp
   const platformUser = await getCurrentPlatformUser()
   if (!platformUser) return { error: 'Sessão administrativa inválida.' }
 
+  const parsed = novaEmpresaSchema.safeParse(input)
+  if (!parsed.success) return { error: parsed.error.issues[0].message }
+
   const {
     company_name,
     cnpj,
@@ -33,11 +47,7 @@ export async function criarNovaEmpresa(input: NovaEmpresaInput): Promise<NovaEmp
     phone,
     plan = 'professional',
     password,
-  } = input
-
-  if (!company_name?.trim()) return { error: 'Nome da empresa é obrigatório.' }
-  if (!full_name?.trim())    return { error: 'Nome do responsável é obrigatório.' }
-  if (!email?.trim())        return { error: 'E-mail é obrigatório.' }
+  } = parsed.data
 
   const ctx = {
     requestId: newRequestId(),

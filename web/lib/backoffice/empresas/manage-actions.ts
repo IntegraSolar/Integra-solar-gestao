@@ -4,9 +4,17 @@ import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { verifySession, SESSION_COOKIE } from '@/lib/backoffice/auth/session'
+import { z } from 'zod'
 import { registrarAuditoria } from '@/lib/backoffice/auditoria/queries'
 import { getOwnerInfo, type OrgConfig } from './queries'
 import { newRequestId, logOk, reportError } from '@/lib/observability'
+
+const novoUsuarioSchema = z.object({
+  name: z.string().trim().min(2, 'Nome é obrigatório.'),
+  email: z.string().trim().email('E-mail inválido.'),
+  password: z.string().min(8, 'A senha deve ter ao menos 8 caracteres.'),
+  role: z.enum(['owner', 'admin', 'member']),
+})
 
 async function getAdminName(): Promise<string> {
   const token = (await cookies()).get(SESSION_COOKIE)?.value
@@ -75,9 +83,9 @@ export async function adicionarUsuario(
   orgId: string,
   input: { name: string; email: string; password: string; role: string }
 ): Promise<{ error?: string }> {
-  const { name, email, password, role } = input
-  if (!name?.trim() || !email?.trim() || !password?.trim()) return { error: 'Preencha nome, e-mail e senha.' }
-  if (password.trim().length < 8) return { error: 'A senha deve ter ao menos 8 caracteres.' }
+  const parsed = novoUsuarioSchema.safeParse(input)
+  if (!parsed.success) return { error: parsed.error.issues[0].message }
+  const { name, email, password, role } = parsed.data
 
   const admin = createAdminClient()
   const normEmail = email.trim().toLowerCase()
