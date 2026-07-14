@@ -53,4 +53,13 @@ export default withSentryConfig(nextConfig, {
   // Evita que o Sentry envolva o middleware com instrumentação Edge Runtime,
   // que pode crashar quando NEXT_PUBLIC_SENTRY_DSN não está configurado.
   autoInstrumentMiddleware: false,
+  // Tree-shaking do SDK client: remove tracing (performance) e Session Replay
+  // do bundle. Mantém apenas a captura de erros. Ver sentry.client.config.ts.
+  bundleSizeOptimizations: {
+    excludeTracing: true,
+    excludeReplayShadowDom: true,
+    excludeReplayIframe: true,
+    excludeReplayWorker: true,
+    excludeDebugStatements: true,
+  },
 })
