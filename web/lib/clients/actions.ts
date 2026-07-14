@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
 import { logAction } from '@/lib/auditoria/actions'
 import type { ActionResult } from './types'
+import { validateInstallments } from './installments'
 
 // ── Helpers ───────────────────────────────────────────────────────
 
@@ -106,7 +107,7 @@ export async function updateTab2(
 // ── Tab 3: Venda e Faturamento ────────────────────────────────────
 
 const tab3Schema = z.object({
-  sale_value: z.coerce.number().min(0, 'Valor da venda é obrigatório'),
+  sale_value: z.coerce.number().min(0.01, 'Informe o valor da venda.'),
   payment_method: z.string().optional(),
   nf_notes: z.string().optional(),
   commission_pct: z.coerce.number().min(0).max(100).default(0),
@@ -131,7 +132,10 @@ export async function updateTab3(
   } catch {
     return { error: 'Dados de parcelas inválidos.' }
   }
-  if (installments.length === 0) return { error: 'Adicione pelo menos uma parcela.' }
+  // C2: valida cada parcela (valor > 0, data válida) e exige que a soma bata
+  // com o valor da venda — evita inconsistência financeira.
+  const parcelaError = validateInstallments(installments, parsed.data.sale_value)
+  if (parcelaError) return { error: parcelaError }
 
   const supabase = await createClient()
 
@@ -173,19 +177,29 @@ export async function updateTab3(
     })
   }
 
-  // Replace installments
-  await supabase.from('client_installments').delete().eq('client_id', clientId)
-  const { error: instError } = await supabase.from('client_installments').insert(
-    installments.map((inst) => ({
-      client_id: clientId,
-      organization_id: orgId,
-      position: inst.position,
-      due_date: inst.due_date,
-      amount: inst.amount,
-      notes: inst.notes ?? null,
-    }))
-  )
-  if (instError) return { error: instError.message }
+  // C3: troca das parcelas de forma ATÔMICA via RPC (delete+insert numa mesma
+  // transação) — se o insert falhar, o delete é revertido (não perde parcelas).
+  const rows = installments.map((inst) => ({
+    position: inst.position,
+    due_date: inst.due_date,
+    amount: Number(inst.amount),
+    notes: inst.notes ?? null,
+  }))
+  const { error: rpcError } = await (supabase as any).rpc('replace_client_installments', {
+    p_client_id: clientId,
+    p_org: orgId,
+    p_installments: rows,
+  })
+  if (rpcError) {
+    const missing = /PGRST202|could not find|does not exist/i.test(`${rpcError.code ?? ''} ${rpcError.message ?? ''}`)
+    if (!missing) return { error: 'Não foi possível salvar as parcelas. Nenhuma alteração foi feita.' }
+    // Fallback temporário (janela entre o deploy e a migração da RPC).
+    await supabase.from('client_installments').delete().eq('client_id', clientId)
+    const { error: instError } = await supabase.from('client_installments').insert(
+      rows.map((r) => ({ client_id: clientId, organization_id: orgId, ...r }))
+    )
+    if (instError) return { error: instError.message }
+  }
 
   const { error } = await supabase
     .from('clients')
