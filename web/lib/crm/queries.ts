@@ -1,7 +1,13 @@
 ﻿// web/lib/crm/queries.ts
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
+import { logger } from '@/lib/logger'
 import type { Lead, FunnelStage, LeadSource, Proposal, Supplier } from './types'
+
+// Teto de segurança do funil ativo. Leads convertidos saem do board (viram
+// clientes), então o funil só mostra leads ativos. Se o teto for atingido,
+// registramos um aviso — nunca truncamos silenciosamente.
+const FUNNEL_MAX = 500
 
 export async function getFunnelStages(): Promise<FunnelStage[]> {
   const user = await getCurrentUserData()
@@ -46,6 +52,7 @@ export async function getLeads(): Promise<Lead[]> {
   const user = await getCurrentUserData()
   if (!user?.membership) return []
   const supabase = await createClient()
+  const orgId = user.membership.organization.id
   const { data } = await supabase
     .from('leads')
     .select(`
@@ -54,10 +61,16 @@ export async function getLeads(): Promise<Lead[]> {
       assigned_user:profiles!assigned_to_user_id(id, full_name, email),
       lead_source:lead_sources(id, name)
     `)
-    .eq('organization_id', user.membership.organization.id)
+    .eq('organization_id', orgId)
+    .eq('converted', false)
     .order('created_at', { ascending: false })
-    .limit(200)
+    .limit(FUNNEL_MAX)
   const leads = (data ?? []) as any[]
+  if (leads.length >= FUNNEL_MAX) {
+    logger.warn('crm.funnel', 'Funil atingiu o teto de leads ativos — possível truncamento', {
+      tenant: orgId, limit: FUNNEL_MAX,
+    })
+  }
   return leads.map((l) => ({ ...l, notes: [], followups: [] })) as Lead[]
 }
 
