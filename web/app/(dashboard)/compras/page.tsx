@@ -1,3 +1,4 @@
+export const metadata = { title: "Compras" }
 import { getCompras } from '@/lib/compras/queries'
 import ComprasClient from './ComprasClient'
 

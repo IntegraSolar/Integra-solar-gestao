@@ -1,3 +1,4 @@
+export const metadata = { title: "Financeiro" }
 // web/app/(dashboard)/financeiro/page.tsx
 import { requireModuleAccess } from '@/lib/org/permissions'
 import { getFinanceiroPainel, getFinanceiroMembers } from '@/lib/financeiro/queries'

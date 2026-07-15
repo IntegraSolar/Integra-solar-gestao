@@ -1,3 +1,4 @@
+export const metadata = { title: "Obras" }
 import { getObras } from '@/lib/obra/queries'
 import ObraClientComponent from './ObraClient'
 

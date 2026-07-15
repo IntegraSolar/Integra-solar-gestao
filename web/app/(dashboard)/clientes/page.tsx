@@ -1,3 +1,4 @@
+export const metadata = { title: "Clientes" }
 // web/app/(dashboard)/clientes/page.tsx
 import { getCurrentUserData } from '@/lib/org/queries'
 import { getClients, getClientsFilterOptions, CLIENTS_PAGE_SIZE, type ClientsFilters } from '@/lib/clients/queries'

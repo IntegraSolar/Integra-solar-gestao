@@ -8,6 +8,7 @@ import { getCurrentUserData } from '@/lib/org/queries'
 import { logAction } from '@/lib/auditoria/actions'
 import type { ActionResult } from './types'
 import { validateInstallments } from './installments'
+import { isValidCpfCnpj, isValidCEP, isValidPhoneBR } from '@/lib/validation/br'
 
 // ── Helpers ───────────────────────────────────────────────────────
 
@@ -32,6 +33,9 @@ async function mergeCompletedTabs(
 
 // ── Tab 1: Dados Pessoais ─────────────────────────────────────────
 
+// C4: valida formato/dígito verificador de CPF/CNPJ, CEP e telefone quando
+// preenchidos (campos seguem opcionais para não travar rascunhos).
+const isBlank = (v: unknown) => v == null || v === ''
 const tab1Schema = z.object({
   type: z.enum(['pf', 'pj']).default('pf'),
   name: z.string().min(1, 'Nome é obrigatório'),
@@ -44,6 +48,16 @@ const tab1Schema = z.object({
   neighborhood: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
+}).superRefine((d, ctx) => {
+  if (!isBlank(d.cpf_cnpj) && !isValidCpfCnpj(d.cpf_cnpj!, d.type)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['cpf_cnpj'], message: d.type === 'pj' ? 'CNPJ inválido.' : 'CPF inválido.' })
+  }
+  if (!isBlank(d.zip) && !isValidCEP(d.zip!)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['zip'], message: 'CEP inválido (precisa de 8 dígitos).' })
+  }
+  if (!isBlank(d.phone) && !isValidPhoneBR(d.phone!)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['phone'], message: 'Telefone inválido (use DDD + número).' })
+  }
 })
 
 export async function updateTab1(
@@ -72,6 +86,19 @@ export async function updateTab1(
 
 // ── Tab 2: Equipamentos Vendidos ──────────────────────────────────
 
+// C6: campos numéricos aceitam vazio, mas quando preenchidos precisam ser
+// números finitos e não-negativos (antes `Number('abc')` virava NaN no banco).
+const numOpt = z.preprocess(
+  (v) => (v === '' || v == null ? undefined : v),
+  z.coerce.number().finite('Valor numérico inválido.').nonnegative('Valor não pode ser negativo.').optional()
+)
+const tab2Schema = z.object({
+  promised_kwh: numOpt,
+  system_power_kwp: numOpt,
+  panel_power_w: numOpt,
+  inverter_power_w: numOpt,
+})
+
 export async function updateTab2(
   clientId: string,
   _prev: ActionResult,
@@ -80,16 +107,18 @@ export async function updateTab2(
   const orgId = await getOrgId()
   if (!orgId) return { error: 'Sem organização ativa.' }
   const raw = Object.fromEntries(formData)
+  const parsedNums = tab2Schema.safeParse(raw)
+  if (!parsedNums.success) return { error: parsedNums.error.issues[0].message }
   const supabase = await createClient()
   const { error } = await supabase
     .from('clients')
     .update({
-      promised_kwh: raw.promised_kwh ? Number(raw.promised_kwh) : null,
-      system_power_kwp: raw.system_power_kwp ? Number(raw.system_power_kwp) : null,
+      promised_kwh: parsedNums.data.promised_kwh ?? null,
+      system_power_kwp: parsedNums.data.system_power_kwp ?? null,
       panel_brand: (raw.panel_brand as string) || null,
-      panel_power_w: raw.panel_power_w ? Number(raw.panel_power_w) : null,
+      panel_power_w: parsedNums.data.panel_power_w ?? null,
       inverter_brand: (raw.inverter_brand as string) || null,
-      inverter_power_w: raw.inverter_power_w ? Number(raw.inverter_power_w) : null,
+      inverter_power_w: parsedNums.data.inverter_power_w ?? null,
       inverter_extra_capacity: (raw.inverter_extra_capacity as string) || null,
       specific_panels: raw.specific_panels === 'on',
       specific_inverter: raw.specific_inverter === 'on',

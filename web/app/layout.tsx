@@ -24,7 +24,12 @@ const sora = Sora({
 })
 
 export const metadata: Metadata = {
-  title: 'Integra Solar — Plataforma de Gestão',
+  // U1: título consistente por rota. Cada página define seu `title` e o template
+  // acrescenta a marca; rotas sem título usam o default.
+  title: {
+    default: 'Integra Solar — Gestão',
+    template: '%s · Integra Solar',
+  },
   description: 'CRM para gestão de projetos de energia solar.',
 }
 

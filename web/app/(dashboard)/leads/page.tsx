@@ -1,3 +1,4 @@
+export const metadata = { title: "Leads" }
 // web/app/(dashboard)/leads/page.tsx
 import { getCurrentUserData } from '@/lib/org/queries'
 import { getLeads, getFunnelStages, getLeadSources, getOrgMembers, ensureDefaultStages } from '@/lib/crm/queries'

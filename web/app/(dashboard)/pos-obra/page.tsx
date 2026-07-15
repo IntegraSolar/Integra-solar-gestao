@@ -1,3 +1,4 @@
+export const metadata = { title: "Pós-Obra" }
 import { getPosObras } from '@/lib/pos-obra/queries'
 import PosObraClientComponent from './PosObraClient'
 

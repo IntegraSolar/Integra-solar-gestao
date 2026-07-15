@@ -1,3 +1,4 @@
+export const metadata = { title: "Configurações" }
 import { requireModuleAccess } from '@/lib/org/permissions'
 import { getOrgConfig, getLeadOrigins } from '@/lib/configuracoes/queries'
 import { getColaboradores } from '@/lib/colaboradores/queries'

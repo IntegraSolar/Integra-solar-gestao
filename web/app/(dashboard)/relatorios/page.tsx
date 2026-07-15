@@ -1,3 +1,4 @@
+export const metadata = { title: "Relatórios" }
 import { requireModuleAccess } from '@/lib/org/permissions'
 import RelatoriosClient from './RelatoriosClient'
 

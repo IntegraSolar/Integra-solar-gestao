@@ -1,3 +1,4 @@
+export const metadata = { title: "Comissões" }
 // web/app/(dashboard)/comissoes/page.tsx
 import { requireModuleAccess } from '@/lib/org/permissions'
 import { getComissoesPainel, getComissoesMembers } from '@/lib/comissoes/queries'

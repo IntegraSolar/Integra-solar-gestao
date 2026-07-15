@@ -1,3 +1,4 @@
+export const metadata = { title: "Contato" }
 import { MessageCircle, Mail } from 'lucide-react'
 
 const SUPPORT = {

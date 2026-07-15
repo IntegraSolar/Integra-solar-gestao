@@ -1,3 +1,4 @@
+export const metadata = { title: "Entrega de Material" }
 import { getEntregasMaterial } from '@/lib/entrega-material/queries'
 import EntregaMaterialClientComponent from './EntregaMaterialClient'
 

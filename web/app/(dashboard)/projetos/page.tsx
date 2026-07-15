@@ -1,3 +1,4 @@
+export const metadata = { title: "Projetos" }
 import { getProjetos } from '@/lib/projetos/queries'
 import ProjetosClient from './ProjetosClient'
 

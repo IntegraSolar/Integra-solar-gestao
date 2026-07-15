@@ -26,6 +26,14 @@ export async function createColaborador(data: CreateColaboradorData): Promise<Ac
   if (!data.email || !data.password || !data.full_name) {
     return { error: 'Nome, e-mail e senha são obrigatórios.' }
   }
+  // Valida o papel contra o enum permitido (evita valor arbitrário / escalonamento).
+  const ROLES = ['admin', 'gerente', 'vendedor', 'instalador', 'projetista']
+  if (!ROLES.includes(data.role)) {
+    return { error: 'Papel de colaborador inválido.' }
+  }
+  if (data.password.length < 8) {
+    return { error: 'A senha deve ter ao menos 8 caracteres.' }
+  }
 
   const adminClient = createAdminClient()
 

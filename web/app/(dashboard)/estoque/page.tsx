@@ -1,3 +1,4 @@
+export const metadata = { title: "Estoque" }
 import { getStockItems } from '@/lib/estoque/queries'
 import EstoqueClient from './EstoqueClient'
 

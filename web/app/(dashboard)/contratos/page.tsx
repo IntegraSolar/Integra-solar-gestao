@@ -1,3 +1,4 @@
+export const metadata = { title: "Contratos" }
 import { getCurrentUserData } from '@/lib/org/queries'
 import { getContratos } from '@/lib/contratos/queries'
 import { redirect } from 'next/navigation'
