@@ -433,6 +433,17 @@ export async function applyCommercialAdjustment(
   const userId = user?.profile.id ?? null
   if (!orgId) return { error: 'Sem organização ativa.' }
 
+  // C1: valida o tipo de ajuste e os valores numéricos antes de gravar.
+  if (!['percentual', 'valor', 'valor_final'].includes(payload.ajuste_tipo)) {
+    return { error: 'Tipo de ajuste inválido.' }
+  }
+  if (!Number.isFinite(payload.preco_final) || payload.preco_final < 0) {
+    return { error: 'Preço final inválido.' }
+  }
+  if (!Number.isFinite(payload.preco_calculado) || payload.preco_calculado < 0) {
+    return { error: 'Preço calculado inválido.' }
+  }
+
   const supabase = await createClient()
   const { error } = await supabase
     .from('proposals')

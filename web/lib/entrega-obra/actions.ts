@@ -1,9 +1,16 @@
 ﻿'use server'
 
+import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
 import type { ActionResult } from '@/lib/crm/types'
+
+// C1: valida status e data de entrega da obra antes de gravar.
+const obraDeliverySchema = z.object({
+  data_entrega: z.string().refine((d) => !d || !Number.isNaN(new Date(d).getTime()), 'Data de entrega inválida.').nullish(),
+  status: z.string().min(1, 'Status é obrigatório.'),
+})
 
 type UpsertObraDeliveryData = {
   data_entrega?: string | null
@@ -28,6 +35,9 @@ export async function upsertObraDelivery(
   const user = await getCurrentUserData()
   const orgId = user?.membership?.organization.id ?? null
   if (!orgId) return { error: 'Sem organização ativa.' }
+
+  const parsed = obraDeliverySchema.safeParse(data)
+  if (!parsed.success) return { error: parsed.error.issues[0].message }
 
   const supabase = await createClient()
 

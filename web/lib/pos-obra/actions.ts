@@ -1,9 +1,18 @@
 ﻿'use server'
 
+import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
 import type { ActionResult } from '@/lib/crm/types'
+
+// C1: valida status, data de contato e NPS (0–10) antes de gravar.
+const posObraSchema = z.object({
+  data_contato: z.string().refine((d) => !d || !Number.isNaN(new Date(d).getTime()), 'Data de contato inválida.').nullish(),
+  nps: z.coerce.number().int().min(0, 'NPS deve ficar entre 0 e 10.').max(10, 'NPS deve ficar entre 0 e 10.').nullish(),
+  observacoes: z.string().nullish(),
+  status: z.string().min(1, 'Status é obrigatório.'),
+})
 
 type UpsertPosObraData = {
   data_contato?: string | null
@@ -19,6 +28,9 @@ export async function upsertPosObra(
   const user = await getCurrentUserData()
   const orgId = user?.membership?.organization.id ?? null
   if (!orgId) return { error: 'Sem organização ativa.' }
+
+  const parsed = posObraSchema.safeParse(data)
+  if (!parsed.success) return { error: parsed.error.issues[0].message }
 
   const supabase = await createClient()
 
