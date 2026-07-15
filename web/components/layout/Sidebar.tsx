@@ -10,7 +10,7 @@ import {
   LayoutDashboard, Users, UserCheck, FileText, DollarSign,
   Ruler, ShoppingCart, Banknote, Package, Wrench,
   CheckSquare, Star, Settings, BarChart2, GraduationCap,
-  Archive, LogOut, MessageCircle,
+  Archive, LogOut, MessageCircle, Calculator,
 } from 'lucide-react'
 
 type NavItem = {
@@ -18,6 +18,7 @@ type NavItem = {
   href: string
   icon: React.ElementType
   moduleKey?: string
+  pro?: boolean
 }
 
 const PIPELINE_ITEMS: NavItem[] = [
@@ -34,6 +35,11 @@ const PIPELINE_ITEMS: NavItem[] = [
   { label: 'Entrega da Obra',     href: '/entrega-obra',     icon: CheckSquare,     moduleKey: 'entrega_obra' },
   { label: 'Pós Obra',            href: '/pos-obra',         icon: Star,            moduleKey: 'pos_obra' },
 ]
+
+// Sempre visível a todos; o acesso é controlado no servidor (flag da empresa).
+const SIMULADORES_ITEM: NavItem = {
+  label: 'Simuladores', href: '/simuladores', icon: Calculator, pro: true,
+}
 
 const SUPPORT_ITEMS: NavItem[] = [
   { label: 'Estoque',       href: '/estoque',       icon: Archive,       moduleKey: 'estoque' },
@@ -98,6 +104,14 @@ export function Sidebar({ user, notificationCount = 0, onNotificationClick }: Si
         >
           <Icon size={15} style={{ color, flexShrink: 0 }} />
           <span style={{ color }}>{item.label}</span>
+          {item.pro && (
+            <span
+              className="ml-auto text-[8px] font-extrabold tracking-wide rounded px-1 py-0.5"
+              style={{ background: '#FF9F40', color: '#1A1A1A' }}
+            >
+              PRO
+            </span>
+          )}
         </Link>
         {isFinanceiro && isActive && (
           <div className="ml-6 mb-1 flex flex-col gap-0.5">
@@ -155,6 +169,8 @@ export function Sidebar({ user, notificationCount = 0, onNotificationClick }: Si
       {/* Navigation */}
       <nav className="sidebar-nav flex-1 overflow-y-auto py-2 px-2">
         {pipelineVisible.map(renderItem)}
+
+        {renderItem(SIMULADORES_ITEM)}
 
         {/* Separador */}
         <div className="mx-3 my-2 flex items-center gap-2">
