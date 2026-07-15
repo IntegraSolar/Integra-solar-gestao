@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { verifySession, SESSION_COOKIE } from '@/lib/backoffice/auth/session'
+import { requireBackofficeSession } from '@/lib/backoffice/auth/getCurrentPlatformUser'
 import { z } from 'zod'
 import { registrarAuditoria } from '@/lib/backoffice/auditoria/queries'
 import { getOwnerInfo, type OrgConfig } from './queries'
@@ -32,6 +33,7 @@ function gerarSenha(): string {
 
 // ── 1. Editar dados cadastrais (org_config) ────────────────────────────────
 export async function atualizarCadastro(orgId: string, data: OrgConfig): Promise<{ error?: string }> {
+  if (!(await requireBackofficeSession())) return { error: 'Sessão de administrador inválida.' }
   const admin = createAdminClient()
 
   const { data: existing } = await admin
@@ -60,6 +62,7 @@ export async function redefinirSenhaResponsavel(
   orgId: string,
   novaSenha?: string
 ): Promise<{ error?: string; password?: string; email?: string }> {
+  if (!(await requireBackofficeSession())) return { error: 'Sessão de administrador inválida.' }
   const owner = await getOwnerInfo(orgId)
   if (!owner) return { error: 'Empresa sem responsável vinculado.' }
 
@@ -83,6 +86,7 @@ export async function adicionarUsuario(
   orgId: string,
   input: { name: string; email: string; password: string; role: string }
 ): Promise<{ error?: string }> {
+  if (!(await requireBackofficeSession())) return { error: 'Sessão de administrador inválida.' }
   const parsed = novoUsuarioSchema.safeParse(input)
   if (!parsed.success) return { error: parsed.error.issues[0].message }
   const { name, email, password, role } = parsed.data
@@ -124,6 +128,7 @@ export async function removerUsuario(
   memberId: string,
   userId: string
 ): Promise<{ error?: string }> {
+  if (!(await requireBackofficeSession())) return { error: 'Sessão de administrador inválida.' }
   const admin = createAdminClient()
 
   // Não permitir remover o último owner
@@ -150,6 +155,7 @@ export async function removerUsuario(
 
 // ── 4. Acessar como a empresa (impersonação) ───────────────────────────────
 export async function impersonarEmpresa(orgId: string): Promise<{ error?: string; url?: string }> {
+  if (!(await requireBackofficeSession())) return { error: 'Sessão de administrador inválida.' }
   const owner = await getOwnerInfo(orgId)
   if (!owner?.email) return { error: 'Empresa sem responsável para impersonar.' }
 

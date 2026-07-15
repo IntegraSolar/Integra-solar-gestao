@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { verifySession, SESSION_COOKIE } from '@/lib/backoffice/auth/session'
+import { requireBackofficeSession } from '@/lib/backoffice/auth/getCurrentPlatformUser'
 import { registrarAuditoria } from '@/lib/backoffice/auditoria/queries'
 import { getAssinatura } from './queries'
 
@@ -46,6 +47,7 @@ export type SalvarAssinaturaInput = {
 }
 
 export async function salvarAssinatura(input: SalvarAssinaturaInput): Promise<{ error?: string }> {
+  if (!(await requireBackofficeSession())) return { error: 'Sessão de administrador inválida.' }
   const admin = createAdminClient()
   const existing = await getAssinatura(input.organization_id)
 
@@ -94,6 +96,7 @@ export async function salvarAssinatura(input: SalvarAssinaturaInput): Promise<{ 
 }
 
 export async function renovarAssinatura(orgId: string): Promise<{ error?: string }> {
+  if (!(await requireBackofficeSession())) return { error: 'Sessão de administrador inválida.' }
   const admin = createAdminClient()
   const sub = await getAssinatura(orgId)
   if (!sub) return { error: 'Nenhuma assinatura para renovar.' }
@@ -121,6 +124,7 @@ export async function renovarAssinatura(orgId: string): Promise<{ error?: string
 }
 
 export async function cancelarAssinatura(orgId: string): Promise<{ error?: string }> {
+  if (!(await requireBackofficeSession())) return { error: 'Sessão de administrador inválida.' }
   const admin = createAdminClient()
   const sub = await getAssinatura(orgId)
   if (!sub) return { error: 'Nenhuma assinatura para cancelar.' }

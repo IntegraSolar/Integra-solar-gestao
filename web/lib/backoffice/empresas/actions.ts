@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
 import { bloquearEmpresa, desbloquearEmpresa, editarEmpresa, excluirEmpresa } from './queries'
 import { verifySession, SESSION_COOKIE } from '@/lib/backoffice/auth/session'
+import { requireBackofficeSession } from '@/lib/backoffice/auth/getCurrentPlatformUser'
 import { registrarAuditoria } from '@/lib/backoffice/auditoria/queries'
 
 async function getAdminName(): Promise<string> {
@@ -15,6 +16,7 @@ async function getAdminName(): Promise<string> {
 }
 
 export async function bloquearEmpresaAction(id: string, motivo: string) {
+  if (!(await requireBackofficeSession())) return { error: 'Sessão de administrador inválida.' }
   const result = await bloquearEmpresa(id, motivo)
   if (!result.error) {
     const adminName = await getAdminName()
@@ -31,6 +33,7 @@ export async function bloquearEmpresaAction(id: string, motivo: string) {
 }
 
 export async function desbloquearEmpresaAction(id: string) {
+  if (!(await requireBackofficeSession())) return { error: 'Sessão de administrador inválida.' }
   const result = await desbloquearEmpresa(id)
   if (!result.error) {
     const adminName = await getAdminName()
@@ -50,6 +53,7 @@ export async function editarEmpresaAction(
   id: string,
   data: { name?: string; plan?: string; status?: string }
 ): Promise<{ error?: string }> {
+  if (!(await requireBackofficeSession())) return { error: 'Sessão de administrador inválida.' }
   const result = await editarEmpresa(id, data)
   if (!result.error) {
     const adminName = await getAdminName()
@@ -66,6 +70,7 @@ export async function editarEmpresaAction(
 }
 
 export async function excluirEmpresaAction(id: string): Promise<{ error?: string }> {
+  if (!(await requireBackofficeSession())) return { error: 'Sessão de administrador inválida.' }
   const adminName = await getAdminName()
   const result = await excluirEmpresa(id)
   if (!result.error) {

@@ -1,6 +1,7 @@
 'use server'
 
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireBackofficeSession } from '@/lib/backoffice/auth/getCurrentPlatformUser'
 import { revalidatePath } from 'next/cache'
 
 export type BackofficeUser = {
@@ -12,6 +13,7 @@ export type BackofficeUser = {
 }
 
 export async function listarAdmins(): Promise<BackofficeUser[]> {
+  if (!(await requireBackofficeSession())) return []
   const admin = createAdminClient()
   const { data, error } = await admin.auth.admin.listUsers({ perPage: 200 })
   if (error || !data) return []
@@ -29,6 +31,10 @@ export async function listarAdmins(): Promise<BackofficeUser[]> {
 }
 
 export async function criarAdmin(_prev: { error?: string } | null, formData: FormData): Promise<{ error?: string; success?: boolean }> {
+  const session = await requireBackofficeSession()
+  if (!session) return { error: 'Sessão de administrador inválida.' }
+  if (session.role !== 'super_admin') return { error: 'Apenas super administradores podem gerenciar administradores da plataforma.' }
+
   const email = formData.get('email')?.toString().trim()
   const name  = formData.get('name')?.toString().trim()
   const role  = formData.get('role')?.toString() as BackofficeUser['role']
@@ -58,6 +64,9 @@ export async function criarAdmin(_prev: { error?: string } | null, formData: For
 }
 
 export async function removerAdmin(id: string): Promise<{ error?: string }> {
+  const session = await requireBackofficeSession()
+  if (!session) return { error: 'Sessão de administrador inválida.' }
+  if (session.role !== 'super_admin') return { error: 'Apenas super administradores podem gerenciar administradores da plataforma.' }
   const admin = createAdminClient()
   const { error } = await admin.auth.admin.deleteUser(id)
   if (error) return { error: error.message }
