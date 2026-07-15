@@ -18,6 +18,11 @@ export async function updateContractStatus(
   const orgId = user?.membership?.organization.id ?? null
   if (!orgId) return { error: 'Sem organização ativa.' }
 
+  // C1: valida o status em runtime (o tipo TS não impede um valor arbitrário).
+  if (!['aguardando_assinatura', 'assinado', 'distratado'].includes(status)) {
+    return { error: 'Status de contrato inválido.' }
+  }
+
   const supabase = await createClient()
 
   // Busca o contrato existente
