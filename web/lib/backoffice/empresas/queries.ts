@@ -11,6 +11,7 @@ export type EmpresaRow = {
   trial_ends_at: string | null
   assinatura: { plan: string | null; status: string | null; expires_at: string | null } | null
   total_users: number
+  simuladores_habilitado: boolean
 }
 
 export type EmpresaDetalhe = EmpresaRow & {
@@ -22,7 +23,7 @@ export async function listarEmpresas(search?: string): Promise<EmpresaRow[]> {
 
   let query = admin
     .from('organizations')
-    .select('id, name, plan, status, created_at, blocked_at, blocked_reason, trial_ends_at')
+    .select('id, name, plan, status, created_at, blocked_at, blocked_reason, trial_ends_at, simuladores_habilitado')
     .order('created_at', { ascending: false })
 
   if (search) {
@@ -68,7 +69,7 @@ export async function buscarEmpresa(id: string): Promise<EmpresaDetalhe | null> 
   const [{ data: org }, { data: subscriptions }, { data: members }] = await Promise.all([
     admin
       .from('organizations')
-      .select('id, name, plan, status, created_at, blocked_at, blocked_reason, trial_ends_at')
+      .select('id, name, plan, status, created_at, blocked_at, blocked_reason, trial_ends_at, simuladores_habilitado')
       .eq('id', id)
       .single(),
     admin
@@ -119,6 +120,18 @@ export async function editarEmpresa(
   const { error } = await admin
     .from('organizations')
     .update({ ...data, updated_at: new Date().toISOString() })
+    .eq('id', id)
+  return error ? { error: error.message } : {}
+}
+
+export async function setSimuladoresHabilitado(
+  id: string,
+  enabled: boolean
+): Promise<{ error?: string }> {
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('organizations')
+    .update({ simuladores_habilitado: enabled, updated_at: new Date().toISOString() })
     .eq('id', id)
   return error ? { error: error.message } : {}
 }

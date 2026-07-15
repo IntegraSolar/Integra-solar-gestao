@@ -6,6 +6,7 @@ import {
   desbloquearEmpresaAction,
   editarEmpresaAction,
   excluirEmpresaAction,
+  toggleSimuladoresAction,
 } from '@/lib/backoffice/empresas/actions'
 import { useRouter } from 'next/navigation'
 import { Button, inputCls } from '@/components/backoffice/ui'
@@ -196,5 +197,32 @@ export function DesbloquearEmpresaButton({ id }: { id: string }) {
     <Button variant="success" onClick={handleDesbloquear} disabled={isPending}>
       {isPending ? 'Desbloqueando...' : 'Desbloquear'}
     </Button>
+  )
+}
+
+export function SimuladoresToggle({ id, enabled }: { id: string; enabled: boolean }) {
+  const [isPending, startTransition] = useTransition()
+  const router = useRouter()
+
+  function handleToggle() {
+    startTransition(async () => {
+      const result = await toggleSimuladoresAction(id, !enabled)
+      if (!result.error) router.refresh()
+    })
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleToggle}
+      disabled={isPending}
+      className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+        enabled
+          ? 'bg-[#EAF7EF] text-[#1f9d55] border border-[#bce8ce]'
+          : 'bg-[#F0F4F8] text-[#45586E] border border-[#D0DCE8]'
+      }`}
+    >
+      {isPending ? '...' : enabled ? 'Simuladores: ON' : 'Simuladores: OFF'}
+    </button>
   )
 }

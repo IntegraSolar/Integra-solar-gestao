@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
-import { bloquearEmpresa, desbloquearEmpresa, editarEmpresa, excluirEmpresa } from './queries'
+import { bloquearEmpresa, desbloquearEmpresa, editarEmpresa, excluirEmpresa, setSimuladoresHabilitado } from './queries'
 import { verifySession, SESSION_COOKIE } from '@/lib/backoffice/auth/session'
 import { requireBackofficeSession } from '@/lib/backoffice/auth/getCurrentPlatformUser'
 import { registrarAuditoria } from '@/lib/backoffice/auditoria/queries'
@@ -82,6 +82,22 @@ export async function excluirEmpresaAction(id: string): Promise<{ error?: string
     }).catch(() => null)
     revalidatePath('/backoffice/empresas')
     redirect('/backoffice/empresas')
+  }
+  return result
+}
+
+export async function toggleSimuladoresAction(id: string, enabled: boolean): Promise<{ error?: string }> {
+  if (!(await requireBackofficeSession())) return { error: 'Sessão de administrador inválida.' }
+  const result = await setSimuladoresHabilitado(id, enabled)
+  if (!result.error) {
+    const adminName = await getAdminName()
+    await registrarAuditoria({
+      organization_id: id,
+      user_name: adminName,
+      action: 'toggle_simuladores',
+      description: `Simuladores ${enabled ? 'habilitados' : 'desabilitados'}.`,
+    })
+    revalidatePath(`/backoffice/empresas/${id}`)
   }
   return result
 }

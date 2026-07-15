@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import { buscarEmpresa, getOrgConfig } from '@/lib/backoffice/empresas/queries'
 import { getAssinatura } from '@/lib/backoffice/assinaturas/queries'
 import { PageHeader, Card, CardHeader, Table, Badge } from '@/components/backoffice/ui'
-import { BloquearEmpresaButton, DesbloquearEmpresaButton, EditarEmpresaButton, ExcluirEmpresaButton } from './EmpresaActions'
+import { BloquearEmpresaButton, DesbloquearEmpresaButton, EditarEmpresaButton, ExcluirEmpresaButton, SimuladoresToggle } from './EmpresaActions'
 import { AssinaturaManager } from './AssinaturaManager'
 import { EditarCadastroButton, ResetarSenhaButton, AdicionarUsuarioButton, RemoverUsuarioButton, ImpersonarButton } from './EmpresaManage'
 
@@ -69,6 +69,10 @@ export default async function EmpresaDetalhePage({ params }: { params: Promise<{
             <InfoRow label="Status" value={empresa.status} />
             <InfoRow label="Cadastro" value={new Date(empresa.created_at).toLocaleDateString('pt-BR')} />
             <InfoRow label="Trial até" value={empresa.trial_ends_at ? new Date(empresa.trial_ends_at).toLocaleDateString('pt-BR') : null} />
+            <div className="flex flex-col gap-1">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#7C8D9E]">Simuladores</span>
+              <SimuladoresToggle id={empresa.id} enabled={empresa.simuladores_habilitado} />
+            </div>
           </div>
         </Card>
 
