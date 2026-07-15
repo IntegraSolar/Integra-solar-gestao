@@ -1,5 +1,9 @@
 'use client'
 
+// Andaime compartilhado da fundação: cabeçalho reutilizável (título/cliente/descrição)
+// que os simuladores vão consumir. Intencionalmente SEM uso ainda — o primeiro
+// simulador construído será o primeiro consumidor. Não é código órfão.
+
 export type SimuladorHeaderValues = {
   titulo: string
   cliente: string
