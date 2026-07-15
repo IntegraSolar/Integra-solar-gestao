@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
+import { requirePermission } from '@/lib/org/permissions'
 import { logAction } from '@/lib/auditoria/actions'
 import type { ActionResult } from '@/lib/crm/types'
 
@@ -11,6 +12,9 @@ const REMOVED_NAME = '[Titular Removido]'
 // ── Anonimizar Lead ───────────────────────────────────────────────
 
 export async function anonymizeLead(leadId: string): Promise<ActionResult> {
+  // Anonimização é irreversível: exige permissão (admin passa; demais precisam
+  // de lgpd.delete explícito). Antes qualquer membro da org podia destruir PII.
+  try { await requirePermission('lgpd', 'delete') } catch { return { error: 'Sem permissão para anonimizar dados (LGPD).' } }
   const user = await getCurrentUserData()
   const orgId = user?.membership?.organization.id
   if (!orgId) return { error: 'Sem organização ativa.' }
@@ -46,6 +50,7 @@ export async function anonymizeLead(leadId: string): Promise<ActionResult> {
 // ── Anonimizar Cliente ────────────────────────────────────────────
 
 export async function anonymizeClient(clientId: string): Promise<ActionResult> {
+  try { await requirePermission('lgpd', 'delete') } catch { return { error: 'Sem permissão para anonimizar dados (LGPD).' } }
   const user = await getCurrentUserData()
   const orgId = user?.membership?.organization.id
   if (!orgId) return { error: 'Sem organização ativa.' }
