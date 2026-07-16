@@ -20,7 +20,8 @@ async function fetchLogoBase64(logoUrl: string | null): Promise<string | null> {
     if (!res.ok) return null
     const buf = await res.arrayBuffer()
     const b64 = Buffer.from(buf).toString('base64')
-    return `data:image/png;base64,${b64}`
+    const mime = res.headers.get('content-type') || 'image/png'
+    return `data:${mime};base64,${b64}`
   } catch {
     return null
   }
