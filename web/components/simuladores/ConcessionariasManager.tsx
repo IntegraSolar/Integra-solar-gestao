@@ -36,7 +36,7 @@ export function ConcessionariasManager({ inicial }: { inicial: ConcessionariaRow
   const [lista, setLista] = useState<ConcessionariaRow[]>(inicial)
   const [form, setForm] = useState<ConcessionariaBruta>(VAZIA)
   const [editId, setEditId] = useState<string | null>(null)
-  const [msg, setMsg] = useState<string | null>(null)
+  const [msg, setMsg] = useState<{ text: string; erro: boolean } | null>(null)
   const [pending, start] = useTransition()
 
   const derivada = useMemo(() => derivarConcessionaria(form), [form])
@@ -59,29 +59,30 @@ export function ConcessionariasManager({ inicial }: { inicial: ConcessionariaRow
       const res = editId
         ? await updateConcessionaria(editId, form)
         : await createConcessionaria(form)
-      if ('error' in res) { setMsg(res.error ?? 'Erro.'); return }
-      setMsg(res.success ?? null)
+      if ('error' in res) { setMsg({ text: res.error ?? 'Erro.', erro: true }); return }
+      setMsg({ text: res.success ?? '', erro: false })
       // Recarrega a lista via reload leve (a page revalida a rota).
       window.location.reload()
     })
   }
 
   function excluir(id: string) {
+    if (!window.confirm('Excluir esta concessionária?')) return
     start(async () => {
       const res = await deleteConcessionaria(id)
-      if ('error' in res) { setMsg(res.error ?? 'Erro.'); return }
+      if ('error' in res) { setMsg({ text: res.error ?? 'Erro.', erro: true }); return }
       setLista((l) => l.filter((c) => c.id !== id))
     })
   }
 
   return (
     <div className="p-6">
-      <h1 className="text-xl font-bold mb-1">Concessionárias — Viabilidade</h1>
-      <p className="text-sm text-[#6b7280] mb-4">
+      <h1 className="text-xl font-bold mb-1 text-[var(--theme-text,#1a2340)]">Concessionárias — Viabilidade</h1>
+      <p className="text-sm text-[var(--theme-text-muted,#6b7280)] mb-4">
         Campos <span className="px-1 rounded bg-[#FFF7DC] border border-[#E7CE7A]">amarelos</span> são editáveis;
         os <span className="px-1 rounded bg-[#F1F3F7] border border-[#E0E3EE]">cinza</span> são calculados automaticamente.
       </p>
-      {msg && <div className="mb-3 text-sm text-[#1f9d55]">{msg}</div>}
+      {msg && <div className={`mb-3 text-sm ${msg.erro ? 'text-[#c0392b]' : 'text-[#1f9d55]'}`}>{msg.text}</div>}
 
       {/* Formulário */}
       <div className="rounded-xl border p-4 mb-6">
