@@ -15,6 +15,20 @@ const CAMPOS_INICIAIS: CamposSimulador = {
   descontoLocacao: 0.2, pctFinanciado: 0,
 }
 
+// Premissas avançadas (chave do input → rótulo pt-BR).
+const PREMISSAS_LABEL: { key: keyof typeof PREMISSAS_DEFAULT; label: string }[] = [
+  { key: 'reajusteTarifaAnual', label: 'Reajuste / IPCA (fração)' },
+  { key: 'tma', label: 'TMA (fração)' },
+  { key: 'impostoPct', label: 'Imposto (fração)' },
+  { key: 'opexPct', label: 'OPEX anual (fração)' },
+  { key: 'degradacaoAnual', label: 'Indisponibilidade (fração)' },
+  { key: 'd23', label: 'Gestão Sunne (fração)' },
+  { key: 'jurosAnual', label: 'Juros do financiamento (fração)' },
+  { key: 'prazoMeses', label: 'Prazo do financiamento (meses)' },
+  { key: 'horizonteAnos', label: 'Horizonte (anos)' },
+  { key: 'anoInicial', label: 'Ano inicial' },
+]
+
 const brl = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 const pct = (v: number) => `${(v * 100).toFixed(1)}%`
 
@@ -31,7 +45,10 @@ export function SimuladorViabilidade({ concessionarias, simulacoes, empresa }: P
   const [pending, start] = useTransition()
 
   const conc = concessionarias.find((c) => c.id === concId)
-  const resultado = useMemo(() => (conc ? calcularViabilidade(montarViabilidadeInput(campos, conc)) : null), [campos, conc])
+  // Memoiza o input montado e deriva o resultado dele — garante que o input salvo/no PDF
+  // é exatamente o que produziu os números na tela (uma única fonte).
+  const input = useMemo(() => (conc ? montarViabilidadeInput(campos, conc) : null), [campos, conc])
+  const resultado = useMemo(() => (input ? calcularViabilidade(input) : null), [input])
 
   const setNum = (k: keyof CamposSimulador, v: string) =>
     setCampos((c) => ({ ...c, [k]: v === '' ? 0 : Number(v) }))
@@ -41,14 +58,14 @@ export function SimuladorViabilidade({ concessionarias, simulacoes, empresa }: P
     (campos.premissas?.[k] as number | undefined) ?? (PREMISSAS_DEFAULT[k] as number)
 
   function salvar() {
-    if (!conc || !resultado) return
+    if (!conc || !resultado || !input) return
     start(async () => {
       const res = await salvarSimulacao({
         nome: nome || `${conc.nome} ${Math.round((resultado.kwp))}kWp`,
         concessionariaId: conc.id, clienteNome: clienteNome || null, clienteCidade: clienteCidade || null,
         tir: resultado.capitalProprio.tir, vpl: resultado.capitalProprio.vpl,
         paybackAnos: resultado.capitalProprio.paybackAnos,
-        input: montarViabilidadeInput(campos, conc) as unknown as Record<string, unknown>,
+        input: input as unknown as Record<string, unknown>,
       })
       if ('error' in res) { setMsg({ text: res.error ?? 'Erro.', erro: true }); return }
       setMsg({ text: res.success ?? '', erro: false })
@@ -57,11 +74,11 @@ export function SimuladorViabilidade({ concessionarias, simulacoes, empresa }: P
   }
 
   async function pdf() {
-    if (!conc || !resultado) return
+    if (!conc || !resultado || !input) return
     await gerarPropostaPdf({
       empresa, clienteNome: clienteNome || null, clienteCidade: clienteCidade || null,
       concessionariaNome: conc.nome, modeloPainel, modeloInversor,
-      input: montarViabilidadeInput(campos, conc), resultado,
+      input, resultado,
     })
   }
 
@@ -112,9 +129,9 @@ export function SimuladorViabilidade({ concessionarias, simulacoes, empresa }: P
             </button>
             {avancadas && (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 mt-3">
-                {(['reajusteTarifaAnual', 'tma', 'impostoPct', 'opexPct', 'degradacaoAnual', 'd23', 'jurosAnual', 'prazoMeses', 'horizonteAnos', 'anoInicial'] as const).map((k) => (
-                  <label key={k} className="text-xs">{k}
-                    <input type="number" step="any" className={N} value={String(premVal(k))} onChange={(e) => setPrem(k, e.target.value)} />
+                {PREMISSAS_LABEL.map(({ key, label }) => (
+                  <label key={key} className="text-xs">{label}
+                    <input type="number" step="any" className={N} value={String(premVal(key))} onChange={(e) => setPrem(key, e.target.value)} />
                   </label>
                 ))}
               </div>
