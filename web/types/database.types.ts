@@ -1950,6 +1950,66 @@ export type Database = {
           },
         ]
       }
+      simulador_viabilidade: {
+        Row: {
+          cliente_cidade: string | null
+          cliente_nome: string | null
+          concessionaria_id: string | null
+          created_at: string
+          id: string
+          input: Json
+          nome: string
+          organization_id: string
+          payback_anos: number
+          tir: number
+          updated_at: string
+          vpl: number
+        }
+        Insert: {
+          cliente_cidade?: string | null
+          cliente_nome?: string | null
+          concessionaria_id?: string | null
+          created_at?: string
+          id?: string
+          input: Json
+          nome: string
+          organization_id: string
+          payback_anos?: number
+          tir?: number
+          updated_at?: string
+          vpl?: number
+        }
+        Update: {
+          cliente_cidade?: string | null
+          cliente_nome?: string | null
+          concessionaria_id?: string | null
+          created_at?: string
+          id?: string
+          input?: Json
+          nome?: string
+          organization_id?: string
+          payback_anos?: number
+          tir?: number
+          updated_at?: string
+          vpl?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "simulador_viabilidade_concessionaria_id_fkey"
+            columns: ["concessionaria_id"]
+            isOneToOne: false
+            referencedRelation: "simulador_concessionarias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "simulador_viabilidade_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stock_items: {
         Row: {
           created_at: string
