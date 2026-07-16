@@ -91,5 +91,5 @@ export const concessionariaBrutaSchema = z.object({
   pisCofins: z.coerce.number().min(0).max(1, 'Pis/Cofins deve ser fração.'),
   demandaContratadaSemImp: z.coerce.number().nonnegative(),
   demandaGeracaoSemImp: z.coerce.number().nonnegative(),
-  aplicaReajuste1430: z.coerce.boolean(),
+  aplicaReajuste1430: z.boolean(),
 })
