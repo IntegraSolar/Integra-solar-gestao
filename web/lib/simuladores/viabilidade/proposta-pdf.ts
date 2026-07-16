@@ -133,7 +133,8 @@ function desenharGraficoAcumulado(
   const min = Math.min(...acum, 0)
   const max = Math.max(...acum, 0)
   const range = max - min || 1
-  const sx = (idx: number) => x + (idx / (acum.length - 1)) * w
+  const anosOperacionais = acum.length - 1 // projeção = ano 0 + horizonte
+  const sx = (idx: number) => x + (idx / (anosOperacionais || 1)) * w
   const sy = (v: number) => y + h - ((v - min) / range) * h
 
   doc.setDrawColor(200, 200, 200); doc.setLineWidth(0.2)
@@ -143,7 +144,7 @@ function desenharGraficoAcumulado(
   doc.setDrawColor(31, 157, 85); doc.setLineWidth(0.5)
   for (let k = 1; k < acum.length; k++) doc.line(sx(k - 1), sy(acum[k - 1]), sx(k), sy(acum[k]))
   doc.setFontSize(7); doc.setTextColor(90, 90, 90)
-  doc.text('Fluxo de caixa acumulado (25 anos)', x, y - 1.5)
+  doc.text(`Fluxo de caixa acumulado (${anosOperacionais} anos)`, x, y - 1.5)
   doc.text(brl(max), x + w, y + 3, { align: 'right' })
   doc.text(brl(min), x + w, y + h, { align: 'right' })
 }
