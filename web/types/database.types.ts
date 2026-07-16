@@ -1882,6 +1882,74 @@ export type Database = {
           },
         ]
       }
+      simulador_concessionarias: {
+        Row: {
+          aplica_reajuste_1430: boolean
+          created_at: string
+          demanda_contratada_sem_imp: number
+          demanda_geracao_sem_imp: number
+          icms: number
+          id: string
+          nome: string
+          organization_id: string
+          pis_cofins: number
+          te: number
+          tipo_processo: string
+          tusd: number
+          tusd_fio_a: number
+          tusd_fio_b: number
+          tusd_ped: number
+          tusd_tfsee: number
+          updated_at: string
+        }
+        Insert: {
+          aplica_reajuste_1430?: boolean
+          created_at?: string
+          demanda_contratada_sem_imp?: number
+          demanda_geracao_sem_imp?: number
+          icms?: number
+          id?: string
+          nome: string
+          organization_id: string
+          pis_cofins?: number
+          te?: number
+          tipo_processo?: string
+          tusd?: number
+          tusd_fio_a?: number
+          tusd_fio_b?: number
+          tusd_ped?: number
+          tusd_tfsee?: number
+          updated_at?: string
+        }
+        Update: {
+          aplica_reajuste_1430?: boolean
+          created_at?: string
+          demanda_contratada_sem_imp?: number
+          demanda_geracao_sem_imp?: number
+          icms?: number
+          id?: string
+          nome?: string
+          organization_id?: string
+          pis_cofins?: number
+          te?: number
+          tipo_processo?: string
+          tusd?: number
+          tusd_fio_a?: number
+          tusd_fio_b?: number
+          tusd_ped?: number
+          tusd_tfsee?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "simulador_concessionarias_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stock_items: {
         Row: {
           created_at: string
