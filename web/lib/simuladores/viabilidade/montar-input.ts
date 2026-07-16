@@ -19,7 +19,7 @@ export type Premissas = {
   fioBSchedule: number[]
 }
 
-export const PREMISSAS_DEFAULT: Premissas = {
+export const PREMISSAS_DEFAULT: Readonly<Premissas> = {
   reajusteTarifaAnual: 0.08,
   degradacaoAnual: 0.015,
   tma: 0.1,
@@ -62,19 +62,8 @@ export function montarViabilidadeInput(campos: CamposSimulador, conc: Concession
     valorInvestimento: campos.valorInvestimento,
     descontoLocacao: campos.descontoLocacao,
     pctFinanciado: campos.pctFinanciado,
-    ...derivados,
-    reajusteTarifaAnual: p.reajusteTarifaAnual,
-    degradacaoAnual: p.degradacaoAnual,
-    tma: p.tma,
-    opexPct: p.opexPct,
-    impostoPct: p.impostoPct,
-    d23: p.d23,
-    sunneSetupMicro: p.sunneSetupMicro,
-    sunneSetupMini: p.sunneSetupMini,
-    jurosAnual: p.jurosAnual,
-    prazoMeses: p.prazoMeses,
-    fioBSchedule: [...p.fioBSchedule],
-    horizonteAnos: p.horizonteAnos,
-    anoInicial: p.anoInicial,
+    ...derivados, // tusdFioB, tarifaLocacaoBase, tarifaDemanda
+    ...p, // as 13 premissas (todas são campos de ViabilidadeInput)
+    fioBSchedule: [...p.fioBSchedule], // cópia — não compartilha a ref do default
   }
 }
