@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
 import type { ActionResult } from '@/lib/crm/types'
+import { logAction } from '@/lib/auditoria/actions'
 import {
   concessionariaBrutaSchema,
   type ConcessionariaBruta,
@@ -76,6 +77,7 @@ export async function createConcessionaria(data: ConcessionariaBruta): Promise<A
     .from('simulador_concessionarias')
     .insert({ organization_id: ctx.orgId, ...brutaToRow(parsed.data) })
   if (error) return { error: error.message }
+  await logAction('Concessionária criada', `Nome: ${parsed.data.nome}`)
   revalidatePath(ROUTE)
   return { success: 'Concessionária criada.' }
 }
@@ -93,6 +95,7 @@ export async function updateConcessionaria(id: string, data: ConcessionariaBruta
     .eq('id', id)
     .eq('organization_id', ctx.orgId)
   if (error) return { error: error.message }
+  await logAction('Concessionária atualizada', `Nome: ${parsed.data.nome}`)
   revalidatePath(ROUTE)
   return { success: 'Concessionária atualizada.' }
 }
@@ -107,6 +110,7 @@ export async function deleteConcessionaria(id: string): Promise<ActionResult> {
     .eq('id', id)
     .eq('organization_id', ctx.orgId)
   if (error) return { error: error.message }
+  await logAction('Concessionária excluída', `ID: ${id}`)
   revalidatePath(ROUTE)
   return { success: 'Concessionária excluída.' }
 }
@@ -122,6 +126,7 @@ export async function seedConcessionarias(): Promise<ActionResult> {
     .from('simulador_concessionarias')
     .upsert(rows, { onConflict: 'organization_id,nome', ignoreDuplicates: true })
   if (error) return { error: error.message }
+  await logAction('Concessionárias padrão carregadas', `${rows.length} concessionárias`)
   revalidatePath(ROUTE)
   return { success: 'Concessionárias padrão carregadas.' }
 }
