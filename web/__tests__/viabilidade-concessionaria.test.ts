@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   derivarConcessionaria,
   concessionariaParaInputs,
+  concessionariaBrutaSchema,
   type ConcessionariaBruta,
 } from '@/lib/simuladores/viabilidade/concessionaria'
 import { CONCESSIONARIAS_SEED } from '@/lib/simuladores/viabilidade/concessionarias-seed'
@@ -58,6 +59,10 @@ describe('CONCESSIONARIAS_SEED', () => {
   it('todos os nomes são únicos', () => {
     const nomes = CONCESSIONARIAS_SEED.map((c) => c.nome)
     expect(new Set(nomes).size).toBe(nomes.length)
+  })
+  it('cada linha do seed é válida pelo schema bruto', () => {
+    for (const c of CONCESSIONARIAS_SEED)
+      expect(() => concessionariaBrutaSchema.parse(c)).not.toThrow()
   })
 })
 

@@ -315,6 +315,10 @@ describe('CONCESSIONARIAS_SEED', () => {
     const nomes = CONCESSIONARIAS_SEED.map((c) => c.nome)
     expect(new Set(nomes).size).toBe(nomes.length)
   })
+  it('cada linha do seed é válida pelo schema bruto', () => {
+    for (const c of CONCESSIONARIAS_SEED)
+      expect(() => concessionariaBrutaSchema.parse(c)).not.toThrow()
+  })
 })
 
 // Integração ponta-a-ponta: seed RGE -> derivação -> motor da Peça 1 reproduz o golden.
