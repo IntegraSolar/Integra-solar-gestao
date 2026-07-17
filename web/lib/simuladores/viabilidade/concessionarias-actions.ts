@@ -127,6 +127,7 @@ export async function seedConcessionarias(): Promise<ActionResult> {
     .upsert(rows, { onConflict: 'organization_id,nome', ignoreDuplicates: true })
   if (error) return { error: error.message }
   await logAction('Concessionárias padrão carregadas', `${rows.length} concessionárias`)
-  revalidatePath(ROUTE)
+  // Sem revalidatePath: esta função é chamada durante o render da página, que já
+  // relista logo em seguida. Revalidar durante o render lança erro no Next.
   return { success: 'Concessionárias padrão carregadas.' }
 }
