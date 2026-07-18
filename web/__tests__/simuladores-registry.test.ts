@@ -9,9 +9,11 @@ describe('registry de simuladores', () => {
     const slugs = SIMULADORES.map(s => s.slug)
     expect(new Set(slugs).size).toBe(slugs.length)
   })
-  it('viabilidade-usina está disponível e os demais em_breve', () => {
+  it('viabilidade-usina e parcelamento-cartao disponíveis, os demais em_breve', () => {
     expect(getSimulador('viabilidade-usina')?.status).toBe('disponivel')
-    expect(SIMULADORES.filter(s => s.slug !== 'viabilidade-usina').every(s => s.status === 'em_breve')).toBe(true)
+    expect(getSimulador('parcelamento-cartao')?.status).toBe('disponivel')
+    const disponiveis = ['viabilidade-usina', 'parcelamento-cartao']
+    expect(SIMULADORES.filter(s => !disponiveis.includes(s.slug)).every(s => s.status === 'em_breve')).toBe(true)
   })
   it('getSimulador acha por slug e retorna undefined para inexistente', () => {
     expect(getSimulador('financiamento')?.titulo).toBe('Financiamento')
