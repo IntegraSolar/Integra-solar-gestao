@@ -32,7 +32,7 @@ export async function listPaineis(): Promise<EquipPainel[]> {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('simulador_equip_paineis')
-    .select('*')
+    .select('id, fabricante, modelo, potencia_wp, voc, vmp, isc, imp, area_m2, coef_pmp, coef_voc, noct, eficiencia, peso_kg, garantia_anos')
     .eq('organization_id', ctx.orgId)
     .order('created_at', { ascending: true })
   if (error || !data) return []
@@ -98,7 +98,7 @@ export async function listInversores(): Promise<EquipInversor[]> {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('simulador_equip_inversores')
-    .select('*')
+    .select('id, fabricante, modelo, tipo, pot_ca_nom_w, mppt_min_v, mppt_max_v, tensao_cc_max_v, num_mppt, corr_max_mppt_a, pot_fv_max_wp, pot_surge_w, tensao_cc_bat_v, eficiencia, backup, paralelismo')
     .eq('organization_id', ctx.orgId)
     .order('created_at', { ascending: true })
   if (error || !data) return []
@@ -164,7 +164,7 @@ export async function listBaterias(): Promise<EquipBateria[]> {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('simulador_equip_baterias')
-    .select('*')
+    .select('id, fabricante, modelo, tecnologia, tensao_v, capacidade_ah, energia_kwh, corr_max_a, corr_recom_a, dod, soc_min, ciclos, eficiencia, garantia_anos')
     .eq('organization_id', ctx.orgId)
     .order('created_at', { ascending: true })
   if (error || !data) return []
