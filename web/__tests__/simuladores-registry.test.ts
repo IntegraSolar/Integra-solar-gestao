@@ -9,11 +9,12 @@ describe('registry de simuladores', () => {
     const slugs = SIMULADORES.map(s => s.slug)
     expect(new Set(slugs).size).toBe(slugs.length)
   })
-  it('viabilidade-usina e parcelamento-cartao disponíveis, os demais em_breve', () => {
+  it('viabilidade-usina e parcelamento-cartao disponíveis; hibrido-offgrid em construção; demais em_breve', () => {
     expect(getSimulador('viabilidade-usina')?.status).toBe('disponivel')
     expect(getSimulador('parcelamento-cartao')?.status).toBe('disponivel')
-    const disponiveis = ['viabilidade-usina', 'parcelamento-cartao']
-    expect(SIMULADORES.filter(s => !disponiveis.includes(s.slug)).every(s => s.status === 'em_breve')).toBe(true)
+    expect(getSimulador('hibrido-offgrid')?.status).toBe('em_construcao')
+    const naoEmBreve = ['viabilidade-usina', 'parcelamento-cartao', 'hibrido-offgrid']
+    expect(SIMULADORES.filter(s => !naoEmBreve.includes(s.slug)).every(s => s.status === 'em_breve')).toBe(true)
   })
   it('getSimulador acha por slug e retorna undefined para inexistente', () => {
     expect(getSimulador('financiamento')?.titulo).toBe('Financiamento')
