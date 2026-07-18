@@ -1882,6 +1882,219 @@ export type Database = {
           },
         ]
       }
+      simulador_equip_paineis: {
+        Row: {
+          area_m2: number
+          coef_pmp: number | null
+          coef_voc: number | null
+          created_at: string
+          eficiencia: number | null
+          fabricante: string
+          garantia_anos: number | null
+          id: string
+          imp: number
+          isc: number
+          modelo: string
+          noct: number | null
+          organization_id: string
+          peso_kg: number | null
+          potencia_wp: number
+          updated_at: string
+          vmp: number
+          voc: number
+        }
+        Insert: {
+          area_m2: number
+          coef_pmp?: number | null
+          coef_voc?: number | null
+          created_at?: string
+          eficiencia?: number | null
+          fabricante: string
+          garantia_anos?: number | null
+          id?: string
+          imp: number
+          isc: number
+          modelo: string
+          noct?: number | null
+          organization_id: string
+          peso_kg?: number | null
+          potencia_wp: number
+          updated_at?: string
+          vmp: number
+          voc: number
+        }
+        Update: {
+          area_m2?: number
+          coef_pmp?: number | null
+          coef_voc?: number | null
+          created_at?: string
+          eficiencia?: number | null
+          fabricante?: string
+          garantia_anos?: number | null
+          id?: string
+          imp?: number
+          isc?: number
+          modelo?: string
+          noct?: number | null
+          organization_id?: string
+          peso_kg?: number | null
+          potencia_wp?: number
+          updated_at?: string
+          vmp?: number
+          voc?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "simulador_equip_paineis_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      simulador_equip_inversores: {
+        Row: {
+          backup: boolean
+          corr_max_mppt_a: number
+          created_at: string
+          eficiencia: number | null
+          fabricante: string
+          id: string
+          modelo: string
+          mppt_max_v: number
+          mppt_min_v: number
+          num_mppt: number
+          organization_id: string
+          paralelismo: number | null
+          pot_ca_nom_w: number
+          pot_fv_max_wp: number
+          pot_surge_w: number | null
+          tensao_cc_bat_v: number | null
+          tensao_cc_max_v: number
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          backup?: boolean
+          corr_max_mppt_a: number
+          created_at?: string
+          eficiencia?: number | null
+          fabricante: string
+          id?: string
+          modelo: string
+          mppt_max_v: number
+          mppt_min_v: number
+          num_mppt: number
+          organization_id: string
+          paralelismo?: number | null
+          pot_ca_nom_w: number
+          pot_fv_max_wp: number
+          pot_surge_w?: number | null
+          tensao_cc_bat_v?: number | null
+          tensao_cc_max_v: number
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          backup?: boolean
+          corr_max_mppt_a?: number
+          created_at?: string
+          eficiencia?: number | null
+          fabricante?: string
+          id?: string
+          modelo?: string
+          mppt_max_v?: number
+          mppt_min_v?: number
+          num_mppt?: number
+          organization_id?: string
+          paralelismo?: number | null
+          pot_ca_nom_w?: number
+          pot_fv_max_wp?: number
+          pot_surge_w?: number | null
+          tensao_cc_bat_v?: number | null
+          tensao_cc_max_v?: number
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "simulador_equip_inversores_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      simulador_equip_baterias: {
+        Row: {
+          capacidade_ah: number
+          ciclos: number | null
+          corr_max_a: number | null
+          corr_recom_a: number | null
+          created_at: string
+          dod: number | null
+          eficiencia: number | null
+          energia_kwh: number | null
+          fabricante: string
+          garantia_anos: number | null
+          id: string
+          modelo: string
+          organization_id: string
+          soc_min: number | null
+          tecnologia: string
+          tensao_v: number
+          updated_at: string
+        }
+        Insert: {
+          capacidade_ah: number
+          ciclos?: number | null
+          corr_max_a?: number | null
+          corr_recom_a?: number | null
+          created_at?: string
+          dod?: number | null
+          eficiencia?: number | null
+          energia_kwh?: number | null
+          fabricante: string
+          garantia_anos?: number | null
+          id?: string
+          modelo: string
+          organization_id: string
+          soc_min?: number | null
+          tecnologia: string
+          tensao_v: number
+          updated_at?: string
+        }
+        Update: {
+          capacidade_ah?: number
+          ciclos?: number | null
+          corr_max_a?: number | null
+          corr_recom_a?: number | null
+          created_at?: string
+          dod?: number | null
+          eficiencia?: number | null
+          energia_kwh?: number | null
+          fabricante?: string
+          garantia_anos?: number | null
+          id?: string
+          modelo?: string
+          organization_id?: string
+          soc_min?: number | null
+          tecnologia?: string
+          tensao_v?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "simulador_equip_baterias_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       simulador_cartao_tabelas: {
         Row: {
           created_at: string
