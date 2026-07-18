@@ -1882,6 +1882,50 @@ export type Database = {
           },
         ]
       }
+      simulador_cartao_tabelas: {
+        Row: {
+          created_at: string
+          id: string
+          max_parcelas: number
+          nome: string
+          observacao: string | null
+          ordem: number
+          organization_id: string
+          taxas: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          max_parcelas?: number
+          nome: string
+          observacao?: string | null
+          ordem?: number
+          organization_id: string
+          taxas?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          max_parcelas?: number
+          nome?: string
+          observacao?: string | null
+          ordem?: number
+          organization_id?: string
+          taxas?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "simulador_cartao_tabelas_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       simulador_concessionarias: {
         Row: {
           aplica_reajuste_1430: boolean
