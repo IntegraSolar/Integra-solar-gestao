@@ -55,7 +55,7 @@ export async function gerarPropostaCartaoPdf(d: DadosCartaoPdf): Promise<void> {
     autoTable(doc, {
       startY: y + 2, theme: 'grid', styles: { fontSize: 8, cellPadding: 1.2 },
       headStyles: { fillColor: [15, 23, 42] },
-      head: [[`${t.nome}${t.observacao ? '  —  ' + t.observacao : ''}`, '', '', '']],
+      head: [[{ content: `${t.nome}${t.observacao ? '  —  ' + t.observacao : ''}`, colSpan: 4 }]],
       body: [
         ['Plano', 'Taxa', 'Valor total', 'Valor da parcela'],
         ...t.opcoes.map((o) => [`${o.parcelas}x`, pct(o.taxa), brl(o.valorTotal), brl(o.valorParcela)]),
@@ -65,6 +65,6 @@ export async function gerarPropostaCartaoPdf(d: DadosCartaoPdf): Promise<void> {
     y = (doc as any).lastAutoTable.finalY + 4
   }
 
-  const fname = `parcelamento-${brl(d.valorProposta).replace(/[^0-9]/g, '')}.pdf`
+  const fname = `parcelamento-${Math.round(d.valorProposta)}.pdf`
   doc.save(fname)
 }
