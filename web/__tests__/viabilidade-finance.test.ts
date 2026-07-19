@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { npv, irr } from '@/lib/simuladores/viabilidade/finance'
+import { npv, irr } from '@/lib/simuladores/finance'
 
 const FLUXO = [-154413.82, 18018.435239867034, 30956.710616464185, 29356.702541229693,
  28698.431410173365, 30660.802146652914, 32755.913030802698, 34992.62005963194,

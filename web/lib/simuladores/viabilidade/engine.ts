@@ -1,5 +1,5 @@
 // web/lib/simuladores/viabilidade/engine.ts
-import { irr, npv } from './finance'
+import { irr, npv } from '../finance'
 import type { ViabilidadeInput, ViabilidadeResultado, LinhaProjecao, MetricasCenario } from './types'
 
 const DEGRAD_FATOR = 0.993251254 // constante da planilha (col F)

@@ -1,4 +1,5 @@
-// web/lib/simuladores/viabilidade/finance.ts
+// web/lib/simuladores/finance.ts
+// Funções financeiras compartilhadas entre os simuladores (viabilidade, híbrido).
 
 // VPL de um fluxo cujo primeiro elemento ocorre em t=1 (igual à função NPV do Excel).
 export function npv(rate: number, cashflows: number[]): number {
