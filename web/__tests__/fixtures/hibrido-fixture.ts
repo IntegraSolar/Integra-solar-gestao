@@ -1,6 +1,9 @@
 // Projeto de teste da planilha de referência (Palmas/TO).
 // Fonte dos golden values dos testes do motor híbrido/off-grid.
-import type { Carga, ProjetoInput, EquipPainel, EquipInversor, EquipBateria } from '@/lib/simuladores/hibrido/types'
+import type {
+  Carga, ProjetoInput, EquipPainel, EquipInversor, EquipBateria,
+  FisicoParaFinanceiro, TarifasInput,
+} from '@/lib/simuladores/hibrido/types'
 
 export const PROJETO: ProjetoInput = {
   hspMensal: [4.75, 4.71, 4.70, 5.16, 5.56, 5.69, 5.82, 5.91, 5.71, 5.42, 4.96, 4.78],
@@ -88,3 +91,23 @@ export const CARGAS: Carga[] = [
     prioridade: 'Alta', critica: true,
   },
 ]
+
+/**
+ * Saída do motor físico para o projeto de teste (16 módulos, 1 inversor,
+ * 2 baterias), usada como entrada do motor financeiro.
+ */
+export const FISICO: FisicoParaFinanceiro = {
+  numModulos: 16,
+  numInversores: 1,
+  numBaterias: 2,
+  potenciaInstaladaKwp: 9.92,
+  producaoAnualKwh: 14149.415366185884,
+  consumoAnualKwh: 2135.25,
+}
+
+/** Tarifas do projeto de teste (aba Projeto da planilha). */
+export const TARIFAS: TarifasInput = {
+  tarifaKwh: 1.22,
+  tusdFioBKwh: 0.36,
+  disponibilidadeKwhMes: 100,
+}
