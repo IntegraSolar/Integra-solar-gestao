@@ -14,13 +14,22 @@ export default async function HibridoOffgridPage() {
       <p className="text-sm text-[var(--theme-text-muted,#6b7280)] mb-5">
         O dimensionamento e a análise ainda estão em desenvolvimento. Por enquanto, mantenha seu catálogo de equipamentos atualizado.
       </p>
-      <Link href="/simuladores/hibrido-offgrid/equipamentos" className="block max-w-sm">
-        <div className="rounded-xl border p-4 hover:border-[#FF9F40] transition-colors bg-[var(--theme-card,#fff)]">
-          <div className="text-2xl">🧰</div>
-          <h3 className="mt-2 text-sm font-semibold text-[var(--theme-text,#1a2340)]">Cadastro de equipamentos</h3>
-          <p className="mt-0.5 text-xs text-[var(--theme-text-muted,#7b8194)]">Painéis, inversores e baterias que alimentarão o simulador.</p>
-        </div>
-      </Link>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <Link href="/simuladores/hibrido-offgrid/equipamentos" className="block h-full">
+          <div className="h-full rounded-xl border p-4 transition-colors hover:border-[#FF9F40] bg-[var(--theme-card,#fff)]">
+            <div className="text-2xl">🧰</div>
+            <h3 className="mt-2 text-sm font-semibold text-[var(--theme-text,#1a2340)]">Cadastro de equipamentos</h3>
+            <p className="mt-0.5 text-xs text-[var(--theme-text-muted,#7b8194)]">Painéis, inversores e baterias que alimentarão o simulador.</p>
+          </div>
+        </Link>
+        <Link href="/simuladores/hibrido-offgrid/cargas" className="block h-full">
+          <div className="h-full rounded-xl border p-4 transition-colors hover:border-[#FF9F40] bg-[var(--theme-card,#fff)]">
+            <div className="text-2xl">🔌</div>
+            <h3 className="mt-2 text-sm font-semibold text-[var(--theme-text,#1a2340)]">Levantamento de cargas</h3>
+            <p className="mt-0.5 text-xs text-[var(--theme-text-muted,#7b8194)]">Consumo, potências e curva de demanda de 24 h.</p>
+          </div>
+        </Link>
+      </div>
     </div>
   )
 }
