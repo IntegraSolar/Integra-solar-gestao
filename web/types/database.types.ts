@@ -2095,6 +2095,71 @@ export type Database = {
           },
         ]
       }
+      simulador_cargas_biblioteca: {
+        Row: {
+          categoria: string | null
+          created_at: string
+          critica: boolean
+          dias_semana: number
+          fator_potencia: number
+          hora_fim: number
+          hora_inicio: number
+          horas_dia: number
+          id: string
+          nome: string
+          organization_id: string
+          potencia_partida_w: number
+          potencia_unit_w: number
+          prioridade: string | null
+          tensao_v: number
+          updated_at: string
+        }
+        Insert: {
+          categoria?: string | null
+          created_at?: string
+          critica?: boolean
+          dias_semana: number
+          fator_potencia: number
+          hora_fim: number
+          hora_inicio: number
+          horas_dia: number
+          id?: string
+          nome: string
+          organization_id: string
+          potencia_partida_w: number
+          potencia_unit_w: number
+          prioridade?: string | null
+          tensao_v: number
+          updated_at?: string
+        }
+        Update: {
+          categoria?: string | null
+          created_at?: string
+          critica?: boolean
+          dias_semana?: number
+          fator_potencia?: number
+          hora_fim?: number
+          hora_inicio?: number
+          horas_dia?: number
+          id?: string
+          nome?: string
+          organization_id?: string
+          potencia_partida_w?: number
+          potencia_unit_w?: number
+          prioridade?: string | null
+          tensao_v?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "simulador_cargas_biblioteca_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       simulador_cartao_tabelas: {
         Row: {
           created_at: string
