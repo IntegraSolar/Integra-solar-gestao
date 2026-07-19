@@ -201,3 +201,103 @@ export type ResultadoHibrido = {
   inversor: ResultadoInversor
   alertas: Alerta[]
 }
+
+// ---------- FINANCEIRO (Fase 2b) ----------
+
+export type PrecosCapex = {
+  moduloUnitario: number       // R$ por módulo
+  inversorUnitario: number     // R$ por inversor
+  bateriaUnitaria: number      // R$ por bateria
+  estruturaPorModulo: number   // R$ por módulo
+  cabeamentoPorKwp: number     // R$ por kWp
+  projetoArt: number           // R$ valor único
+  maoDeObraPorKwp: number      // R$ por kWp
+  freteImprevistos: number     // R$ valor único
+}
+
+export type PremissasFinanceiras = {
+  bdi: number                  // fração sobre o custo direto
+  margemLucro: number          // fração sobre o PREÇO DE VENDA
+  impostos: number             // fração sobre o PREÇO DE VENDA
+  tma: number                  // taxa mínima de atratividade a.a.
+  inflacaoTarifa: number       // reajuste anual da tarifa
+  degradacaoAnual: number      // degradação dos módulos
+  omAnual: number              // O&M como fração do investimento
+  horizonteAnos: number
+  fioBSchedule: number[]       // fração do TUSD Fio B cobrada por ano (Lei 14.300)
+}
+
+export type TarifasInput = {
+  tarifaKwh: number
+  tusdFioBKwh: number
+  disponibilidadeKwhMes: number
+}
+
+/** Números do motor físico de que o financeiro precisa. */
+export type FisicoParaFinanceiro = {
+  numModulos: number
+  numInversores: number
+  numBaterias: number
+  potenciaInstaladaKwp: number
+  producaoAnualKwh: number
+  consumoAnualKwh: number
+}
+
+export type ItemCapex = {
+  descricao: string
+  quantidade: number
+  custoUnitario: number
+  subtotal: number
+}
+
+export type ResultadoCapex = {
+  itens: ItemCapex[]
+  custoDireto: number
+  valorBdi: number
+  custoComBdi: number
+  valorMargem: number
+  valorImpostos: number
+  investimentoTotal: number
+  investimentoPorKwp: number
+}
+
+export type ResultadoEconomiaAno = {
+  ano: number
+  geracaoKwh: number
+  autoconsumoKwh: number
+  excedenteKwh: number
+  tarifaAno: number
+  tusdAno: number
+  economiaAutoconsumo: number
+  creditoExcedente: number
+  custoDisponibilidade: number
+  economiaLiquida: number
+}
+
+export type LinhaProjecaoFinanceira = {
+  ano: number
+  geracaoKwh: number
+  economiaLiquida: number
+  custoOm: number
+  fluxoLiquido: number
+  fluxoAcumulado: number
+  fluxoDescontado: number
+  vplAcumulado: number
+}
+
+export type IndicadoresFinanceiros = {
+  vpl: number
+  tir: number
+  paybackSimplesAnos: number | null
+  paybackDescontadoAnos: number | null
+  lcoe: number
+  economiaAcumulada: number
+  roi: number
+  indiceVplInvestimento: number
+}
+
+export type ResultadoFinanceiro = {
+  capex: ResultadoCapex
+  projecao: LinhaProjecaoFinanceira[]
+  indicadores: IndicadoresFinanceiros
+}

@@ -1,7 +1,10 @@
 // web/lib/simuladores/hibrido/premissas.ts
 // Constantes de engenharia da aba "Premissas" da planilha de referência.
 // Refs.: ABNT NBR 16690 / 16274 / 5410, PRODIST Mód.3, IEC 61724, NREL PVWatts.
-import type { Premissas, TecnologiaBateria, ParamsTecnologia } from './types'
+import type {
+  Premissas, TecnologiaBateria, ParamsTecnologia,
+  PrecosCapex, PremissasFinanceiras,
+} from './types'
 
 export const PREMISSAS_PADRAO: Premissas = {
   // Fatores de perda do sistema (Performance Ratio)
@@ -45,4 +48,36 @@ export const TECNOLOGIAS_BATERIA_PARAMS: Record<TecnologiaBateria, ParamsTecnolo
   'Chumbo-ácido': { dod: 0.5,  eficiencia: 0.8,  ciclos: 800,  cRate: 0.2 },
   'Gel':          { dod: 0.5,  eficiencia: 0.8,  ciclos: 1200, cRate: 0.2 },
   'AGM':          { dod: 0.5,  eficiencia: 0.85, ciclos: 1000, cRate: 0.3 },
+}
+
+// ---------- FINANCEIRO (Fase 2b) ----------
+
+/** Preços de referência do CAPEX. Editáveis por simulação na tela. */
+export const PRECOS_CAPEX_PADRAO: PrecosCapex = {
+  moduloUnitario: 780,
+  inversorUnitario: 11000,
+  bateriaUnitaria: 9800,
+  estruturaPorModulo: 180,
+  cabeamentoPorKwp: 400,
+  projetoArt: 2500,
+  maoDeObraPorKwp: 250,
+  freteImprevistos: 2800,
+}
+
+/**
+ * Rampa do TUSD Fio B da Lei 14.300: 60% no 1º ano, 75% no 2º, 90% no 3º e
+ * integral do 4º em diante. Mesma escala usada no simulador de viabilidade.
+ */
+export const FIO_B_SCHEDULE_14300: number[] = [0.6, 0.75, 0.9, ...Array<number>(22).fill(1)]
+
+export const PREMISSAS_FINANCEIRAS_PADRAO: PremissasFinanceiras = {
+  bdi: 0.15,              // aba Financeiro da planilha (a aba Premissas diz 25%)
+  margemLucro: 0.2,       // sobre o preço de venda
+  impostos: 0.06,         // Simples/ISS/PIS/COFINS, sobre o preço de venda
+  tma: 0.08,
+  inflacaoTarifa: 0.08,
+  degradacaoAnual: 0.005,
+  omAnual: 0.01,
+  horizonteAnos: 25,
+  fioBSchedule: FIO_B_SCHEDULE_14300,
 }
