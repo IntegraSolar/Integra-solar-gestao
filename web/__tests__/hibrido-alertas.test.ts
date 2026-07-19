@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest'
 import { calcularAlertas } from '@/lib/simuladores/hibrido/alertas'
-import { PREMISSAS_PADRAO } from '@/lib/simuladores/hibrido/premissas'
 import type { Alerta, CodigoAlerta } from '@/lib/simuladores/hibrido/types'
 
 // Cenário nominal: tudo dentro dos limites.
@@ -19,7 +18,6 @@ const OK = {
   correnteDescargaA: 84.51, correnteContinuaA: 150,
   autonomiaRealDias: 2.04, diasAutonomia: 2,
   tipoInversor: 'Híbrido' as const, tipoSistema: 'Híbrido' as const,
-  premissas: PREMISSAS_PADRAO,
 }
 
 const acha = (as: Alerta[], c: CodigoAlerta) => as.find((a) => a.codigo === c)

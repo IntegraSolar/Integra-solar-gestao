@@ -2,7 +2,7 @@
 // Verificações normativas do dimensionamento (NBR 16690 / 16274 / 5410).
 // Emite um alerta por verificação: severidade da tabela quando a condição de
 // erro ocorre, 'ok' quando não ocorre, e nada quando faltam dados para avaliar.
-import type { Alerta, CodigoAlerta, Premissas, SeveridadeAlerta } from './types'
+import type { Alerta, CodigoAlerta, SeveridadeAlerta } from './types'
 
 export type ParamsAlertas = {
   temPainel: boolean
@@ -35,7 +35,6 @@ export type ParamsAlertas = {
   diasAutonomia: number
   tipoInversor: 'Híbrido' | 'Off-grid' | 'On-grid' | null
   tipoSistema: 'Híbrido' | 'Off-grid' | 'On-grid' | null
-  premissas: Premissas
 }
 
 function alerta(
