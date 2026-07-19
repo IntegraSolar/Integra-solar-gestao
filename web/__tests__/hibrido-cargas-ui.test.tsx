@@ -82,7 +82,7 @@ describe('CargasTabela', () => {
     render(<TabelaComEstado />)
     await user.selectOptions(screen.getByTestId('select-biblioteca'), 'b1')
     await user.click(screen.getByTestId('btn-add-biblioteca'))
-    expect(screen.getByDisplayValue('Geladeira duplex')).toBeInTheDocument()
+    expect(screen.getByTestId('nome-0')).toHaveValue('Geladeira duplex')
     expect(screen.getByTestId('qtd-0')).toHaveValue(1)
     expect(screen.getByTestId('pot-0')).toHaveValue(150)
   })

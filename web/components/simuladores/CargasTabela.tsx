@@ -55,7 +55,7 @@ export function CargasTabela({ cargas, biblioteca, onChange }: Props) {
             onChange={(e) => setSelecionado(e.target.value)}
           >
             {biblioteca.map((b) => (
-              <option key={b.id} value={b.id}>{b.nome} ({b.categoria})</option>
+              <option key={b.id} value={b.id}>{b.nome}</option>
             ))}
           </select>
         </label>
