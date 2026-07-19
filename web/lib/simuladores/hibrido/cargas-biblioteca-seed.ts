@@ -22,7 +22,9 @@ export const CARGAS_BIBLIOTECA_SEED: CargaBibliotecaData[] = [
   { nome: 'Notebook', categoria: 'Eletrônico', potenciaUnitW: 65, potenciaPartidaW: 65, tensaoV: 220, fatorPotencia: 0.9, horasDia: 6, diasSemana: 5, horaInicio: 8, horaFim: 18, prioridade: 'Média', critica: false },
   { nome: 'Roteador Wi-Fi', categoria: 'Eletrônico', potenciaUnitW: 10, potenciaPartidaW: 10, tensaoV: 220, fatorPotencia: 0.9, horasDia: 24, diasSemana: 7, horaInicio: 0, horaFim: 24, prioridade: 'Alta', critica: true },
   { nome: 'Câmera de segurança', categoria: 'Eletrônico', potenciaUnitW: 15, potenciaPartidaW: 15, tensaoV: 220, fatorPotencia: 0.9, horasDia: 24, diasSemana: 7, horaInicio: 0, horaFim: 24, prioridade: 'Alta', critica: true },
-  { nome: 'Micro-ondas', categoria: 'Aquecimento', potenciaUnitW: 1400, potenciaPartidaW: 1400, tensaoV: 220, fatorPotencia: 1, horasDia: 0.5, diasSemana: 7, horaInicio: 11, horaFim: 13, prioridade: 'Baixa', critica: false },
+  // FP 0,7: apesar de aquecer, o micro-ondas não é resistivo puro — o conjunto
+  // transformador + magnetron tem fator de potência típico de 0,7.
+  { nome: 'Micro-ondas', categoria: 'Aquecimento', potenciaUnitW: 1400, potenciaPartidaW: 1400, tensaoV: 220, fatorPotencia: 0.7, horasDia: 0.5, diasSemana: 7, horaInicio: 11, horaFim: 13, prioridade: 'Baixa', critica: false },
   { nome: 'Forno elétrico', categoria: 'Aquecimento', potenciaUnitW: 1500, potenciaPartidaW: 1500, tensaoV: 220, fatorPotencia: 1, horasDia: 0.5, diasSemana: 3, horaInicio: 18, horaFim: 20, prioridade: 'Baixa', critica: false },
   { nome: 'Cafeteira', categoria: 'Aquecimento', potenciaUnitW: 800, potenciaPartidaW: 800, tensaoV: 220, fatorPotencia: 1, horasDia: 0.3, diasSemana: 7, horaInicio: 6, horaFim: 8, prioridade: 'Baixa', critica: false },
   { nome: 'Ferro de passar', categoria: 'Aquecimento', potenciaUnitW: 1000, potenciaPartidaW: 1000, tensaoV: 220, fatorPotencia: 1, horasDia: 0.5, diasSemana: 2, horaInicio: 14, horaFim: 16, prioridade: 'Baixa', critica: false },
