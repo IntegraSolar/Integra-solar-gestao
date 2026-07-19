@@ -23,8 +23,15 @@ type Props = {
 export function CargasTabela({ cargas, biblioteca, onChange }: Props) {
   const [selecionado, setSelecionado] = useState<string>(biblioteca[0]?.id ?? '')
 
+  // A seleção guardada pode ficar obsoleta: a biblioteca é do componente pai e
+  // muda quando o usuário cadastra ou exclui modelos no painel. Sem esta
+  // reconciliação, um id que saiu da lista deixaria "Adicionar" sem efeito
+  // nenhum — falha silenciosa. Cai sempre no primeiro item disponível.
+  const selecaoValida = biblioteca.some((b) => b.id === selecionado)
+  const selecionadoEfetivo = selecaoValida ? selecionado : (biblioteca[0]?.id ?? '')
+
   function addDaBiblioteca() {
-    const m = biblioteca.find((b) => b.id === selecionado)
+    const m = biblioteca.find((b) => b.id === selecionadoEfetivo)
     if (!m) return
     onChange([...cargas, bibliotecaParaCarga(m)])
   }
@@ -51,7 +58,7 @@ export function CargasTabela({ cargas, biblioteca, onChange }: Props) {
           <select
             className={`${IN} mt-1 min-w-56`}
             data-testid="select-biblioteca"
-            value={selecionado}
+            value={selecionadoEfetivo}
             onChange={(e) => setSelecionado(e.target.value)}
           >
             {biblioteca.map((b) => (

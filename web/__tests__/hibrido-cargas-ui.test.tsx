@@ -123,6 +123,27 @@ describe('CargasTabela', () => {
     expect(screen.queryByTestId('qtd-0')).not.toBeInTheDocument()
     expect(screen.getByText(/Nenhuma carga adicionada/)).toBeInTheDocument()
   })
+
+  it('adiciona mesmo quando a biblioteca chega depois da montagem', async () => {
+    // A biblioteca vem do componente pai e muda quando o usuário cadastra ou
+    // exclui modelos. Se a seleção guardada não reconciliasse com a lista atual,
+    // "Adicionar" viraria um no-op silencioso.
+    const user = userEvent.setup()
+    function TabelaBibliotecaTardia() {
+      const [biblioteca, setBiblioteca] = useState<CargaBiblioteca[]>([])
+      const [cargas, setCargas] = useState<Carga[]>([])
+      return (
+        <>
+          <button onClick={() => setBiblioteca([MODELO])}>popular</button>
+          <CargasTabela cargas={cargas} biblioteca={biblioteca} onChange={setCargas} />
+        </>
+      )
+    }
+    render(<TabelaBibliotecaTardia />)
+    await user.click(screen.getByText('popular'))
+    await user.click(screen.getByTestId('btn-add-biblioteca'))
+    expect(screen.getByTestId('nome-0')).toHaveValue('Geladeira duplex')
+  })
 })
 
 import { BibliotecaCargasPanel } from '@/components/simuladores/BibliotecaCargasPanel'
