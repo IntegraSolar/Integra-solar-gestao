@@ -52,3 +52,68 @@ describe('CargasCurva24h', () => {
     expect(screen.getByText(/Nenhuma carga no levantamento/)).toBeInTheDocument()
   })
 })
+
+import { useState } from 'react'
+import userEvent from '@testing-library/user-event'
+import { CargasTabela } from '@/components/simuladores/CargasTabela'
+import type { CargaBiblioteca } from '@/lib/simuladores/hibrido/cargas-biblioteca-schemas'
+
+const MODELO: CargaBiblioteca = {
+  id: 'b1', nome: 'Geladeira duplex', categoria: 'Refrigeração',
+  potenciaUnitW: 150, potenciaPartidaW: 600, tensaoV: 220, fatorPotencia: 0.85,
+  horasDia: 10, diasSemana: 7, horaInicio: 0, horaFim: 24,
+  prioridade: 'Alta', critica: true,
+}
+
+/** Envoltório com estado, já que CargasTabela é controlado. */
+function TabelaComEstado({ inicial = [] as Carga[] }) {
+  const [cargas, setCargas] = useState<Carga[]>(inicial)
+  return <CargasTabela cargas={cargas} biblioteca={[MODELO]} onChange={setCargas} />
+}
+
+describe('CargasTabela', () => {
+  it('começa vazia com uma mensagem', () => {
+    render(<TabelaComEstado />)
+    expect(screen.getByText(/Nenhuma carga adicionada/)).toBeInTheDocument()
+  })
+
+  it('adicionar da biblioteca preenche os campos do modelo', async () => {
+    const user = userEvent.setup()
+    render(<TabelaComEstado />)
+    await user.selectOptions(screen.getByTestId('select-biblioteca'), 'b1')
+    await user.click(screen.getByTestId('btn-add-biblioteca'))
+    expect(screen.getByDisplayValue('Geladeira duplex')).toBeInTheDocument()
+    expect(screen.getByTestId('qtd-0')).toHaveValue(1)
+    expect(screen.getByTestId('pot-0')).toHaveValue(150)
+  })
+
+  it('alterar a quantidade atualiza o consumo exibido na linha', async () => {
+    const user = userEvent.setup()
+    render(<TabelaComEstado />)
+    await user.selectOptions(screen.getByTestId('select-biblioteca'), 'b1')
+    await user.click(screen.getByTestId('btn-add-biblioteca'))
+    // 1 × 150 W × 10 h = 1500 Wh
+    expect(screen.getByTestId('consumo-linha-0')).toHaveTextContent('1.500')
+    await user.clear(screen.getByTestId('qtd-0'))
+    await user.type(screen.getByTestId('qtd-0'), '2')
+    // 2 × 150 W × 10 h = 3000 Wh
+    expect(screen.getByTestId('consumo-linha-0')).toHaveTextContent('3.000')
+  })
+
+  it('adicionar em branco cria uma linha editável', async () => {
+    const user = userEvent.setup()
+    render(<TabelaComEstado />)
+    await user.click(screen.getByTestId('btn-add-branco'))
+    expect(screen.getByTestId('qtd-0')).toBeInTheDocument()
+  })
+
+  it('remover tira a linha da lista', async () => {
+    const user = userEvent.setup()
+    render(<TabelaComEstado />)
+    await user.click(screen.getByTestId('btn-add-branco'))
+    expect(screen.getByTestId('qtd-0')).toBeInTheDocument()
+    await user.click(screen.getByTestId('btn-remover-0'))
+    expect(screen.queryByTestId('qtd-0')).not.toBeInTheDocument()
+    expect(screen.getByText(/Nenhuma carga adicionada/)).toBeInTheDocument()
+  })
+})
