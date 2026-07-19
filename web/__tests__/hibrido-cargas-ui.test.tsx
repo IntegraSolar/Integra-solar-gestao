@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import '@testing-library/jest-dom/vitest'
 import { render, screen } from '@testing-library/react'
 import { CargasResumo } from '@/components/simuladores/CargasResumo'
@@ -7,6 +7,12 @@ import { CargasCurva24h } from '@/components/simuladores/CargasCurva24h'
 import { calcularCargas } from '@/lib/simuladores/hibrido/cargas'
 import { PREMISSAS_PADRAO } from '@/lib/simuladores/hibrido/premissas'
 import type { Carga } from '@/lib/simuladores/hibrido/types'
+
+vi.mock('@/lib/simuladores/hibrido/cargas-biblioteca-actions', () => ({
+  createCargaBiblioteca: vi.fn(async () => ({ success: 'Carga adicionada.' })),
+  updateCargaBiblioteca: vi.fn(async () => ({ success: 'Carga atualizada.' })),
+  deleteCargaBiblioteca: vi.fn(async () => ({ success: 'Carga excluída.' })),
+}))
 
 const CARGA: Carga = {
   nome: 'Chuveiro', quantidade: 1, potenciaUnitW: 5500, potenciaPartidaW: 5500,
@@ -115,5 +121,50 @@ describe('CargasTabela', () => {
     await user.click(screen.getByTestId('btn-remover-0'))
     expect(screen.queryByTestId('qtd-0')).not.toBeInTheDocument()
     expect(screen.getByText(/Nenhuma carga adicionada/)).toBeInTheDocument()
+  })
+})
+
+import { BibliotecaCargasPanel } from '@/components/simuladores/BibliotecaCargasPanel'
+import {
+  createCargaBiblioteca, deleteCargaBiblioteca,
+} from '@/lib/simuladores/hibrido/cargas-biblioteca-actions'
+
+describe('BibliotecaCargasPanel', () => {
+  it('começa recolhido e abre ao clicar', async () => {
+    const user = userEvent.setup()
+    render(<BibliotecaCargasPanel inicial={[MODELO]} />)
+    expect(screen.queryByTestId('bib-nome')).not.toBeInTheDocument()
+    await user.click(screen.getByTestId('btn-toggle-biblioteca'))
+    expect(screen.getByTestId('bib-nome')).toBeInTheDocument()
+  })
+
+  it('lista os modelos existentes', async () => {
+    const user = userEvent.setup()
+    render(<BibliotecaCargasPanel inicial={[MODELO]} />)
+    await user.click(screen.getByTestId('btn-toggle-biblioteca'))
+    expect(screen.getByText('Geladeira duplex')).toBeInTheDocument()
+  })
+
+  it('criar chama a action com os dados do formulário', async () => {
+    const user = userEvent.setup()
+    render(<BibliotecaCargasPanel inicial={[]} />)
+    await user.click(screen.getByTestId('btn-toggle-biblioteca'))
+    await user.type(screen.getByTestId('bib-nome'), 'Bomba nova')
+    await user.clear(screen.getByTestId('bib-pot'))
+    await user.type(screen.getByTestId('bib-pot'), '750')
+    await user.clear(screen.getByTestId('bib-partida'))
+    await user.type(screen.getByTestId('bib-partida'), '3000')
+    await user.click(screen.getByTestId('btn-salvar-biblioteca'))
+    expect(createCargaBiblioteca).toHaveBeenCalledWith(
+      expect.objectContaining({ nome: 'Bomba nova', potenciaUnitW: 750, potenciaPartidaW: 3000 })
+    )
+  })
+
+  it('excluir chama a action com o id', async () => {
+    const user = userEvent.setup()
+    render(<BibliotecaCargasPanel inicial={[MODELO]} />)
+    await user.click(screen.getByTestId('btn-toggle-biblioteca'))
+    await user.click(screen.getByTestId('btn-excluir-b1'))
+    expect(deleteCargaBiblioteca).toHaveBeenCalledWith('b1')
   })
 })
