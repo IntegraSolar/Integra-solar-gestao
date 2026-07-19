@@ -156,8 +156,15 @@ Cálculo:
 - `custoDireto` = Σ dos subtotais
 - `valorBdi` = `custoDireto × bdi`
 - `custoComBdi` = `custoDireto + valorBdi`
-- `denominador` = `1 − margemLucro − impostos`
+- `denominador` = `1 − (margemLucro + impostos)`
 - `investimentoTotal` = `denominador > 0 ? custoComBdi / denominador : custoComBdi`
+
+A soma de `margemLucro + impostos` antes da subtração é deliberada: escrito como
+`1 − margemLucro − impostos`, o caso em que os dois somam exatamente 1 deixa um
+resíduo de ponto flutuante positivo (`1 − 0,7 − 0,3 ≈ 5,55e−17`), que fura a
+guarda `denominador > 0` e faz a divisão explodir. Com a soma primeiro o
+resultado é zero exato e a guarda funciona. No caso normal (0,2 + 0,06) as duas
+formas dão 0,74 idêntico.
 - `valorMargem` = `investimentoTotal × margemLucro`
 - `valorImpostos` = `investimentoTotal × impostos`
 - `investimentoPorKwp` = `potenciaInstaladaKwp > 0 ? investimentoTotal / potenciaInstaladaKwp : 0`

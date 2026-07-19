@@ -34,6 +34,9 @@ export function calcularCapex(params: ParamsCapex): ResultadoCapex {
   const custoComBdi = custoDireto + valorBdi
 
   // Margem e impostos incidem sobre o preço de venda: preço = custo / (1 - m - i).
+  // Soma m + i antes de subtrair: `1 - m - i` deixa resíduo de ponto flutuante
+  // quando m + i = 1 exatamente (1 - 0.7 - 0.3 ≈ 5.55e-17 > 0), o que fura a
+  // guarda abaixo e explode a divisão. `1 - (m + i)` dá zero exato.
   const denominador = 1 - (premissas.margemLucro + premissas.impostos)
   const investimentoTotal = denominador > 0 ? custoComBdi / denominador : custoComBdi
 
