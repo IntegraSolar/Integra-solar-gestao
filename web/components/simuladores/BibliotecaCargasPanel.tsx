@@ -1,7 +1,7 @@
 'use client'
 import { useState, useTransition } from 'react'
 import {
-  createCargaBiblioteca, updateCargaBiblioteca, deleteCargaBiblioteca,
+  listCargasBiblioteca, createCargaBiblioteca, updateCargaBiblioteca, deleteCargaBiblioteca,
 } from '@/lib/simuladores/hibrido/cargas-biblioteca-actions'
 import {
   CATEGORIAS_CARGA, PRIORIDADES_CARGA,
@@ -16,9 +16,13 @@ const VAZIO: CargaBibliotecaData = {
   prioridade: 'Média', critica: false,
 }
 
-export function BibliotecaCargasPanel({ inicial }: { inicial: CargaBiblioteca[] }) {
+type Props = {
+  biblioteca: CargaBiblioteca[]
+  onBibliotecaChange: (lista: CargaBiblioteca[]) => void
+}
+
+export function BibliotecaCargasPanel({ biblioteca, onBibliotecaChange }: Props) {
   const [aberto, setAberto] = useState(false)
-  const [lista, setLista] = useState(inicial)
   const [form, setForm] = useState<CargaBibliotecaData>(VAZIO)
   const [editId, setEditId] = useState<string | null>(null)
   const [msg, setMsg] = useState<{ text: string; erro: boolean } | null>(null)
@@ -42,6 +46,7 @@ export function BibliotecaCargasPanel({ inicial }: { inicial: CargaBiblioteca[] 
       setMsg({ text: res.success ?? 'Salvo.', erro: false })
       setForm(VAZIO)
       setEditId(null)
+      onBibliotecaChange(await listCargasBiblioteca())
     })
   }
 
@@ -49,7 +54,7 @@ export function BibliotecaCargasPanel({ inicial }: { inicial: CargaBiblioteca[] 
     start(async () => {
       const res = await deleteCargaBiblioteca(id)
       if (res.error) { setMsg({ text: res.error, erro: true }); return }
-      setLista((l) => l.filter((m) => m.id !== id))
+      onBibliotecaChange(await listCargasBiblioteca())
     })
   }
 
@@ -61,7 +66,7 @@ export function BibliotecaCargasPanel({ inicial }: { inicial: CargaBiblioteca[] 
         onClick={() => setAberto((a) => !a)}
         className="text-sm font-semibold text-[var(--theme-text,#1a2340)]"
       >
-        {aberto ? '▾' : '▸'} Biblioteca de cargas da empresa ({lista.length})
+        {aberto ? '▾' : '▸'} Biblioteca de cargas da empresa ({biblioteca.length})
       </button>
 
       {aberto && (
@@ -137,7 +142,7 @@ export function BibliotecaCargasPanel({ inicial }: { inicial: CargaBiblioteca[] 
           </div>
 
           <ul className="mt-4 space-y-1">
-            {lista.map((m) => (
+            {biblioteca.map((m) => (
               <li key={m.id} className="flex items-center justify-between border-t border-[var(--theme-border,#e7e9f2)] py-1 text-xs">
                 <span>
                   <b>{m.nome}</b>

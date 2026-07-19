@@ -9,6 +9,7 @@ import { PREMISSAS_PADRAO } from '@/lib/simuladores/hibrido/premissas'
 import type { Carga } from '@/lib/simuladores/hibrido/types'
 
 vi.mock('@/lib/simuladores/hibrido/cargas-biblioteca-actions', () => ({
+  listCargasBiblioteca: vi.fn(async () => []),
   createCargaBiblioteca: vi.fn(async () => ({ success: 'Carga adicionada.' })),
   updateCargaBiblioteca: vi.fn(async () => ({ success: 'Carga atualizada.' })),
   deleteCargaBiblioteca: vi.fn(async () => ({ success: 'Carga excluída.' })),
@@ -129,10 +130,15 @@ import {
   createCargaBiblioteca, deleteCargaBiblioteca,
 } from '@/lib/simuladores/hibrido/cargas-biblioteca-actions'
 
+function PainelComEstado({ inicial = [] as CargaBiblioteca[] }) {
+  const [biblioteca, setBiblioteca] = useState<CargaBiblioteca[]>(inicial)
+  return <BibliotecaCargasPanel biblioteca={biblioteca} onBibliotecaChange={setBiblioteca} />
+}
+
 describe('BibliotecaCargasPanel', () => {
   it('começa recolhido e abre ao clicar', async () => {
     const user = userEvent.setup()
-    render(<BibliotecaCargasPanel inicial={[MODELO]} />)
+    render(<PainelComEstado inicial={[MODELO]} />)
     expect(screen.queryByTestId('bib-nome')).not.toBeInTheDocument()
     await user.click(screen.getByTestId('btn-toggle-biblioteca'))
     expect(screen.getByTestId('bib-nome')).toBeInTheDocument()
@@ -140,14 +146,14 @@ describe('BibliotecaCargasPanel', () => {
 
   it('lista os modelos existentes', async () => {
     const user = userEvent.setup()
-    render(<BibliotecaCargasPanel inicial={[MODELO]} />)
+    render(<PainelComEstado inicial={[MODELO]} />)
     await user.click(screen.getByTestId('btn-toggle-biblioteca'))
     expect(screen.getByText('Geladeira duplex')).toBeInTheDocument()
   })
 
   it('criar chama a action com os dados do formulário', async () => {
     const user = userEvent.setup()
-    render(<BibliotecaCargasPanel inicial={[]} />)
+    render(<PainelComEstado inicial={[]} />)
     await user.click(screen.getByTestId('btn-toggle-biblioteca'))
     await user.type(screen.getByTestId('bib-nome'), 'Bomba nova')
     await user.clear(screen.getByTestId('bib-pot'))
@@ -162,7 +168,7 @@ describe('BibliotecaCargasPanel', () => {
 
   it('excluir chama a action com o id', async () => {
     const user = userEvent.setup()
-    render(<BibliotecaCargasPanel inicial={[MODELO]} />)
+    render(<PainelComEstado inicial={[MODELO]} />)
     await user.click(screen.getByTestId('btn-toggle-biblioteca'))
     await user.click(screen.getByTestId('btn-excluir-b1'))
     expect(deleteCargaBiblioteca).toHaveBeenCalledWith('b1')
