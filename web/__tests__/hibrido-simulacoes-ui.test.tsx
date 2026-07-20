@@ -96,3 +96,86 @@ describe('HibridoSimulacoesSalvas', () => {
     expect(onExcluir).toHaveBeenCalledWith('s1')
   })
 })
+
+import { SimuladorHibrido } from '@/components/simuladores/SimuladorHibrido'
+import {
+  salvarSimulacaoHibrido, getSimulacaoHibrido,
+} from '@/lib/simuladores/hibrido/simulacoes-actions'
+import { montarSnapshot } from '@/lib/simuladores/hibrido/snapshot'
+import { CAMPOS_INICIAIS } from '@/lib/simuladores/hibrido/montar-input'
+import { camposFinanceiroIniciais } from '@/lib/simuladores/hibrido/montar-financeiro'
+import { PAINEL, INVERSOR, BATERIA, CARGAS } from './fixtures/hibrido-fixture'
+
+const EQUIP_UI = { paineis: [PAINEL], inversores: [INVERSOR], baterias: [BATERIA] }
+
+describe('SimuladorHibrido — salvar e reabrir', () => {
+  it('salvar envia o nome, o resumo e o snapshot', async () => {
+    const user = userEvent.setup()
+    render(<SimuladorHibrido equipamentos={EQUIP_UI} biblioteca={[]} simulacoes={[]} />)
+
+    await user.type(screen.getByTestId('ident-nome'), 'Projeto Palmas')
+    await user.selectOptions(screen.getByTestId('sel-painel'), PAINEL.id)
+    await user.click(screen.getByTestId('btn-salvar-simulacao'))
+
+    expect(salvarSimulacaoHibrido).toHaveBeenCalledWith(
+      expect.objectContaining({
+        nome: 'Projeto Palmas',
+        snapshot: expect.objectContaining({ versao: 1 }),
+        potenciaKwp: expect.any(Number),
+      })
+    )
+  })
+
+  it('reabrir pede confirmação; cancelar não muda nada', async () => {
+    const user = userEvent.setup()
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    render(<SimuladorHibrido equipamentos={EQUIP_UI} biblioteca={[]} simulacoes={[SIM]} />)
+
+    await user.click(screen.getByTestId('btn-reabrir-s1'))
+    expect(confirmSpy).toHaveBeenCalled()
+    expect(getSimulacaoHibrido).not.toHaveBeenCalled()
+    confirmSpy.mockRestore()
+  })
+
+  it('ao confirmar, restaura campos, cargas e identificação', async () => {
+    const user = userEvent.setup()
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+
+    const snapshot = montarSnapshot(
+      { ...CAMPOS_INICIAIS, tempMediaC: 27, painelId: PAINEL.id, numModulos: '16' },
+      { ...camposFinanceiroIniciais(2026), tarifaKwh: '1.22' },
+      CARGAS,
+      { painel: PAINEL, inversor: INVERSOR, bateria: BATERIA }
+    )
+    vi.mocked(getSimulacaoHibrido).mockResolvedValueOnce({
+      ...SIM, clienteUf: 'TO', concessionaria: 'ENERGISA',
+      responsavelTecnico: 'Patrick', snapshot,
+    })
+
+    render(<SimuladorHibrido equipamentos={EQUIP_UI} biblioteca={[]} simulacoes={[SIM]} />)
+    await user.click(screen.getByTestId('btn-reabrir-s1'))
+
+    expect(await screen.findByDisplayValue('Projeto Palmas')).toBeInTheDocument()
+    expect(screen.getByTestId('temp-media')).toHaveValue(27)
+    expect(screen.getByTestId('ident-clienteNome')).toHaveValue('Iago')
+    expect(screen.getByTestId('fin-tarifaKwh')).toHaveValue('1.22')
+    confirmSpy.mockRestore()
+  })
+
+  it('snapshot inválido mostra erro e não altera a tela', async () => {
+    const user = userEvent.setup()
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    vi.mocked(getSimulacaoHibrido).mockResolvedValueOnce({
+      ...SIM, clienteUf: null, concessionaria: null, responsavelTecnico: null,
+      snapshot: { versao: 99 },
+    })
+
+    render(<SimuladorHibrido equipamentos={EQUIP_UI} biblioteca={[]} simulacoes={[SIM]} />)
+    const antes = (screen.getByTestId('temp-media') as HTMLInputElement).value
+    await user.click(screen.getByTestId('btn-reabrir-s1'))
+
+    expect(await screen.findByTestId('erro-simulacao')).toBeInTheDocument()
+    expect((screen.getByTestId('temp-media') as HTMLInputElement).value).toBe(antes)
+    confirmSpy.mockRestore()
+  })
+})

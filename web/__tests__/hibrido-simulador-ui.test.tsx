@@ -148,7 +148,7 @@ import { calcularHibrido } from '@/lib/simuladores/hibrido'
 describe('SimuladorHibrido (integração — a tela mostra o que o motor calculou)', () => {
   it('com painel selecionado e 16 módulos forçados, exibe o kWp e a produção do motor', async () => {
     const user = userEvent.setup()
-    render(<SimuladorHibrido equipamentos={EQUIP} biblioteca={[]} />)
+    render(<SimuladorHibrido equipamentos={EQUIP} biblioteca={[]} simulacoes={[]} />)
 
     await user.selectOptions(screen.getByTestId('sel-painel'), PAINEL.id)
     await user.selectOptions(screen.getByTestId('sel-inversor'), INVERSOR.id)
@@ -174,12 +174,12 @@ describe('SimuladorHibrido (integração — a tela mostra o que o motor calculo
   })
 
   it('sem nada selecionado mostra o alerta de dados insuficientes', () => {
-    render(<SimuladorHibrido equipamentos={EQUIP} biblioteca={[]} />)
+    render(<SimuladorHibrido equipamentos={EQUIP} biblioteca={[]} simulacoes={[]} />)
     expect(screen.getByTestId('alerta-DADOS_INSUFICIENTES')).toBeInTheDocument()
   })
 
   it('sem equipamentos cadastrados orienta o usuário ao cadastro', () => {
-    render(<SimuladorHibrido equipamentos={VAZIO} biblioteca={[]} />)
+    render(<SimuladorHibrido equipamentos={VAZIO} biblioteca={[]} simulacoes={[]} />)
     expect(screen.getByTestId('aviso-sem-equipamentos')).toBeInTheDocument()
   })
 })

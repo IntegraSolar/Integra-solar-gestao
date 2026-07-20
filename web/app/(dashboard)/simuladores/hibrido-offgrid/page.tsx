@@ -27,6 +27,7 @@ export default async function HibridoOffgridPage() {
     <SimuladorHibrido
       equipamentos={{ paineis, inversores, baterias }}
       biblioteca={biblioteca}
+      simulacoes={[]}
     />
   )
 }
