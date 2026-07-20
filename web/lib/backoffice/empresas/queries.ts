@@ -1,4 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getTodayBRT } from '@/lib/utils/date-range'
+import { classificarInatividade, type Inatividade } from '@/lib/backoffice/inatividade'
 
 export type EmpresaRow = {
   id: string
@@ -12,6 +14,9 @@ export type EmpresaRow = {
   assinatura: { plan: string | null; status: string | null; expires_at: string | null } | null
   total_users: number
   simuladores_habilitado: boolean
+  /** Inatividade medida pela última proposta criada. */
+  inatividade: Inatividade
+  ultima_proposta: string | null
 }
 
 export type EmpresaDetalhe = EmpresaRow & {
@@ -35,7 +40,7 @@ export async function listarEmpresas(search?: string): Promise<EmpresaRow[]> {
 
   const orgIds = data.map((o) => o.id)
 
-  const [{ data: subscriptions }, { data: memberCounts }] = await Promise.all([
+  const [{ data: subscriptions }, { data: memberCounts }, { data: propostas }] = await Promise.all([
     admin
       .from('subscriptions')
       .select('organization_id, plan, status, expires_at')
@@ -44,6 +49,11 @@ export async function listarEmpresas(search?: string): Promise<EmpresaRow[]> {
       .from('organization_members')
       .select('organization_id')
       .in('organization_id', orgIds),
+    admin
+      .from('proposals')
+      .select('organization_id, created_at')
+      .in('organization_id', orgIds)
+      .order('created_at', { ascending: false }),
   ])
 
   const subMap: Record<string, { plan: string | null; status: string | null; expires_at: string | null }> = {}
@@ -56,10 +66,20 @@ export async function listarEmpresas(search?: string): Promise<EmpresaRow[]> {
     countMap[m.organization_id] = (countMap[m.organization_id] ?? 0) + 1
   }
 
+  // Vem ordenado por data desc: a primeira ocorrência de cada org é a mais recente.
+  const ultimaPropostaMap: Record<string, string> = {}
+  for (const p of (propostas ?? []) as { organization_id: string; created_at: string }[]) {
+    if (!ultimaPropostaMap[p.organization_id]) ultimaPropostaMap[p.organization_id] = p.created_at
+  }
+
+  const hoje = getTodayBRT()
+
   return data.map((o) => ({
     ...o,
     assinatura: subMap[o.id] ?? null,
     total_users: countMap[o.id] ?? 0,
+    ultima_proposta: ultimaPropostaMap[o.id] ?? null,
+    inatividade: classificarInatividade(ultimaPropostaMap[o.id] ?? null, hoje),
   }))
 }
 
@@ -86,6 +106,16 @@ export async function buscarEmpresa(id: string): Promise<EmpresaDetalhe | null> 
 
   if (!org) return null
 
+  const { data: ultimaProposta } = await admin
+    .from('proposals')
+    .select('created_at')
+    .eq('organization_id', id)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  const ultimaPropostaEm = (ultimaProposta as { created_at: string } | null)?.created_at ?? null
+
   // Buscar profiles dos membros
   const userIds = (members ?? []).map((m) => m.user_id)
   const { data: profiles } = userIds.length
@@ -108,6 +138,8 @@ export async function buscarEmpresa(id: string): Promise<EmpresaDetalhe | null> 
     ...org,
     assinatura: subscriptions?.[0] ?? null,
     total_users: usuarios.length,
+    ultima_proposta: ultimaPropostaEm,
+    inatividade: classificarInatividade(ultimaPropostaEm, getTodayBRT()),
     usuarios,
   }
 }
