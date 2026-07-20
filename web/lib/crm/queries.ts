@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
 import { logger } from '@/lib/logger'
 import type { Lead, FunnelStage, LeadSource, Proposal, Supplier } from './types'
+import { podeVerTodosOsLeads, podeAcessarLead, filtroLeadsDoUsuario } from './acesso'
 
 // Teto de segurança do funil ativo. Leads convertidos saem do board (viram
 // clientes), então o funil só mostra leads ativos. Se o teto for atingido,
@@ -53,7 +54,8 @@ export async function getLeads(): Promise<Lead[]> {
   if (!user?.membership) return []
   const supabase = await createClient()
   const orgId = user.membership.organization.id
-  const { data } = await supabase
+
+  let query = supabase
     .from('leads')
     .select(`
       *,
@@ -63,6 +65,15 @@ export async function getLeads(): Promise<Lead[]> {
     `)
     .eq('organization_id', orgId)
     .eq('converted', false)
+
+  // Vendedor vê apenas os próprios leads; lead sem responsável fica com quem vê todos.
+  if (!podeVerTodosOsLeads(user.membership.role, user.membership.permissions)) {
+    // Sem identidade não há como delimitar o escopo — nega em vez de liberar tudo.
+    if (!user.profile?.id) return []
+    query = query.or(filtroLeadsDoUsuario(user.profile.id))
+  }
+
+  const { data } = await query
     .order('created_at', { ascending: false })
     .limit(FUNNEL_MAX)
   const leads = (data ?? []) as any[]
@@ -93,6 +104,11 @@ export async function getLeadById(id: string): Promise<Lead | null> {
     .single()
   if (!data) return null
   const lead = data as any
+
+  // Impede abrir pela URL o lead de outro vendedor.
+  const verTodos = podeVerTodosOsLeads(user.membership.role, user.membership.permissions)
+  if (!podeAcessarLead(lead, user.profile.id, verTodos)) return null
+
   return { ...lead, notes: lead.notes ?? [], followups: lead.followups ?? [] } as Lead
 }
 
