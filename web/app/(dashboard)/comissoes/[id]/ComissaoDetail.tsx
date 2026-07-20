@@ -5,7 +5,7 @@ import { useState, useTransition, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import type { ComissaoItem } from '@/lib/comissoes/queries'
 import { markCommissionPaid, uploadComprovanteComissao } from '@/lib/comissoes/actions'
-import { formatCurrency, formatDate } from '@/lib/format'
+import { formatCurrency, formatDate, formatPercent } from '@/lib/format'
 
 export default function ComissaoDetail({ comissao }: { comissao: ComissaoItem }) {
   const router = useRouter()
@@ -79,13 +79,17 @@ export default function ComissaoDetail({ comissao }: { comissao: ComissaoItem })
         <div className="grid grid-cols-2 gap-4">
           <div>
             <p className={labelCls}>Vendedor</p>
-            <p className={valueCls}>{comissao.vendedor_name ?? '—'}</p>
+            <p className={valueCls}>{comissao.vendedor_name}</p>
           </div>
           <div>
             <p className={labelCls}>Valor da Comissão</p>
             <p className="text-xl font-bold" style={{ color: 'var(--theme-accent)' }}>
               {formatCurrency(comissao.valor_comissao)}
             </p>
+          </div>
+          <div>
+            <p className={labelCls}>Percentual</p>
+            <p className={valueCls}>{formatPercent(comissao.commission_pct)}</p>
           </div>
           <div>
             <p className={labelCls}>Criada em</p>

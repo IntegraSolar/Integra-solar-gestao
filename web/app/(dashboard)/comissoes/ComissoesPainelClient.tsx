@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import type { ComissoesPainel, ComissaoMember } from '@/lib/comissoes/queries'
-import { formatCurrency } from '@/lib/format'
+import { formatCurrency, formatPercent } from '@/lib/format'
 import { SearchBar, filterBySearch } from '@/components/ui/SearchBar'
 import { MonthYearFilter } from '@/components/ui/filters/MonthYearFilter'
 import { SelectFilter } from '@/components/ui/filters/SelectFilter'
@@ -29,14 +29,14 @@ export default function ComissoesPainelClient({
   members,
   month,
   year,
-  vendedorId,
+  vendedor,
   dateField,
 }: {
   painel: ComissoesPainel
   members: ComissaoMember[]
   month: number
   year: number
-  vendedorId: string
+  vendedor: string
   dateField: 'created_at' | 'paid_at'
 }) {
   const router = useRouter()
@@ -44,12 +44,12 @@ export default function ComissoesPainelClient({
   const [search, setSearch] = useState('')
   const filteredItems = filterBySearch(painel.items, search, ['client_name'])
 
-  function applyFilter(patch: { month?: number; year?: number; vendedorId?: string; dateField?: 'created_at' | 'paid_at' }) {
+  function applyFilter(patch: { month?: number; year?: number; vendedor?: string; dateField?: 'created_at' | 'paid_at' }) {
     const sp = new URLSearchParams()
     sp.set('month', String(patch.month ?? month))
     sp.set('year', String(patch.year ?? year))
-    const nv = patch.vendedorId !== undefined ? patch.vendedorId : vendedorId
-    if (nv) sp.set('vendedorId', nv)
+    const nv = patch.vendedor !== undefined ? patch.vendedor : vendedor
+    if (nv) sp.set('vendedor', nv)
     const nd = patch.dateField ?? dateField
     if (nd !== 'created_at') sp.set('dateField', nd)
     router.push(`${pathname}?${sp.toString()}`)
@@ -81,8 +81,8 @@ export default function ComissoesPainelClient({
           placeholder="Data por"
         />
         <SelectFilter
-          value={vendedorId}
-          onChange={(v) => applyFilter({ vendedorId: v })}
+          value={vendedor}
+          onChange={(v) => applyFilter({ vendedor: v })}
           options={members.map((m) => ({ value: m.id, label: m.name }))}
           placeholder="Todos os vendedores"
         />
@@ -113,6 +113,7 @@ export default function ComissoesPainelClient({
             <tr className="border-b border-white/10 text-white/50">
               <th className="text-left px-4 py-3 font-medium">Cliente</th>
               <th className="text-left px-4 py-3 font-medium">Vendedor</th>
+              <th className="text-left px-4 py-3 font-medium">%</th>
               <th className="text-left px-4 py-3 font-medium">Valor</th>
               <th className="text-left px-4 py-3 font-medium">Status</th>
               <th className="px-4 py-3" />
@@ -121,7 +122,7 @@ export default function ComissoesPainelClient({
           <tbody>
             {filteredItems.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-white/40">
+                <td colSpan={6} className="px-4 py-8 text-center text-white/40">
                   Nenhuma comissão no período.
                 </td>
               </tr>
@@ -129,7 +130,8 @@ export default function ComissoesPainelClient({
             {filteredItems.map((c) => (
               <tr key={c.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                 <td className="px-4 py-3 text-white font-medium">{c.client_name}</td>
-                <td className="px-4 py-3 text-white/60">{c.vendedor_name ?? '—'}</td>
+                <td className="px-4 py-3 text-white/60">{c.vendedor_name}</td>
+                <td className="px-4 py-3 text-white/60">{formatPercent(c.commission_pct)}</td>
                 <td className="px-4 py-3 text-white/60">{formatCurrency(c.valor_comissao)}</td>
                 <td className="px-4 py-3">
                   <StatusBadge status={c.status} />
