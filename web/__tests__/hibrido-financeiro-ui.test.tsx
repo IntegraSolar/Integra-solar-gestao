@@ -124,3 +124,47 @@ describe('HibridoIndicadores', () => {
     expect(screen.getByTestId('ind-economia-acumulada')).toBeInTheDocument()
   })
 })
+
+import { SimuladorHibrido } from '@/components/simuladores/SimuladorHibrido'
+import { montarFinanceiroInput, fisicoParaFinanceiro } from '@/lib/simuladores/hibrido/montar-financeiro'
+import { montarHibridoInput, montarPremissas, CAMPOS_INICIAIS } from '@/lib/simuladores/hibrido/montar-input'
+import { calcularHibrido } from '@/lib/simuladores/hibrido'
+import { PAINEL, INVERSOR, BATERIA } from './fixtures/hibrido-fixture'
+
+const EQUIP_UI = { paineis: [PAINEL], inversores: [INVERSOR], baterias: [BATERIA] }
+
+describe('SimuladorHibrido — integração financeira', () => {
+  it('sem tarifa, suprime os resultados financeiros e mostra o aviso', () => {
+    render(<SimuladorHibrido equipamentos={EQUIP_UI} biblioteca={[]} />)
+    expect(screen.getByTestId('aviso-sem-tarifa')).toBeInTheDocument()
+    expect(screen.queryByTestId('ind-vpl')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('projecao')).not.toBeInTheDocument()
+  })
+
+  it('o CAPEX aparece mesmo sem tarifa (não depende dela)', () => {
+    render(<SimuladorHibrido equipamentos={EQUIP_UI} biblioteca={[]} />)
+    expect(screen.getByTestId('capex-investimento-total')).toBeInTheDocument()
+  })
+
+  it('com tarifa informada, o VPL exibido bate com o que o motor devolve', async () => {
+    const user = userEvent.setup()
+    render(<SimuladorHibrido equipamentos={EQUIP_UI} biblioteca={[]} />)
+
+    await user.selectOptions(screen.getByTestId('sel-painel'), PAINEL.id)
+    await user.selectOptions(screen.getByTestId('sel-inversor'), INVERSOR.id)
+    await user.click(screen.getByTestId('btn-toggle-avancado'))
+    await user.type(screen.getByTestId('av-numModulos'), '16')
+    await user.type(screen.getByTestId('fin-tarifaKwh'), '1.22')
+
+    // Esperado calculado pelos MESMOS caminhos que a tela usa.
+    const campos = { ...CAMPOS_INICIAIS, painelId: PAINEL.id, inversorId: INVERSOR.id, numModulos: '16' }
+    const fisicoRes = calcularHibrido(montarHibridoInput(campos, EQUIP_UI, []), montarPremissas(campos))
+    const camposFin = { ...camposFinanceiroIniciais(new Date().getFullYear()), tarifaKwh: '1.22' }
+    const esperado = calcularFinanceiro(montarFinanceiroInput(camposFin, fisicoParaFinanceiro(fisicoRes)))
+
+    expect(screen.getByTestId('ind-vpl')).toHaveTextContent(
+      esperado.indicadores.vpl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    )
+    expect(screen.queryByTestId('aviso-sem-tarifa')).not.toBeInTheDocument()
+  })
+})

@@ -16,6 +16,18 @@ import { HibridoResultadosArmazenamento } from './HibridoResultadosArmazenamento
 import { HibridoProducaoMensal } from './HibridoProducaoMensal'
 import { HibridoAlertas } from './HibridoAlertas'
 import { CargasBuilder } from './CargasBuilder'
+import {
+  camposFinanceiroIniciais, fisicoParaFinanceiro, montarFinanceiroInput,
+  type CamposFinanceiro,
+} from '@/lib/simuladores/hibrido/montar-financeiro'
+import { calcularFinanceiro } from '@/lib/simuladores/hibrido/financeiro'
+import { calcularEconomiaAno } from '@/lib/simuladores/hibrido/economia'
+import { PREMISSAS_FINANCEIRAS_PADRAO } from '@/lib/simuladores/hibrido/premissas'
+import { HibridoInputsFinanceiro } from './HibridoInputsFinanceiro'
+import { HibridoResultadosCapex } from './HibridoResultadosCapex'
+import { HibridoResultadosEconomia } from './HibridoResultadosEconomia'
+import { HibridoIndicadores } from './HibridoIndicadores'
+import { HibridoProjecao } from './HibridoProjecao'
 
 type Props = {
   equipamentos: EquipamentosDisponiveis
@@ -26,6 +38,9 @@ export function SimuladorHibrido({ equipamentos, biblioteca: bibliotecaInicial }
   const [campos, setCampos] = useState<CamposHibrido>(CAMPOS_INICIAIS)
   const [cargas, setCargas] = useState<Carga[]>([])
   const [biblioteca, setBiblioteca] = useState<CargaBiblioteca[]>(bibliotecaInicial)
+  const [camposFin, setCamposFin] = useState<CamposFinanceiro>(() =>
+    camposFinanceiroIniciais(new Date().getFullYear())
+  )
 
   // Uma única fonte: o input montado gera o resultado. Nenhum cálculo na UI.
   const premissas = useMemo(() => montarPremissas(campos), [campos])
@@ -35,16 +50,29 @@ export function SimuladorHibrido({ equipamentos, biblioteca: bibliotecaInicial }
   )
   const resultado = useMemo(() => calcularHibrido(input, premissas), [input, premissas])
 
+  // Financeiro: deriva do resultado físico, sem recalcular nada na UI.
+  const paramsFin = useMemo(
+    () => montarFinanceiroInput(camposFin, fisicoParaFinanceiro(resultado)),
+    [camposFin, resultado]
+  )
+  const financeiro = useMemo(() => calcularFinanceiro(paramsFin), [paramsFin])
+  const economiaAno1 = useMemo(
+    () => calcularEconomiaAno(1, {
+      fisico: paramsFin.fisico,
+      tarifas: paramsFin.tarifas,
+      premissas: paramsFin.premissas ?? PREMISSAS_FINANCEIRAS_PADRAO,
+    }),
+    [paramsFin]
+  )
+  const temTarifa = paramsFin.tarifas.tarifaKwh > 0
+
   return (
     <div className="p-6">
       <div className="mb-1 flex items-center gap-2">
         <h1 className="text-xl font-bold text-[var(--theme-text,#1a2340)]">Simulador Híbrido / Off-grid</h1>
-        <span className="rounded bg-[#fff6e6] px-1.5 py-0.5 text-[10px] font-extrabold tracking-wide text-[#b26b00] border border-[#f0d9a8]">
-          EM CONSTRUÇÃO
-        </span>
       </div>
       <p className="mb-4 text-sm text-[var(--theme-text-muted,#6b7280)]">
-        Dimensionamento fotovoltaico, banco de baterias e inversor. Os resultados financeiros chegam na próxima etapa.
+        Dimensionamento fotovoltaico, banco de baterias, inversor e análise financeira completa.
       </p>
 
       <div className="mb-4 flex flex-wrap gap-3 text-xs">
@@ -77,6 +105,25 @@ export function SimuladorHibrido({ equipamentos, biblioteca: bibliotecaInicial }
         <HibridoResultadosFV dim={resultado.dimensionamento} strings={resultado.strings} />
         <HibridoProducaoMensal producaoMensalKwh={resultado.dimensionamento.producaoMensalKwh} />
         <HibridoResultadosArmazenamento bat={resultado.baterias} inv={resultado.inversor} />
+
+        <HibridoInputsFinanceiro campos={camposFin} onChange={setCamposFin} />
+        <HibridoResultadosCapex capex={financeiro.capex} />
+
+        {!temTarifa ? (
+          <div
+            className="rounded-lg border border-[#f0d9a8] bg-[#fff6e6] px-3 py-2 text-xs text-[#b26b00]"
+            data-testid="aviso-sem-tarifa"
+          >
+            Informe a tarifa de energia acima para ver a economia, os indicadores de viabilidade
+            e a projeção. Sem tarifa não há economia a calcular.
+          </div>
+        ) : (
+          <>
+            <HibridoResultadosEconomia economia={economiaAno1} />
+            <HibridoIndicadores indicadores={financeiro.indicadores} />
+            <HibridoProjecao projecao={financeiro.projecao} />
+          </>
+        )}
       </div>
     </div>
   )
