@@ -47,6 +47,20 @@ export async function generateProposalLink(
 
   if (error) return { error: 'Erro ao gerar link: ' + error.message }
 
+  // Configuração padrão da apresentação. onConflict evita duplicar quando o
+  // link é regerado para a mesma proposta. Falha aqui não pode impedir a
+  // geração do link: sem configuração, normalizarConfig aplica os padrões.
+  try {
+    await (supabase as any)
+      .from('proposal_presentations')
+      .upsert(
+        { proposal_id: proposalId, organization_id: orgId },
+        { onConflict: 'proposal_id' }
+      )
+  } catch {
+    // Ignorado de propósito — ver comentário acima.
+  }
+
   revalidatePath('/leads')
   return { success: 'Link gerado.', token }
 }
