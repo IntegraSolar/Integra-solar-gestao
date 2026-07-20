@@ -57,3 +57,44 @@ describe('HibridoInputsProjeto', () => {
     expect(screen.getByTestId('criterio-geracao')).toHaveValue('media_anual')
   })
 })
+
+import { HibridoSelecaoEquipamentos } from '@/components/simuladores/HibridoSelecaoEquipamentos'
+import type { EquipamentosDisponiveis } from '@/lib/simuladores/hibrido/montar-input'
+import { PAINEL, INVERSOR, BATERIA } from './fixtures/hibrido-fixture'
+
+const EQUIP: EquipamentosDisponiveis = {
+  paineis: [PAINEL], inversores: [INVERSOR], baterias: [BATERIA],
+}
+const VAZIO: EquipamentosDisponiveis = { paineis: [], inversores: [], baterias: [] }
+
+function SelecaoComEstado({ equipamentos = EQUIP }: { equipamentos?: EquipamentosDisponiveis }) {
+  const [campos, setCampos] = useState<CamposHibrido>(CAMPOS_INICIAIS)
+  return <HibridoSelecaoEquipamentos campos={campos} equipamentos={equipamentos} onChange={setCampos} />
+}
+
+describe('HibridoSelecaoEquipamentos', () => {
+  it('lista os equipamentos cadastrados', () => {
+    render(<SelecaoComEstado />)
+    expect(screen.getByTestId('sel-painel')).toBeInTheDocument()
+    expect(screen.getByText(/OSDA MHDRZ/)).toBeInTheDocument()
+  })
+
+  it('escolher um painel guarda o id', async () => {
+    const user = userEvent.setup()
+    render(<SelecaoComEstado />)
+    await user.selectOptions(screen.getByTestId('sel-painel'), PAINEL.id)
+    expect(screen.getByTestId('sel-painel')).toHaveValue(PAINEL.id)
+  })
+
+  it('começa sem nada selecionado', () => {
+    render(<SelecaoComEstado />)
+    expect(screen.getByTestId('sel-painel')).toHaveValue('')
+  })
+
+  it('sem equipamentos cadastrados mostra aviso com link para o cadastro', () => {
+    render(<SelecaoComEstado equipamentos={VAZIO} />)
+    const aviso = screen.getByTestId('aviso-sem-equipamentos')
+    expect(aviso).toBeInTheDocument()
+    expect(aviso.querySelector('a')).toHaveAttribute('href', '/simuladores/hibrido-offgrid/equipamentos')
+  })
+})
