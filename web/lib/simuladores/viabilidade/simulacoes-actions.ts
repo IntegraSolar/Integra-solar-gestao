@@ -4,7 +4,7 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
-import { getCurrentUserData } from '@/lib/org/queries'
+import { requireSimuladoresOrg } from '@/lib/simuladores/access'
 import type { ActionResult } from '@/lib/crm/types'
 import { logAction } from '@/lib/auditoria/actions'
 import type { Json } from '@/types/database.types'
@@ -36,12 +36,8 @@ const salvarSchema = z.object({
 })
 export type SalvarSimulacaoData = z.infer<typeof salvarSchema>
 
-async function requireOrg(): Promise<{ orgId: string } | { error: string }> {
-  const user = await getCurrentUserData()
-  const orgId = user?.membership?.organization.id
-  if (!orgId) return { error: 'Sem organização ativa.' }
-  return { orgId }
-}
+// Guard compartilhado: valida a org E o plano de Simuladores da empresa.
+const requireOrg = requireSimuladoresOrg
 
 export async function salvarSimulacao(data: SalvarSimulacaoData): Promise<ActionResult> {
   const ctx = await requireOrg()
