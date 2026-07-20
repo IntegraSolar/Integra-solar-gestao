@@ -2095,6 +2095,71 @@ export type Database = {
           },
         ]
       }
+      simulador_hibrido_simulacoes: {
+        Row: {
+          cliente_cidade: string | null
+          cliente_nome: string | null
+          cliente_uf: string | null
+          concessionaria: string | null
+          created_at: string
+          id: string
+          investimento_total: number
+          nome: string
+          organization_id: string
+          payback_anos: number | null
+          potencia_kwp: number
+          responsavel_tecnico: string | null
+          snapshot: Json
+          tir: number
+          updated_at: string
+          vpl: number
+        }
+        Insert: {
+          cliente_cidade?: string | null
+          cliente_nome?: string | null
+          cliente_uf?: string | null
+          concessionaria?: string | null
+          created_at?: string
+          id?: string
+          investimento_total?: number
+          nome: string
+          organization_id: string
+          payback_anos?: number | null
+          potencia_kwp?: number
+          responsavel_tecnico?: string | null
+          snapshot: Json
+          tir?: number
+          updated_at?: string
+          vpl?: number
+        }
+        Update: {
+          cliente_cidade?: string | null
+          cliente_nome?: string | null
+          cliente_uf?: string | null
+          concessionaria?: string | null
+          created_at?: string
+          id?: string
+          investimento_total?: number
+          nome?: string
+          organization_id?: string
+          payback_anos?: number | null
+          potencia_kwp?: number
+          responsavel_tecnico?: string | null
+          snapshot?: Json
+          tir?: number
+          updated_at?: string
+          vpl?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "simulador_hibrido_simulacoes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       simulador_cargas_biblioteca: {
         Row: {
           categoria: string | null
