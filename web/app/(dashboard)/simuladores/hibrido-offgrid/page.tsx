@@ -7,13 +7,14 @@ import {
 import {
   listCargasBiblioteca, seedCargasBiblioteca,
 } from '@/lib/simuladores/hibrido/cargas-biblioteca-actions'
+import { listSimulacoesHibrido } from '@/lib/simuladores/hibrido/simulacoes-actions'
 import { SimuladorHibrido } from '@/components/simuladores/SimuladorHibrido'
 
 export default async function HibridoOffgridPage() {
   if (!(await isSimuladoresEnabled())) redirect('/simuladores')
 
-  const [paineis, inversores, baterias] = await Promise.all([
-    listPaineis(), listInversores(), listBaterias(),
+  const [paineis, inversores, baterias, simulacoes] = await Promise.all([
+    listPaineis(), listInversores(), listBaterias(), listSimulacoesHibrido(),
   ])
 
   // Seed no primeiro acesso, mesmo comportamento da tela de cargas.
@@ -27,7 +28,7 @@ export default async function HibridoOffgridPage() {
     <SimuladorHibrido
       equipamentos={{ paineis, inversores, baterias }}
       biblioteca={biblioteca}
-      simulacoes={[]}
+      simulacoes={simulacoes}
     />
   )
 }
