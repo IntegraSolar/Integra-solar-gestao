@@ -43,8 +43,17 @@ describe('catálogo de templates', () => {
 
   it('premium inclui os blocos essenciais', () => {
     expect(blocosDoTemplate('premium')).toEqual(
-      expect.arrayContaining(['cover', 'resumo', 'sistema', 'equipamentos', 'condicoes', 'contato'])
+      expect.arrayContaining(['cover', 'hero', 'sistema', 'equipamentos', 'condicoes', 'contato'])
     )
+  })
+
+  it('nenhum template usa hero e resumo juntos', () => {
+    // Os dois exibem os mesmos indicadores. Lado a lado, a apresentação repete
+    // potência e geração em sequência — o oposto de "pouco texto, muito impacto".
+    for (const id of Object.keys(TEMPLATES)) {
+      const blocos = blocosDoTemplate(id)
+      expect(blocos.includes('hero') && blocos.includes('resumo')).toBe(false)
+    }
   })
 
   it('todo bloco de todo template é um bloco válido', () => {

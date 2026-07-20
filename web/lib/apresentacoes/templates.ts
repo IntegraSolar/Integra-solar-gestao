@@ -17,7 +17,8 @@ export const TEMPLATES: Record<string, Template> = {
     descricao: 'Apresentação completa, com todos os diferenciais.',
     temaPadrao: 'minimal-white',
     blocos: [
-      'cover', 'hero', 'resumo', 'sistema', 'equipamentos', 'garantias',
+      // Sem 'resumo': o Hero logo acima ja exibe potencia, geracao e investimento.
+      'cover', 'hero', 'sistema', 'equipamentos', 'garantias',
       'como-funciona', 'timeline', 'condicoes', 'empresa', 'assinatura', 'contato',
     ],
   },
@@ -54,14 +55,14 @@ export const TEMPLATES: Record<string, Template> = {
     nome: 'Agronegócio',
     descricao: 'Para propriedades rurais e irrigação.',
     temaPadrao: 'solar-gold',
-    blocos: ['cover', 'hero', 'resumo', 'sistema', 'equipamentos', 'fluxo', 'garantias', 'empresa', 'condicoes', 'contato'],
+    blocos: ['cover', 'hero', 'sistema', 'equipamentos', 'fluxo', 'garantias', 'empresa', 'condicoes', 'contato'],
   },
   luxury: {
     id: 'luxury',
     nome: 'Luxury',
     descricao: 'Sofisticado, para alto padrão.',
     temaPadrao: 'executive-black',
-    blocos: ['cover', 'hero', 'resumo', 'sistema', 'garantias', 'empresa', 'depoimentos', 'condicoes', 'assinatura', 'contato'],
+    blocos: ['cover', 'hero', 'sistema', 'garantias', 'empresa', 'depoimentos', 'condicoes', 'assinatura', 'contato'],
   },
   executive: {
     id: 'executive',
@@ -75,14 +76,14 @@ export const TEMPLATES: Record<string, Template> = {
     nome: 'Dark',
     descricao: 'Visual escuro e moderno.',
     temaPadrao: 'modern-dark',
-    blocos: ['cover', 'hero', 'resumo', 'sistema', 'equipamentos', 'garantias', 'timeline', 'condicoes', 'contato'],
+    blocos: ['cover', 'hero', 'sistema', 'equipamentos', 'garantias', 'timeline', 'condicoes', 'contato'],
   },
   modern: {
     id: 'modern',
     nome: 'Modern',
     descricao: 'Contemporâneo, com bastante respiro.',
     temaPadrao: 'minimal-white',
-    blocos: ['cover', 'hero', 'resumo', 'como-funciona', 'sistema', 'garantias', 'empresa', 'condicoes', 'contato'],
+    blocos: ['cover', 'hero', 'como-funciona', 'sistema', 'garantias', 'empresa', 'condicoes', 'contato'],
   },
 }
 

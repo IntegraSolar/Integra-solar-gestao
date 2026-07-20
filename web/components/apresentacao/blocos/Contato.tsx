@@ -8,7 +8,6 @@ export function Contato({ dados }: { dados: ApresentacaoData }) {
     empresa.telefone && { rotulo: 'Telefone', valor: empresa.telefone },
     empresa.email && { rotulo: 'E-mail', valor: empresa.email },
     empresa.cidade && { rotulo: 'Cidade', valor: empresa.cidade },
-    empresa.cnpj && { rotulo: 'CNPJ', valor: empresa.cnpj },
   ].filter(Boolean) as { rotulo: string; valor: string }[]
 
   return (

@@ -31,7 +31,7 @@ const ETAPAS = [
 
 export function LinhaDoTempo({ dados: _dados }: { dados: ApresentacaoData }) {
   return (
-    <Secao titulo="Como funciona o processo">
+    <Secao titulo="Etapas do seu projeto">
       <div>
         {ETAPAS.map((etapa, i) => (
           <div key={etapa.titulo} style={{ display: 'flex', gap: 16 }}>

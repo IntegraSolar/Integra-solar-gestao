@@ -19,8 +19,6 @@ export function Empresa({ dados }: { dados: ApresentacaoData }) {
 
   const contatos = [
     empresa.endereco_resumido && { nome: 'local' as const, texto: empresa.endereco_resumido },
-    empresa.telefone && { nome: 'telefone' as const, texto: empresa.telefone },
-    empresa.email && { nome: 'email' as const, texto: empresa.email },
   ].filter(Boolean) as { nome: 'local' | 'telefone' | 'email'; texto: string }[]
 
   const rodape = [empresa.razao_social, empresa.cnpj].filter(Boolean).join(' · ') || null
