@@ -135,20 +135,20 @@ const EQUIP_UI = { paineis: [PAINEL], inversores: [INVERSOR], baterias: [BATERIA
 
 describe('SimuladorHibrido — integração financeira', () => {
   it('sem tarifa, suprime os resultados financeiros e mostra o aviso', () => {
-    render(<SimuladorHibrido equipamentos={EQUIP_UI} biblioteca={[]} simulacoes={[]} />)
+    render(<SimuladorHibrido equipamentos={EQUIP_UI} biblioteca={[]} simulacoes={[]} empresa={{ nome: 'Empresa Teste', cnpj: null, endereco: null, telefone: null, email: null, logoBase64: null }} />)
     expect(screen.getByTestId('aviso-sem-tarifa')).toBeInTheDocument()
     expect(screen.queryByTestId('ind-vpl')).not.toBeInTheDocument()
     expect(screen.queryByTestId('projecao')).not.toBeInTheDocument()
   })
 
   it('o CAPEX aparece mesmo sem tarifa (não depende dela)', () => {
-    render(<SimuladorHibrido equipamentos={EQUIP_UI} biblioteca={[]} simulacoes={[]} />)
+    render(<SimuladorHibrido equipamentos={EQUIP_UI} biblioteca={[]} simulacoes={[]} empresa={{ nome: 'Empresa Teste', cnpj: null, endereco: null, telefone: null, email: null, logoBase64: null }} />)
     expect(screen.getByTestId('capex-investimento-total')).toBeInTheDocument()
   })
 
   it('com tarifa informada, o VPL exibido bate com o que o motor devolve', async () => {
     const user = userEvent.setup()
-    render(<SimuladorHibrido equipamentos={EQUIP_UI} biblioteca={[]} simulacoes={[]} />)
+    render(<SimuladorHibrido equipamentos={EQUIP_UI} biblioteca={[]} simulacoes={[]} empresa={{ nome: 'Empresa Teste', cnpj: null, endereco: null, telefone: null, email: null, logoBase64: null }} />)
 
     await user.selectOptions(screen.getByTestId('sel-painel'), PAINEL.id)
     await user.selectOptions(screen.getByTestId('sel-inversor'), INVERSOR.id)
@@ -166,5 +166,36 @@ describe('SimuladorHibrido — integração financeira', () => {
       esperado.indicadores.vpl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     )
     expect(screen.queryByTestId('aviso-sem-tarifa')).not.toBeInTheDocument()
+  })
+})
+
+describe('SimuladorHibrido — botões de PDF', () => {
+  const EMPRESA = { nome: 'Empresa Teste', cnpj: null, endereco: null, telefone: null, email: null, logoBase64: null }
+
+  it('sem equipamentos selecionados, ambos os botões ficam desabilitados', () => {
+    render(<SimuladorHibrido equipamentos={EQUIP_UI} biblioteca={[]} simulacoes={[]} empresa={EMPRESA} />)
+    expect(screen.getByTestId('btn-memorial-pdf')).toBeDisabled()
+    expect(screen.getByTestId('btn-relatorio-pdf')).toBeDisabled()
+  })
+
+  it('com equipamentos mas sem tarifa, só o memorial libera', async () => {
+    // O memorial é técnico e não depende de tarifa. Já o relatório sairia com
+    // VPL negativo e "não se paga no horizonte" só por falta de um campo —
+    // um documento dizendo ao cliente que o projeto é inviável sem que seja.
+    const user = userEvent.setup()
+    render(<SimuladorHibrido equipamentos={EQUIP_UI} biblioteca={[]} simulacoes={[]} empresa={EMPRESA} />)
+    await user.selectOptions(screen.getByTestId('sel-painel'), PAINEL.id)
+    await user.selectOptions(screen.getByTestId('sel-inversor'), INVERSOR.id)
+    expect(screen.getByTestId('btn-memorial-pdf')).toBeEnabled()
+    expect(screen.getByTestId('btn-relatorio-pdf')).toBeDisabled()
+  })
+
+  it('informar a tarifa libera o relatório', async () => {
+    const user = userEvent.setup()
+    render(<SimuladorHibrido equipamentos={EQUIP_UI} biblioteca={[]} simulacoes={[]} empresa={EMPRESA} />)
+    await user.selectOptions(screen.getByTestId('sel-painel'), PAINEL.id)
+    await user.selectOptions(screen.getByTestId('sel-inversor'), INVERSOR.id)
+    await user.type(screen.getByTestId('fin-tarifaKwh'), '1.22')
+    expect(screen.getByTestId('btn-relatorio-pdf')).toBeEnabled()
   })
 })

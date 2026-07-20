@@ -1,6 +1,6 @@
 // web/lib/simuladores/cartao/proposta-cartao-pdf.ts
 import type { OpcaoParcelamento } from './calculo'
-import type { EmpresaProposta } from '@/lib/simuladores/viabilidade/proposta-empresa'
+import type { EmpresaProposta } from '@/lib/simuladores/proposta-empresa'
 
 export type TabelaPdf = { nome: string; observacao: string | null; opcoes: OpcaoParcelamento[] }
 export type DadosCartaoPdf = {

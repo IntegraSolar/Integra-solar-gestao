@@ -2097,55 +2097,79 @@ export type Database = {
       }
       simulador_hibrido_simulacoes: {
         Row: {
+          altitude: number | null
+          azimute: number | null
           cliente_cidade: string | null
           cliente_nome: string | null
           cliente_uf: string | null
           concessionaria: string | null
           created_at: string
           id: string
+          inclinacao: number | null
           investimento_total: number
+          latitude: number | null
+          longitude: number | null
+          modo_operacao: string | null
           nome: string
           organization_id: string
           payback_anos: number | null
           potencia_kwp: number
           responsavel_tecnico: string | null
           snapshot: Json
+          tensao_nominal: number | null
+          tipo_ligacao: string | null
           tir: number
           updated_at: string
           vpl: number
         }
         Insert: {
+          altitude?: number | null
+          azimute?: number | null
           cliente_cidade?: string | null
           cliente_nome?: string | null
           cliente_uf?: string | null
           concessionaria?: string | null
           created_at?: string
           id?: string
+          inclinacao?: number | null
           investimento_total?: number
+          latitude?: number | null
+          longitude?: number | null
+          modo_operacao?: string | null
           nome: string
           organization_id: string
           payback_anos?: number | null
           potencia_kwp?: number
           responsavel_tecnico?: string | null
           snapshot: Json
+          tensao_nominal?: number | null
+          tipo_ligacao?: string | null
           tir?: number
           updated_at?: string
           vpl?: number
         }
         Update: {
+          altitude?: number | null
+          azimute?: number | null
           cliente_cidade?: string | null
           cliente_nome?: string | null
           cliente_uf?: string | null
           concessionaria?: string | null
           created_at?: string
           id?: string
+          inclinacao?: number | null
           investimento_total?: number
+          latitude?: number | null
+          longitude?: number | null
+          modo_operacao?: string | null
           nome?: string
           organization_id?: string
           payback_anos?: number | null
           potencia_kwp?: number
           responsavel_tecnico?: string | null
           snapshot?: Json
+          tensao_nominal?: number | null
+          tipo_ligacao?: string | null
           tir?: number
           updated_at?: string
           vpl?: number

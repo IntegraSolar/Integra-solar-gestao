@@ -73,3 +73,51 @@ describe('mapeadores', () => {
     expect(c.snapshot).toEqual({ versao: 1 })
   })
 })
+
+describe('dados descritivos do projeto', () => {
+  const COM_DESCRITIVOS = {
+    ...MINIMO,
+    azimute: 0, inclinacao: 15, latitude: -10.1836, longitude: -48.3338,
+    altitude: 240, tipoLigacao: 'Bifásico', tensaoNominal: 380,
+    modoOperacao: 'Autoconsumo + Backup',
+  }
+
+  it('o schema aceita os descritivos', () => {
+    expect(salvarSimulacaoSchema.safeParse(COM_DESCRITIVOS).success).toBe(true)
+  })
+
+  it('todos os descritivos são opcionais', () => {
+    expect(salvarSimulacaoSchema.safeParse(MINIMO).success).toBe(true)
+  })
+
+  it('rowToCompleta traz os descritivos de volta', () => {
+    const c = rowToCompleta({
+      id: 's1', nome: 'X', cliente_nome: null, cliente_cidade: null, cliente_uf: null,
+      concessionaria: null, responsavel_tecnico: null,
+      potencia_kwp: 0, investimento_total: 0, vpl: 0, tir: 0, payback_anos: null,
+      snapshot: {}, created_at: '2026-07-19T12:00:00Z',
+      azimute: 0, inclinacao: 15, latitude: -10.1836, longitude: -48.3338,
+      altitude: 240, tipo_ligacao: 'Bifásico', tensao_nominal: 380,
+      modo_operacao: 'Autoconsumo + Backup',
+    })
+    expect(c.inclinacao).toBe(15)
+    expect(c.latitude).toBeCloseTo(-10.1836, 6)
+    expect(c.tipoLigacao).toBe('Bifásico')
+    expect(c.modoOperacao).toBe('Autoconsumo + Backup')
+  })
+
+  it('descritivos ausentes voltam como null, nunca 0 ou string vazia', () => {
+    const c = rowToCompleta({
+      id: 's1', nome: 'X', cliente_nome: null, cliente_cidade: null, cliente_uf: null,
+      concessionaria: null, responsavel_tecnico: null,
+      potencia_kwp: 0, investimento_total: 0, vpl: 0, tir: 0, payback_anos: null,
+      snapshot: {}, created_at: '2026-07-19T12:00:00Z',
+      azimute: null, inclinacao: null, latitude: null, longitude: null,
+      altitude: null, tipo_ligacao: null, tensao_nominal: null, modo_operacao: null,
+    })
+    // 0 seria um azimute válido (Norte); null tem de continuar null.
+    expect(c.azimute).toBeNull()
+    expect(c.latitude).toBeNull()
+    expect(c.tipoLigacao).toBeNull()
+  })
+})

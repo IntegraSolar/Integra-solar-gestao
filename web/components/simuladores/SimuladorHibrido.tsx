@@ -34,18 +34,22 @@ import {
 import type { SimulacaoResumo } from '@/lib/simuladores/hibrido/simulacoes-schemas'
 import { montarSnapshot, lerSnapshot, mesclarEquipamentos } from '@/lib/simuladores/hibrido/snapshot'
 import {
-  HibridoIdentificacao, IDENTIFICACAO_INICIAL, type Identificacao,
+  HibridoIdentificacao, DADOS_PROJETO_INICIAL, type DadosProjeto,
 } from './HibridoIdentificacao'
 import { HibridoSimulacoesSalvas } from './HibridoSimulacoesSalvas'
+import { gerarMemorialPdf } from '@/lib/simuladores/hibrido/memorial-pdf'
+import { gerarRelatorioPdf } from '@/lib/simuladores/hibrido/relatorio-pdf'
+import type { EmpresaProposta } from '@/lib/simuladores/proposta-empresa'
 
 type Props = {
   equipamentos: EquipamentosDisponiveis
   biblioteca: CargaBiblioteca[]
   simulacoes: SimulacaoResumo[]
+  empresa: EmpresaProposta
 }
 
 export function SimuladorHibrido({
-  equipamentos: equipamentosIniciais, biblioteca: bibliotecaInicial, simulacoes,
+  equipamentos: equipamentosIniciais, biblioteca: bibliotecaInicial, simulacoes, empresa,
 }: Props) {
   const [campos, setCampos] = useState<CamposHibrido>(CAMPOS_INICIAIS)
   const [cargas, setCargas] = useState<Carga[]>([])
@@ -53,7 +57,7 @@ export function SimuladorHibrido({
   const [camposFin, setCamposFin] = useState<CamposFinanceiro>(() =>
     camposFinanceiroIniciais(new Date().getFullYear())
   )
-  const [identificacao, setIdentificacao] = useState<Identificacao>(IDENTIFICACAO_INICIAL)
+  const [dadosProjeto, setDadosProjeto] = useState<DadosProjeto>(DADOS_PROJETO_INICIAL)
   // Catálogo pode crescer ao reabrir uma simulação cujo equipamento saiu do cadastro.
   const [equipamentos, setEquipamentos] = useState(equipamentosIniciais)
   const [msg, setMsg] = useState<{ text: string; erro: boolean } | null>(null)
@@ -83,6 +87,34 @@ export function SimuladorHibrido({
   )
   const temTarifa = paramsFin.tarifas.tarifaKwh > 0
 
+  const baseDocumento = {
+    dados: dadosProjeto,
+    projeto: input.projeto,
+    resultado,
+    painel: input.painel,
+    inversor: input.inversor,
+    bateria: input.bateria,
+    // Vem do painel avançado, não de DadosProjeto.
+    tipoSistema: campos.tipoSistema,
+  }
+
+  async function memorialPdf() {
+    await gerarMemorialPdf(baseDocumento, empresa)
+  }
+
+  async function relatorioPdf() {
+    await gerarRelatorioPdf(
+      {
+        ...baseDocumento,
+        financeiro,
+        economiaAno1,
+        camposFin,
+        dataEmissao: new Date(),
+      },
+      empresa
+    )
+  }
+
   function salvar() {
     const snapshot = montarSnapshot(campos, camposFin, cargas, {
       painel: input.painel,
@@ -90,14 +122,23 @@ export function SimuladorHibrido({
       bateria: input.bateria,
     })
     start(async () => {
+      const num = (v: string) => (v.trim() === '' ? null : Number(v))
       const res = await salvarSimulacaoHibrido({
-        nome: identificacao.nome,
+        nome: dadosProjeto.nome,
         snapshot,
-        clienteNome: identificacao.clienteNome || null,
-        clienteCidade: identificacao.clienteCidade || null,
-        clienteUf: identificacao.clienteUf || null,
-        concessionaria: identificacao.concessionaria || null,
-        responsavelTecnico: identificacao.responsavelTecnico || null,
+        clienteNome: dadosProjeto.clienteNome || null,
+        clienteCidade: dadosProjeto.clienteCidade || null,
+        clienteUf: dadosProjeto.clienteUf || null,
+        concessionaria: dadosProjeto.concessionaria || null,
+        responsavelTecnico: dadosProjeto.responsavelTecnico || null,
+        azimute: num(dadosProjeto.azimute),
+        inclinacao: num(dadosProjeto.inclinacao),
+        latitude: num(dadosProjeto.latitude),
+        longitude: num(dadosProjeto.longitude),
+        altitude: num(dadosProjeto.altitude),
+        tipoLigacao: dadosProjeto.tipoLigacao || null,
+        tensaoNominal: num(dadosProjeto.tensaoNominal),
+        modoOperacao: dadosProjeto.modoOperacao || null,
         potenciaKwp: resultado.dimensionamento.potenciaInstaladaKwp,
         investimentoTotal: financeiro.capex.investimentoTotal,
         vpl: financeiro.indicadores.vpl,
@@ -123,13 +164,22 @@ export function SimuladorHibrido({
       setCampos(snap.campos)
       setCamposFin(snap.camposFin)
       setCargas(snap.cargas)
-      setIdentificacao({
+      const txt = (v: number | null) => (v === null ? '' : String(v))
+      setDadosProjeto({
         nome: sim.nome,
         clienteNome: sim.clienteNome ?? '',
         clienteCidade: sim.clienteCidade ?? '',
         clienteUf: sim.clienteUf ?? '',
         concessionaria: sim.concessionaria ?? '',
         responsavelTecnico: sim.responsavelTecnico ?? '',
+        azimute: txt(sim.azimute),
+        inclinacao: txt(sim.inclinacao),
+        latitude: txt(sim.latitude),
+        longitude: txt(sim.longitude),
+        altitude: txt(sim.altitude),
+        tipoLigacao: sim.tipoLigacao ?? '',
+        tensaoNominal: txt(sim.tensaoNominal),
+        modoOperacao: sim.modoOperacao ?? '',
       })
       setMsg({ text: `Simulação "${sim.nome}" reaberta.`, erro: false })
     })
@@ -172,7 +222,7 @@ export function SimuladorHibrido({
       </div>
 
       <div className="space-y-4">
-        <HibridoIdentificacao identificacao={identificacao} onChange={setIdentificacao} />
+        <HibridoIdentificacao dados={dadosProjeto} onChange={setDadosProjeto} />
         <HibridoInputsProjeto campos={campos} onChange={setCampos} />
         <HibridoSelecaoEquipamentos campos={campos} equipamentos={equipamentos} onChange={setCampos} />
 
@@ -213,7 +263,31 @@ export function SimuladorHibrido({
           </>
         )}
 
-        <div className="flex justify-end">
+        <div className="flex flex-wrap justify-end gap-2">
+          <button
+            type="button"
+            data-testid="btn-memorial-pdf"
+            disabled={!input.painel || !input.inversor}
+            onClick={memorialPdf}
+            className="rounded border px-4 py-2 text-sm font-semibold disabled:opacity-40"
+          >
+            Memorial descritivo (PDF)
+          </button>
+          <button
+            type="button"
+            data-testid="btn-relatorio-pdf"
+            // Também exige tarifa: sem ela a economia é zero e o relatório sairia
+            // com VPL negativo e "não se paga no horizonte" — um documento dizendo
+            // ao cliente que o projeto é inviável, só porque um campo ficou em
+            // branco. A tela já suprime esses blocos por isso (Fase 3b2); o PDF,
+            // que sai do escritório, não pode ser menos criterioso.
+            disabled={!input.painel || !input.inversor || !temTarifa}
+            title={!temTarifa ? 'Informe a tarifa de energia para emitir o relatório.' : undefined}
+            onClick={relatorioPdf}
+            className="rounded border px-4 py-2 text-sm font-semibold disabled:opacity-40"
+          >
+            Relatório executivo (PDF)
+          </button>
           <button
             type="button"
             disabled={pending}

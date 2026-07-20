@@ -1,4 +1,5 @@
-// web/lib/simuladores/viabilidade/proposta-empresa.ts
+// web/lib/simuladores/proposta-empresa.ts
+// Dados cadastrais da empresa para os PDFs. Compartilhado entre os simuladores.
 'use server'
 
 import { createClient } from '@/lib/supabase/server'

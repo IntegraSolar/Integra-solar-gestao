@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import {
-  HibridoIdentificacao, IDENTIFICACAO_INICIAL, type Identificacao,
+  HibridoIdentificacao, DADOS_PROJETO_INICIAL, type DadosProjeto,
 } from '@/components/simuladores/HibridoIdentificacao'
 
 vi.mock('@/lib/simuladores/hibrido/simulacoes-actions', () => ({
@@ -16,8 +16,8 @@ vi.mock('@/lib/simuladores/hibrido/simulacoes-actions', () => ({
 }))
 
 function IdentComEstado() {
-  const [ident, setIdent] = useState<Identificacao>(IDENTIFICACAO_INICIAL)
-  return <HibridoIdentificacao identificacao={ident} onChange={setIdent} />
+  const [ident, setIdent] = useState<DadosProjeto>(DADOS_PROJETO_INICIAL)
+  return <HibridoIdentificacao dados={ident} onChange={setIdent} />
 }
 
 describe('HibridoIdentificacao', () => {
@@ -111,7 +111,7 @@ const EQUIP_UI = { paineis: [PAINEL], inversores: [INVERSOR], baterias: [BATERIA
 describe('SimuladorHibrido — salvar e reabrir', () => {
   it('salvar envia o nome, o resumo e o snapshot', async () => {
     const user = userEvent.setup()
-    render(<SimuladorHibrido equipamentos={EQUIP_UI} biblioteca={[]} simulacoes={[]} />)
+    render(<SimuladorHibrido equipamentos={EQUIP_UI} biblioteca={[]} simulacoes={[]} empresa={{ nome: 'Empresa Teste', cnpj: null, endereco: null, telefone: null, email: null, logoBase64: null }} />)
 
     await user.type(screen.getByTestId('ident-nome'), 'Projeto Palmas')
     await user.selectOptions(screen.getByTestId('sel-painel'), PAINEL.id)
@@ -129,7 +129,7 @@ describe('SimuladorHibrido — salvar e reabrir', () => {
   it('reabrir pede confirmação; cancelar não muda nada', async () => {
     const user = userEvent.setup()
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
-    render(<SimuladorHibrido equipamentos={EQUIP_UI} biblioteca={[]} simulacoes={[SIM]} />)
+    render(<SimuladorHibrido equipamentos={EQUIP_UI} biblioteca={[]} simulacoes={[SIM]} empresa={{ nome: 'Empresa Teste', cnpj: null, endereco: null, telefone: null, email: null, logoBase64: null }} />)
 
     await user.click(screen.getByTestId('btn-reabrir-s1'))
     expect(confirmSpy).toHaveBeenCalled()
@@ -150,9 +150,11 @@ describe('SimuladorHibrido — salvar e reabrir', () => {
     vi.mocked(getSimulacaoHibrido).mockResolvedValueOnce({
       ...SIM, clienteUf: 'TO', concessionaria: 'ENERGISA',
       responsavelTecnico: 'Patrick', snapshot,
+      azimute: null, inclinacao: null, latitude: null, longitude: null,
+      altitude: null, tipoLigacao: null, tensaoNominal: null, modoOperacao: null,
     })
 
-    render(<SimuladorHibrido equipamentos={EQUIP_UI} biblioteca={[]} simulacoes={[SIM]} />)
+    render(<SimuladorHibrido equipamentos={EQUIP_UI} biblioteca={[]} simulacoes={[SIM]} empresa={{ nome: 'Empresa Teste', cnpj: null, endereco: null, telefone: null, email: null, logoBase64: null }} />)
     await user.click(screen.getByTestId('btn-reabrir-s1'))
 
     expect(await screen.findByDisplayValue('Projeto Palmas')).toBeInTheDocument()
@@ -168,9 +170,11 @@ describe('SimuladorHibrido — salvar e reabrir', () => {
     vi.mocked(getSimulacaoHibrido).mockResolvedValueOnce({
       ...SIM, clienteUf: null, concessionaria: null, responsavelTecnico: null,
       snapshot: { versao: 99 },
+      azimute: null, inclinacao: null, latitude: null, longitude: null,
+      altitude: null, tipoLigacao: null, tensaoNominal: null, modoOperacao: null,
     })
 
-    render(<SimuladorHibrido equipamentos={EQUIP_UI} biblioteca={[]} simulacoes={[SIM]} />)
+    render(<SimuladorHibrido equipamentos={EQUIP_UI} biblioteca={[]} simulacoes={[SIM]} empresa={{ nome: 'Empresa Teste', cnpj: null, endereco: null, telefone: null, email: null, logoBase64: null }} />)
     const antes = (screen.getByTestId('temp-media') as HTMLInputElement).value
     await user.click(screen.getByTestId('btn-reabrir-s1'))
 
