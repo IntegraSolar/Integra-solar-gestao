@@ -1,21 +1,8 @@
 'use client'
 
 import { useState, useEffect, use } from 'react'
-
-type PropostaData = {
-  titulo: string
-  empresa: { nome: string; cnpj: string | null; telefone: string | null; logo_url: string | null }
-  cliente: { nome: string; cidade: string | null }
-  sistema: {
-    paineis: string
-    inversores: string
-    potencia_kwp: string
-    geracao_mensal: string
-  }
-  investimento: { valor: string }
-  datas: { emitida_em: string; valida_ate: string }
-  tema: { cor_principal: string; cor_secundaria: string }
-}
+// Tipo vem da fonte da verdade: se o backend mudar um campo, o build acusa aqui.
+import type { PropostaPublica as PropostaData } from '@/lib/proposals/proposta-publica'
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
