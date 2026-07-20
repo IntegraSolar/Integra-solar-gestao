@@ -34,6 +34,11 @@ export const PREMISSAS_DEFAULT: Readonly<Premissas> = {
   horizonteAnos: 25,
   anoInicial: 2025,
   // Derivada do ano corrente: a escala da Lei 14.300 é por ano-calendário.
+  // `new Date().getFullYear()` é avaliado uma única vez, na carga do módulo —
+  // reflete o ano em que o processo iniciou. Em deploys que reciclam a
+  // instância com frequência (Vercel, serverless) isso é inofensivo; um
+  // servidor de longa duração que atravessasse a virada do ano sem redeploy
+  // manteria a rampa do ano anterior até ser reiniciado.
   fioBSchedule: fioBSchedule(new Date().getFullYear(), 25),
 }
 

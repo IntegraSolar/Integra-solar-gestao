@@ -38,7 +38,8 @@ describe('montarViabilidadeInput (golden RGE)', () => {
     expect(alt.reajusteTarifaAnual).toBe(0.08)
   })
   it('não compartilha a ref do fioBSchedule default (cópia defensiva)', () => {
+    const original = PREMISSAS_DEFAULT.fioBSchedule[0]
     montarViabilidadeInput(CAMPOS, RGE).fioBSchedule[0] = 99
-    expect(PREMISSAS_DEFAULT.fioBSchedule[0]).toBe(0.6)
+    expect(PREMISSAS_DEFAULT.fioBSchedule[0]).toBe(original)
   })
 })

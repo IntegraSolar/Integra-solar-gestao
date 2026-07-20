@@ -68,6 +68,12 @@ export const PRECOS_CAPEX_PADRAO: PrecosCapex = {
 /**
  * Rampa do TUSD Fio B da Lei 14.300 para conexão no ano corrente.
  * A tela permite escolher outro ano de conexão; esta constante é só o default.
+ *
+ * `new Date().getFullYear()` é avaliado uma única vez, na carga do módulo — o
+ * valor reflete o ano em que o processo iniciou. Em deploys que reciclam a
+ * instância com frequência (Vercel, serverless) isso é inofensivo; um servidor
+ * de longa duração que atravessasse a virada do ano sem redeploy manteria a
+ * rampa do ano anterior até ser reiniciado.
  */
 export const FIO_B_SCHEDULE_14300: number[] = fioBSchedule(new Date().getFullYear(), 25)
 
