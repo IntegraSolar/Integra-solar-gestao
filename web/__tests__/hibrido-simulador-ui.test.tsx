@@ -98,3 +98,45 @@ describe('HibridoSelecaoEquipamentos', () => {
     expect(aviso.querySelector('a')).toHaveAttribute('href', '/simuladores/hibrido-offgrid/equipamentos')
   })
 })
+
+import { HibridoAlertas } from '@/components/simuladores/HibridoAlertas'
+import type { Alerta } from '@/lib/simuladores/hibrido/types'
+
+const ALERTAS: Alerta[] = [
+  { codigo: 'SOBRETENSAO', severidade: 'erro', mensagem: 'Tensão da string no frio excede a tensão CC máxima do inversor.', valor: 520, limite: 500 },
+  { codigo: 'OVERSIZING_ALTO', severidade: 'aviso', mensagem: 'Relação DC/AC acima do máximo recomendado.', valor: 1.5, limite: 1.35 },
+  { codigo: 'CORRENTE_MPPT', severidade: 'ok', mensagem: 'Corrente por MPPT dentro do limite.', valor: 16, limite: 22 },
+]
+
+describe('HibridoAlertas', () => {
+  it('lista todos os alertas recebidos', () => {
+    render(<HibridoAlertas alertas={ALERTAS} />)
+    expect(screen.getByTestId('alerta-SOBRETENSAO')).toBeInTheDocument()
+    expect(screen.getByTestId('alerta-OVERSIZING_ALTO')).toBeInTheDocument()
+    expect(screen.getByTestId('alerta-CORRENTE_MPPT')).toBeInTheDocument()
+  })
+
+  it('distingue erro, aviso e ok', () => {
+    render(<HibridoAlertas alertas={ALERTAS} />)
+    expect(screen.getByTestId('alerta-SOBRETENSAO')).toHaveAttribute('data-severidade', 'erro')
+    expect(screen.getByTestId('alerta-OVERSIZING_ALTO')).toHaveAttribute('data-severidade', 'aviso')
+    expect(screen.getByTestId('alerta-CORRENTE_MPPT')).toHaveAttribute('data-severidade', 'ok')
+  })
+
+  it('resume quantos erros e avisos existem', () => {
+    render(<HibridoAlertas alertas={ALERTAS} />)
+    expect(screen.getByTestId('alertas-resumo')).toHaveTextContent('1 erro')
+    expect(screen.getByTestId('alertas-resumo')).toHaveTextContent('1 aviso')
+  })
+
+  it('mostra valor e limite quando existem', () => {
+    render(<HibridoAlertas alertas={ALERTAS} />)
+    expect(screen.getByTestId('alerta-SOBRETENSAO')).toHaveTextContent('520')
+    expect(screen.getByTestId('alerta-SOBRETENSAO')).toHaveTextContent('500')
+  })
+
+  it('lista vazia mostra mensagem neutra', () => {
+    render(<HibridoAlertas alertas={[]} />)
+    expect(screen.getByText(/Nenhuma verificação/)).toBeInTheDocument()
+  })
+})
