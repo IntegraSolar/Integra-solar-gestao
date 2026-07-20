@@ -140,3 +140,46 @@ describe('HibridoAlertas', () => {
     expect(screen.getByText(/Nenhuma verificação/)).toBeInTheDocument()
   })
 })
+
+import { SimuladorHibrido } from '@/components/simuladores/SimuladorHibrido'
+import { montarHibridoInput, montarPremissas } from '@/lib/simuladores/hibrido/montar-input'
+import { calcularHibrido } from '@/lib/simuladores/hibrido'
+
+describe('SimuladorHibrido (integração — a tela mostra o que o motor calculou)', () => {
+  it('com painel selecionado e 16 módulos forçados, exibe o kWp e a produção do motor', async () => {
+    const user = userEvent.setup()
+    render(<SimuladorHibrido equipamentos={EQUIP} biblioteca={[]} />)
+
+    await user.selectOptions(screen.getByTestId('sel-painel'), PAINEL.id)
+    await user.selectOptions(screen.getByTestId('sel-inversor'), INVERSOR.id)
+    await user.click(screen.getByTestId('btn-toggle-avancado'))
+    await user.type(screen.getByTestId('av-numModulos'), '16')
+
+    // O esperado é calculado pelo MOTOR, com os mesmos campos que a tela tem.
+    const campos: CamposHibrido = {
+      ...CAMPOS_INICIAIS,
+      painelId: PAINEL.id, inversorId: INVERSOR.id, numModulos: '16',
+    }
+    const esperado = calcularHibrido(
+      montarHibridoInput(campos, EQUIP, []),
+      montarPremissas(campos)
+    )
+
+    const fmt = (v: number, c = 2) =>
+      v.toLocaleString('pt-BR', { minimumFractionDigits: c, maximumFractionDigits: c })
+
+    expect(screen.getByTestId('r-kwp')).toHaveTextContent(fmt(esperado.dimensionamento.potenciaInstaladaKwp))
+    expect(screen.getByTestId('r-prod-anual')).toHaveTextContent(fmt(esperado.dimensionamento.producaoAnualKwh, 0))
+    expect(screen.getByTestId('r-num-modulos')).toHaveTextContent('16')
+  })
+
+  it('sem nada selecionado mostra o alerta de dados insuficientes', () => {
+    render(<SimuladorHibrido equipamentos={EQUIP} biblioteca={[]} />)
+    expect(screen.getByTestId('alerta-DADOS_INSUFICIENTES')).toBeInTheDocument()
+  })
+
+  it('sem equipamentos cadastrados orienta o usuário ao cadastro', () => {
+    render(<SimuladorHibrido equipamentos={VAZIO} biblioteca={[]} />)
+    expect(screen.getByTestId('aviso-sem-equipamentos')).toBeInTheDocument()
+  })
+})
