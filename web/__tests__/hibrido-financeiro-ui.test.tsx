@@ -86,3 +86,41 @@ describe('HibridoResultadosCapex', () => {
     )
   })
 })
+
+import { HibridoIndicadores } from '@/components/simuladores/HibridoIndicadores'
+import type { IndicadoresFinanceiros } from '@/lib/simuladores/hibrido/types'
+
+describe('HibridoIndicadores', () => {
+  const r = calcularFinanceiro({ fisico: FISICO_TESTE, tarifas: TARIFAS_TESTE })
+
+  it('exibe o VPL e a TIR que o motor devolveu', () => {
+    render(<HibridoIndicadores indicadores={r.indicadores} />)
+    expect(screen.getByTestId('ind-vpl')).toHaveTextContent(
+      r.indicadores.vpl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    )
+    expect(screen.getByTestId('ind-tir')).toHaveTextContent(
+      (r.indicadores.tir * 100).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+    )
+  })
+
+  it('payback null aparece como "não se paga no horizonte"', () => {
+    const semPayback: IndicadoresFinanceiros = {
+      ...r.indicadores, paybackSimplesAnos: null, paybackDescontadoAnos: null,
+    }
+    render(<HibridoIndicadores indicadores={semPayback} />)
+    expect(screen.getByTestId('ind-payback-simples')).toHaveTextContent('não se paga no horizonte')
+    expect(screen.getByTestId('ind-payback-descontado')).toHaveTextContent('não se paga no horizonte')
+  })
+
+  it('payback preenchido aparece em anos', () => {
+    render(<HibridoIndicadores indicadores={r.indicadores} />)
+    expect(screen.getByTestId('ind-payback-simples')).toHaveTextContent('anos')
+  })
+
+  it('exibe LCOE, ROI e economia acumulada', () => {
+    render(<HibridoIndicadores indicadores={r.indicadores} />)
+    expect(screen.getByTestId('ind-lcoe')).toBeInTheDocument()
+    expect(screen.getByTestId('ind-roi')).toBeInTheDocument()
+    expect(screen.getByTestId('ind-economia-acumulada')).toBeInTheDocument()
+  })
+})
