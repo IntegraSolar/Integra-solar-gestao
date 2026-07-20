@@ -4,7 +4,7 @@ import { isSimuladoresEnabled } from '@/lib/simuladores/access'
 import {
   listCargasBiblioteca, seedCargasBiblioteca,
 } from '@/lib/simuladores/hibrido/cargas-biblioteca-actions'
-import { CargasBuilder } from '@/components/simuladores/CargasBuilder'
+import { CargasPageClient } from '@/components/simuladores/CargasPageClient'
 
 export default async function CargasPage() {
   if (!(await isSimuladoresEnabled())) redirect('/simuladores')
@@ -15,5 +15,5 @@ export default async function CargasPage() {
     await seedCargasBiblioteca()
     biblioteca = await listCargasBiblioteca()
   }
-  return <CargasBuilder biblioteca={biblioteca} />
+  return <CargasPageClient biblioteca={biblioteca} />
 }
