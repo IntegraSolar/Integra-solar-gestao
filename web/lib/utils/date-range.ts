@@ -33,6 +33,16 @@ export function getMonthDateRange(month: number, year: number): { startDate: str
   return { startDate, endDate }
 }
 
+/**
+ * Data de hoje em BRT como YYYY-MM-DD.
+ * `new Date().toISOString()` daria o dia seguinte entre 21h e 00h BRT, o que faria
+ * uma parcela que vence hoje ser classificada como atrasada.
+ */
+export function getTodayBRT(now: Date = new Date()): string {
+  const brt = new Date(now.getTime() + BRT_OFFSET_MINUTES * 60 * 1000)
+  return brt.toISOString().split('T')[0]
+}
+
 function getLastDay(month: number, year: number): number {
   return new Date(year, month, 0).getDate()
 }
