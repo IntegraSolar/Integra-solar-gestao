@@ -1,9 +1,16 @@
 import { describe, it, expect } from 'vitest'
 import { calcularEconomiaAno } from '@/lib/simuladores/hibrido/economia'
 import { PREMISSAS_FINANCEIRAS_PADRAO } from '@/lib/simuladores/hibrido/premissas'
+import { fioBSchedule } from '@/lib/simuladores/fio-b'
 import { FISICO, TARIFAS } from './fixtures/hibrido-fixture'
 
-const comRampa = { fisico: FISICO, tarifas: TARIFAS, premissas: PREMISSAS_FINANCEIRAS_PADRAO }
+// Escala fixada em 2026 de propósito: estes testes verificam o comportamento da
+// rampa, então não podem depender do ano em que a suíte roda.
+const comRampa = {
+  fisico: FISICO,
+  tarifas: TARIFAS,
+  premissas: { ...PREMISSAS_FINANCEIRAS_PADRAO, fioBSchedule: fioBSchedule(2026, 25) },
+}
 const semRampa = {
   ...comRampa,
   premissas: { ...PREMISSAS_FINANCEIRAS_PADRAO, fioBSchedule: new Array(25).fill(1) },

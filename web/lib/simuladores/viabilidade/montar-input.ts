@@ -1,6 +1,7 @@
 // web/lib/simuladores/viabilidade/montar-input.ts
 import type { ViabilidadeInput, ModalidadeGD } from './types'
 import { concessionariaParaInputs, type ConcessionariaBruta } from './concessionaria'
+import { fioBSchedule } from '../fio-b'
 
 // Premissas do cenário (defaults). Valores EXATOS do golden da Peça 1.
 export type Premissas = {
@@ -32,7 +33,8 @@ export const PREMISSAS_DEFAULT: Readonly<Premissas> = {
   prazoMeses: 12,
   horizonteAnos: 25,
   anoInicial: 2025,
-  fioBSchedule: [0.6, 0.75, 0.9, ...Array<number>(22).fill(1)],
+  // Derivada do ano corrente: a escala da Lei 14.300 é por ano-calendário.
+  fioBSchedule: fioBSchedule(new Date().getFullYear(), 25),
 }
 
 // Campos coletados na tela (por-negócio). Modalidade só GD1/GD2 (motor não faz GD3 ainda).
