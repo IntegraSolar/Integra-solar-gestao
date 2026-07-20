@@ -64,10 +64,6 @@ export function ProposalPricingReview({
   const [showAdjustModal, setShowAdjustModal] = useState(false)
   const [isSavingAdjust, startSavingAdjust] = useTransition()
 
-  // Condições de pagamento
-  const [valorEntrada, setValorEntrada] = useState(proposal.valor_entrada ?? 0)
-  const [numParcelas, setNumParcelas] = useState(proposal.num_parcelas ?? 0)
-
   // Variáveis editáveis — usa overrides salvos da última geração, ou config global como fallback
   const ov = proposal.pricing_overrides
   const [vInstalacao, setVInstalacao] = useState(ov?.valor_instalacao_por_placa ?? orgConfig.valor_instalacao_por_placa ?? 0)
@@ -152,9 +148,6 @@ export function ProposalPricingReview({
   // Preço exibido no resumo: valor final negociado (com ajuste) ou valor calculado
   const precoExibido = ajusteRecalculado?.preco_final ?? totals.venda
 
-  // Valor das parcelas calculado automaticamente
-  const valorParcelas = numParcelas > 0 ? Math.max(0, precoExibido - valorEntrada) / numParcelas : 0
-
   async function handleApplyAdjustment(data: {
     ajuste_tipo: string
     ajuste_valor: number
@@ -212,9 +205,6 @@ export function ProposalPricingReview({
           body: JSON.stringify({
             proposalId: proposal.id,
             templateId: selectedTemplateId,
-            valor_entrada: valorEntrada,
-            valor_parcelas: valorParcelas,
-            num_parcelas: numParcelas,
             overrides: {
               valor_instalacao_por_placa: vInstalacao,
               valor_projeto_por_kwp: vProjeto,
@@ -525,29 +515,6 @@ export function ProposalPricingReview({
               </div>
             </div>
           )}
-
-          {/* Condições de pagamento */}
-          <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--theme-card-border)' }}>
-            <div className="px-4 py-3" style={{ background: 'var(--theme-surface)' }}>
-              <p className="text-xs font-semibold text-white/50 uppercase tracking-wide">Condições de Pagamento</p>
-            </div>
-            <div className="p-4 grid grid-cols-3 gap-4">
-              <div>
-                <label className={labelCls}>Entrada (R$)</label>
-                <input type="number" min="0" step="0.01" value={valorEntrada} onChange={(e) => setValorEntrada(parseFloat(e.target.value) || 0)} className={varInputCls} />
-              </div>
-              <div>
-                <label className={labelCls}>Nº de parcelas</label>
-                <input type="number" min="0" step="1" value={numParcelas} onChange={(e) => setNumParcelas(parseInt(e.target.value) || 0)} className={varInputCls} />
-              </div>
-              <div>
-                <label className={labelCls}>Valor da parcela</label>
-                <p className="px-3 py-2 rounded-xl text-sm text-white/70 border border-white/10" style={{ background: 'var(--theme-input-bg)' }}>
-                  {numParcelas > 0 ? formatCurrency(valorParcelas) : '—'}
-                </p>
-              </div>
-            </div>
-          </div>
 
           {/* Seleção de template */}
           <div>
