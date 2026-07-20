@@ -11,7 +11,7 @@ export type SimuladorInfo = {
 // Fundação: todos "em_breve". Cada simulador vira 'disponivel' quando construído.
 export const SIMULADORES: SimuladorInfo[] = [
   { slug: 'viabilidade-usina',       titulo: 'Viabilidade de usina', descricao: 'ROI de usina de investimento',            icone: '📊', status: 'disponivel' },
-  { slug: 'hibrido-offgrid',         titulo: 'Híbrido / Off-grid',   descricao: 'Dimensionamento e autonomia de baterias', icone: '🔋', status: 'em_construcao' },
+  { slug: 'hibrido-offgrid',         titulo: 'Híbrido / Off-grid',   descricao: 'Dimensionamento e autonomia de baterias', icone: '🔋', status: 'disponivel' },
   { slug: 'conta-pos-instalacao',    titulo: 'Conta pós-instalação', descricao: 'Lei 14.300 e payback',                    icone: '⚡', status: 'em_breve' },
   { slug: 'parcelamento-cartao',     titulo: 'Parcelamento no cartão', descricao: 'Simula parcelas no cartão',             icone: '💳', status: 'disponivel' },
   { slug: 'financiamento',           titulo: 'Financiamento',        descricao: 'Parcela e juros',                         icone: '🏦', status: 'em_breve' },
