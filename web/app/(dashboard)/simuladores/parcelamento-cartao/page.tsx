@@ -2,7 +2,7 @@ export const metadata = { title: 'Parcelamento no cartão' }
 import { redirect } from 'next/navigation'
 import { isSimuladoresEnabled } from '@/lib/simuladores/access'
 import { listCartaoTabelas } from '@/lib/simuladores/cartao/tabelas-actions'
-import { getEmpresaParaProposta } from '@/lib/simuladores/viabilidade/proposta-empresa'
+import { getEmpresaParaProposta } from '@/lib/simuladores/proposta-empresa'
 import { SimuladorCartao } from '@/components/simuladores/SimuladorCartao'
 
 export default async function ParcelamentoCartaoPage() {

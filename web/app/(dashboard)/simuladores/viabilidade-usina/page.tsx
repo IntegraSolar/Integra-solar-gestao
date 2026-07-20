@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { isSimuladoresEnabled } from '@/lib/simuladores/access'
 import { listConcessionarias } from '@/lib/simuladores/viabilidade/concessionarias-actions'
 import { listSimulacoes } from '@/lib/simuladores/viabilidade/simulacoes-actions'
-import { getEmpresaParaProposta } from '@/lib/simuladores/viabilidade/proposta-empresa'
+import { getEmpresaParaProposta } from '@/lib/simuladores/proposta-empresa'
 import { SimuladorViabilidade } from '@/components/simuladores/SimuladorViabilidade'
 
 export default async function ViabilidadePage() {

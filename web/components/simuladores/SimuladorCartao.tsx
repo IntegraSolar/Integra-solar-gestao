@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import type { CartaoTabela } from '@/lib/simuladores/cartao/tabelas-actions'
 import { valorAParcelar, calcularTabelaCartao } from '@/lib/simuladores/cartao/calculo'
 import { gerarPropostaCartaoPdf } from '@/lib/simuladores/cartao/proposta-cartao-pdf'
-import type { EmpresaProposta } from '@/lib/simuladores/viabilidade/proposta-empresa'
+import type { EmpresaProposta } from '@/lib/simuladores/proposta-empresa'
 
 type Props = { tabelas: CartaoTabela[]; empresa: EmpresaProposta }
 const brl = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })

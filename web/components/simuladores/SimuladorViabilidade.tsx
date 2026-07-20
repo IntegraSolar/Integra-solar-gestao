@@ -5,7 +5,7 @@ import { salvarSimulacao, deleteSimulacao, type SimulacaoResumo } from '@/lib/si
 import { montarViabilidadeInput, PREMISSAS_DEFAULT, type CamposSimulador } from '@/lib/simuladores/viabilidade/montar-input'
 import { calcularViabilidade } from '@/lib/simuladores/viabilidade/engine'
 import { gerarPropostaPdf } from '@/lib/simuladores/viabilidade/proposta-pdf'
-import type { EmpresaProposta } from '@/lib/simuladores/viabilidade/proposta-empresa'
+import type { EmpresaProposta } from '@/lib/simuladores/proposta-empresa'
 
 type Props = { concessionarias: ConcessionariaRow[]; simulacoes: SimulacaoResumo[]; empresa: EmpresaProposta }
 

@@ -1,6 +1,6 @@
 // web/lib/simuladores/viabilidade/proposta-pdf.ts
 import type { ViabilidadeInput, ViabilidadeResultado } from './types'
-import type { EmpresaProposta } from './proposta-empresa'
+import type { EmpresaProposta } from '../proposta-empresa'
 
 export type DadosProposta = {
   empresa: EmpresaProposta
