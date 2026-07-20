@@ -13,6 +13,8 @@ import { LinhaDoTempo } from './blocos/LinhaDoTempo'
 import { FluxoInstalacao } from './blocos/FluxoInstalacao'
 import { ComoFunciona } from './blocos/ComoFunciona'
 import { Assinatura } from './blocos/Assinatura'
+import { Empresa } from './blocos/Empresa'
+import { Depoimentos } from './blocos/Depoimentos'
 
 const REGISTRO: Record<BlocoId, React.FC<{ dados: ApresentacaoData }>> = {
   cover: Cover,
@@ -27,6 +29,8 @@ const REGISTRO: Record<BlocoId, React.FC<{ dados: ApresentacaoData }>> = {
   fluxo: FluxoInstalacao,
   'como-funciona': ComoFunciona,
   assinatura: Assinatura,
+  empresa: Empresa,
+  depoimentos: Depoimentos,
 }
 
 export function Apresentacao({

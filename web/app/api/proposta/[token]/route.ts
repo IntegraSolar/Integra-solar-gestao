@@ -54,7 +54,9 @@ export async function GET(
       .maybeSingle(),
     (supabase as any)
       .from('org_config')
-      .select('nome_fantasia, razao_social, cnpj, telefone, email, cidade, cor_principal, cor_secundaria, logo_url')
+      .select(
+        'nome_fantasia, razao_social, cnpj, telefone, email, cidade, estado, endereco, bairro, numero, cor_principal, cor_secundaria, logo_url'
+      )
       .eq('organization_id', link.organization_id)
       .maybeSingle(),
   ])
@@ -79,6 +81,26 @@ export async function GET(
     cfg = data ?? null
   } catch {
     cfg = null
+  }
+
+  // Depoimentos: tabela pode ainda não existir em produção (migration não
+  // aplicada). Qualquer erro aqui não pode derrubar a rota pública.
+  let depoimentos: { autor: string; cidade: string | null; texto: string }[] = []
+  try {
+    const { data } = await (supabase as any)
+      .from('org_depoimentos')
+      .select('autor, cidade, texto')
+      .eq('organization_id', link.organization_id)
+      .eq('ativo', true)
+      .order('ordem', { ascending: true })
+      .limit(3)
+    depoimentos = (data ?? []).map((d: any) => ({
+      autor: d.autor,
+      cidade: d.cidade ?? null,
+      texto: d.texto,
+    }))
+  } catch {
+    depoimentos = []
   }
 
   return NextResponse.json({
@@ -108,10 +130,15 @@ export async function GET(
         telefone: org?.telefone ?? null,
         email: org?.email ?? null,
         cidade: org?.cidade ?? null,
+        estado: org?.estado ?? null,
+        endereco: org?.endereco ?? null,
+        bairro: org?.bairro ?? null,
+        numero: org?.numero ?? null,
         cor_principal: org?.cor_principal ?? null,
         cor_secundaria: org?.cor_secundaria ?? null,
         logo_url: org?.logo_url ?? null,
       },
+      depoimentos,
     }),
     config: normalizarConfig(cfg),
   })

@@ -24,10 +24,15 @@ function raw(over: Partial<ApresentacaoRaw> = {}): ApresentacaoRaw {
       telefone: '6332221111',
       email: 'contato@integrasolar.com.br',
       cidade: 'Palmas',
+      estado: 'TO',
+      endereco: 'Rua das Flores',
+      bairro: 'Centro',
+      numero: '123',
       cor_principal: '#10B981',
       cor_secundaria: '#1A3A5C',
       logo_url: 'https://exemplo/logo.png',
     },
+    depoimentos: [],
     ...over,
   }
 }
@@ -111,5 +116,51 @@ describe('montarApresentacao — dados incompletos não podem virar informação
   it('potência válida em watts continua sendo convertida', () => {
     const a = montarApresentacao(raw())
     expect(a.equipamentos.inversores.potencia).toBe('8 kW')
+  })
+})
+
+describe('montarApresentacao — bloco institucional (empresa)', () => {
+  it('monta o endereço resumido com todas as partes', () => {
+    const a = montarApresentacao(raw())
+    expect(a.empresa.endereco_resumido).toBe('Rua das Flores, 123 — Centro, Palmas/TO')
+  })
+
+  it('endereço sem bairro e sem número não gera vírgulas soltas nem traços órfãos', () => {
+    const r = raw()
+    r.org.bairro = null
+    r.org.numero = null
+    const a = montarApresentacao(r)
+    expect(a.empresa.endereco_resumido).toBe('Rua das Flores — Palmas/TO')
+  })
+
+  it('sem nenhuma parte de endereço, endereco_resumido é null', () => {
+    const r = raw()
+    r.org.endereco = null
+    r.org.numero = null
+    r.org.bairro = null
+    r.org.cidade = null
+    r.org.estado = null
+    const a = montarApresentacao(r)
+    expect(a.empresa.endereco_resumido).toBeNull()
+  })
+
+  it('expõe razão social no bloco de empresa', () => {
+    const a = montarApresentacao(raw())
+    expect(a.empresa.razao_social).toBe('Integra Solar LTDA')
+  })
+})
+
+describe('montarApresentacao — depoimentos', () => {
+  it('fica vazio quando a origem não traz nenhum', () => {
+    const a = montarApresentacao(raw())
+    expect(a.depoimentos).toEqual([])
+  })
+
+  it('repassa os depoimentos informados', () => {
+    const r = raw({
+      depoimentos: [{ autor: 'João', cidade: 'Palmas', texto: 'Excelente serviço' }],
+    })
+    const a = montarApresentacao(r)
+    expect(a.depoimentos).toEqual([{ autor: 'João', cidade: 'Palmas', texto: 'Excelente serviço' }])
   })
 })

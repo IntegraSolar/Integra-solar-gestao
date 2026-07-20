@@ -14,6 +14,8 @@ export const BLOCOS_VALIDOS = [
   'fluxo',
   'como-funciona',
   'assinatura',
+  'empresa',
+  'depoimentos',
 ] as const
 
 export type BlocoId = (typeof BLOCOS_VALIDOS)[number]
@@ -29,12 +31,15 @@ export type ApresentacaoData = {
   titulo: string
   empresa: {
     nome: string
+    razao_social: string | null
     cnpj: string | null
     telefone: string | null
     email: string | null
     cidade: string | null
     logo_url: string | null
+    endereco_resumido: string | null
   }
+  depoimentos: { autor: string; cidade: string | null; texto: string }[]
   cliente: { nome: string; cidade: string | null }
   sistema: {
     paineis: string
