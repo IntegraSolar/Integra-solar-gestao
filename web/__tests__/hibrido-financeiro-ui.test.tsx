@@ -46,7 +46,7 @@ describe('HibridoInputsFinanceiro', () => {
   it('ano de conexão vem preenchido e não aceita antes de 2023', () => {
     render(<FinanceiroComEstado />)
     const ano = screen.getByTestId('fin-anoConexao')
-    expect(ano).toHaveValue('2026')
+    expect(ano).toHaveValue(2026)
     expect(ano).toHaveAttribute('min', '2023')
   })
 })

@@ -76,8 +76,7 @@ export function HibridoInputsFinanceiro({ campos, onChange }: Props) {
       <div className="mt-4 max-w-40">
         <label className="text-[11px]">Ano de conexão
           <input
-            type="text"
-            inputMode="numeric"
+            type="number"
             min="2023"
             className={IN}
             data-testid="fin-anoConexao"
