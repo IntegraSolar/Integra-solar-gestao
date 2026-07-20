@@ -1,5 +1,5 @@
 'use client'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { calcularHibrido } from '@/lib/simuladores/hibrido'
 import {
@@ -28,19 +28,36 @@ import { HibridoResultadosCapex } from './HibridoResultadosCapex'
 import { HibridoResultadosEconomia } from './HibridoResultadosEconomia'
 import { HibridoIndicadores } from './HibridoIndicadores'
 import { HibridoProjecao } from './HibridoProjecao'
+import {
+  salvarSimulacaoHibrido, getSimulacaoHibrido, deleteSimulacaoHibrido,
+} from '@/lib/simuladores/hibrido/simulacoes-actions'
+import type { SimulacaoResumo } from '@/lib/simuladores/hibrido/simulacoes-schemas'
+import { montarSnapshot, lerSnapshot, mesclarEquipamentos } from '@/lib/simuladores/hibrido/snapshot'
+import {
+  HibridoIdentificacao, IDENTIFICACAO_INICIAL, type Identificacao,
+} from './HibridoIdentificacao'
+import { HibridoSimulacoesSalvas } from './HibridoSimulacoesSalvas'
 
 type Props = {
   equipamentos: EquipamentosDisponiveis
   biblioteca: CargaBiblioteca[]
+  simulacoes: SimulacaoResumo[]
 }
 
-export function SimuladorHibrido({ equipamentos, biblioteca: bibliotecaInicial }: Props) {
+export function SimuladorHibrido({
+  equipamentos: equipamentosIniciais, biblioteca: bibliotecaInicial, simulacoes,
+}: Props) {
   const [campos, setCampos] = useState<CamposHibrido>(CAMPOS_INICIAIS)
   const [cargas, setCargas] = useState<Carga[]>([])
   const [biblioteca, setBiblioteca] = useState<CargaBiblioteca[]>(bibliotecaInicial)
   const [camposFin, setCamposFin] = useState<CamposFinanceiro>(() =>
     camposFinanceiroIniciais(new Date().getFullYear())
   )
+  const [identificacao, setIdentificacao] = useState<Identificacao>(IDENTIFICACAO_INICIAL)
+  // Catálogo pode crescer ao reabrir uma simulação cujo equipamento saiu do cadastro.
+  const [equipamentos, setEquipamentos] = useState(equipamentosIniciais)
+  const [msg, setMsg] = useState<{ text: string; erro: boolean } | null>(null)
+  const [pending, start] = useTransition()
 
   // Uma única fonte: o input montado gera o resultado. Nenhum cálculo na UI.
   const premissas = useMemo(() => montarPremissas(campos), [campos])
@@ -66,6 +83,67 @@ export function SimuladorHibrido({ equipamentos, biblioteca: bibliotecaInicial }
   )
   const temTarifa = paramsFin.tarifas.tarifaKwh > 0
 
+  function salvar() {
+    const snapshot = montarSnapshot(campos, camposFin, cargas, {
+      painel: input.painel,
+      inversor: input.inversor,
+      bateria: input.bateria,
+    })
+    start(async () => {
+      const res = await salvarSimulacaoHibrido({
+        nome: identificacao.nome,
+        snapshot,
+        clienteNome: identificacao.clienteNome || null,
+        clienteCidade: identificacao.clienteCidade || null,
+        clienteUf: identificacao.clienteUf || null,
+        concessionaria: identificacao.concessionaria || null,
+        responsavelTecnico: identificacao.responsavelTecnico || null,
+        potenciaKwp: resultado.dimensionamento.potenciaInstaladaKwp,
+        investimentoTotal: financeiro.capex.investimentoTotal,
+        vpl: financeiro.indicadores.vpl,
+        tir: financeiro.indicadores.tir,
+        paybackAnos: financeiro.indicadores.paybackSimplesAnos,
+      })
+      if (res.error) { setMsg({ text: res.error, erro: true }); return }
+      setMsg({ text: res.success ?? 'Simulação salva.', erro: false })
+      window.location.reload()
+    })
+  }
+
+  function reabrir(id: string) {
+    if (!window.confirm('Reabrir esta simulação substitui o que está na tela. Continuar?')) return
+    start(async () => {
+      const sim = await getSimulacaoHibrido(id)
+      const snap = sim ? lerSnapshot(sim.snapshot) : null
+      if (!sim || !snap) {
+        setMsg({ text: 'Não foi possível ler esta simulação salva.', erro: true })
+        return
+      }
+      setEquipamentos((cat) => mesclarEquipamentos(cat, snap.equipamentos))
+      setCampos(snap.campos)
+      setCamposFin(snap.camposFin)
+      setCargas(snap.cargas)
+      setIdentificacao({
+        nome: sim.nome,
+        clienteNome: sim.clienteNome ?? '',
+        clienteCidade: sim.clienteCidade ?? '',
+        clienteUf: sim.clienteUf ?? '',
+        concessionaria: sim.concessionaria ?? '',
+        responsavelTecnico: sim.responsavelTecnico ?? '',
+      })
+      setMsg({ text: `Simulação "${sim.nome}" reaberta.`, erro: false })
+    })
+  }
+
+  function excluir(id: string) {
+    if (!window.confirm('Excluir esta simulação?')) return
+    start(async () => {
+      const res = await deleteSimulacaoHibrido(id)
+      if (res.error) { setMsg({ text: res.error, erro: true }); return }
+      window.location.reload()
+    })
+  }
+
   return (
     <div className="p-6">
       <div className="mb-1 flex items-center gap-2">
@@ -74,6 +152,15 @@ export function SimuladorHibrido({ equipamentos, biblioteca: bibliotecaInicial }
       <p className="mb-4 text-sm text-[var(--theme-text-muted,#6b7280)]">
         Dimensionamento fotovoltaico, banco de baterias, inversor e análise financeira completa.
       </p>
+
+      {msg && (
+        <div
+          className={`mb-3 text-sm ${msg.erro ? 'text-[#c0392b]' : 'text-[#1f9d55]'}`}
+          data-testid={msg.erro ? 'erro-simulacao' : 'ok-simulacao'}
+        >
+          {msg.text}
+        </div>
+      )}
 
       <div className="mb-4 flex flex-wrap gap-3 text-xs">
         <Link href="/simuladores/hibrido-offgrid/equipamentos" className="text-[#3b6fd6] underline">
@@ -85,6 +172,7 @@ export function SimuladorHibrido({ equipamentos, biblioteca: bibliotecaInicial }
       </div>
 
       <div className="space-y-4">
+        <HibridoIdentificacao identificacao={identificacao} onChange={setIdentificacao} />
         <HibridoInputsProjeto campos={campos} onChange={setCampos} />
         <HibridoSelecaoEquipamentos campos={campos} equipamentos={equipamentos} onChange={setCampos} />
 
@@ -124,6 +212,20 @@ export function SimuladorHibrido({ equipamentos, biblioteca: bibliotecaInicial }
             <HibridoProjecao projecao={financeiro.projecao} />
           </>
         )}
+
+        <div className="flex justify-end">
+          <button
+            type="button"
+            disabled={pending}
+            data-testid="btn-salvar-simulacao"
+            onClick={salvar}
+            className="rounded bg-[#FF9F40] px-4 py-2 text-sm font-semibold text-[#1a1a1a] disabled:opacity-60"
+          >
+            Salvar simulação
+          </button>
+        </div>
+
+        <HibridoSimulacoesSalvas simulacoes={simulacoes} onReabrir={reabrir} onExcluir={excluir} />
       </div>
     </div>
   )

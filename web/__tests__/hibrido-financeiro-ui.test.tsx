@@ -135,20 +135,20 @@ const EQUIP_UI = { paineis: [PAINEL], inversores: [INVERSOR], baterias: [BATERIA
 
 describe('SimuladorHibrido — integração financeira', () => {
   it('sem tarifa, suprime os resultados financeiros e mostra o aviso', () => {
-    render(<SimuladorHibrido equipamentos={EQUIP_UI} biblioteca={[]} />)
+    render(<SimuladorHibrido equipamentos={EQUIP_UI} biblioteca={[]} simulacoes={[]} />)
     expect(screen.getByTestId('aviso-sem-tarifa')).toBeInTheDocument()
     expect(screen.queryByTestId('ind-vpl')).not.toBeInTheDocument()
     expect(screen.queryByTestId('projecao')).not.toBeInTheDocument()
   })
 
   it('o CAPEX aparece mesmo sem tarifa (não depende dela)', () => {
-    render(<SimuladorHibrido equipamentos={EQUIP_UI} biblioteca={[]} />)
+    render(<SimuladorHibrido equipamentos={EQUIP_UI} biblioteca={[]} simulacoes={[]} />)
     expect(screen.getByTestId('capex-investimento-total')).toBeInTheDocument()
   })
 
   it('com tarifa informada, o VPL exibido bate com o que o motor devolve', async () => {
     const user = userEvent.setup()
-    render(<SimuladorHibrido equipamentos={EQUIP_UI} biblioteca={[]} />)
+    render(<SimuladorHibrido equipamentos={EQUIP_UI} biblioteca={[]} simulacoes={[]} />)
 
     await user.selectOptions(screen.getByTestId('sel-painel'), PAINEL.id)
     await user.selectOptions(screen.getByTestId('sel-inversor'), INVERSOR.id)
