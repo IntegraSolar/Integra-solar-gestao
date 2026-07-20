@@ -9,12 +9,39 @@ import { getCurrentUserData } from '@/lib/org/queries'
 import { requirePermission } from '@/lib/org/permissions'
 import { logAction } from '@/lib/auditoria/actions'
 import type { ActionResult } from './types'
+import { podeVerTodosOsLeads, podeAcessarLead } from './acesso'
 
 // ── Helpers ───────────────────────────────────────────────────────
 
 async function getOrgId(): Promise<string | null> {
   const user = await getCurrentUserData()
   return user?.membership?.organization.id ?? null
+}
+
+/**
+ * Garante que o usuário pode agir sobre este lead especificamente.
+ * A permissão de módulo diz o que ele pode fazer; esta checagem diz sobre quais
+ * leads — um vendedor não mexe no lead de outro.
+ */
+async function assertLeadDoUsuario(leadId: string): Promise<string | null> {
+  const user = await getCurrentUserData()
+  if (!user?.membership) return 'Não autenticado.'
+
+  const supabase = await createClient()
+  const { data: lead } = await supabase
+    .from('leads')
+    .select('assigned_to_user_id, created_by')
+    .eq('id', leadId)
+    .eq('organization_id', user.membership.organization.id)
+    .maybeSingle()
+
+  if (!lead) return 'Lead não encontrado.'
+
+  const verTodos = podeVerTodosOsLeads(user.membership.role, user.membership.permissions)
+  if (!podeAcessarLead(lead as any, user.profile.id, verTodos)) {
+    return 'Este lead pertence a outro vendedor.'
+  }
+  return null
 }
 
 
@@ -70,6 +97,9 @@ export async function updateLead(
   const orgId = await getOrgId()
   if (!orgId) return { error: 'Sem organização ativa.' }
 
+  const negado = await assertLeadDoUsuario(leadId)
+  if (negado) return { error: negado }
+
   const parsed = leadSchema.safeParse(Object.fromEntries(formData))
   if (!parsed.success) return { error: parsed.error.issues[0].message }
 
@@ -95,6 +125,10 @@ export async function deleteLead(leadId: string): Promise<ActionResult> {
   try { await requirePermission('leads', 'delete') } catch { return { error: 'Sem permissão para excluir leads.' } }
   const orgId = await getOrgId()
   if (!orgId) return { error: 'Sem organização ativa.' }
+
+  const negado = await assertLeadDoUsuario(leadId)
+  if (negado) return { error: negado }
+
   const supabase = await createClient()
   const { error } = await supabase.from('leads').delete().eq('id', leadId).eq('organization_id', orgId)
   if (error) return { error: error.message }
@@ -104,8 +138,13 @@ export async function deleteLead(leadId: string): Promise<ActionResult> {
 }
 
 export async function moveLeadStage(leadId: string, stageId: string): Promise<ActionResult> {
+  try { await requirePermission('leads', 'edit') } catch { return { error: 'Sem permissão para mover leads.' } }
   const orgId = await getOrgId()
   if (!orgId) return { error: 'Sem organização ativa.' }
+
+  const negado = await assertLeadDoUsuario(leadId)
+  if (negado) return { error: negado }
+
   const supabase = await createClient()
   const { error } = await supabase
     .from('leads')
@@ -495,6 +534,10 @@ export async function removeCommercialAdjustment(proposalId: string): Promise<Ac
 export async function convertLeadToClient(leadId: string): Promise<{ clientId?: string; error?: string }> {
   const orgId = await getOrgId()
   if (!orgId) return { error: 'Sem organização ativa.' }
+
+  const negado = await assertLeadDoUsuario(leadId)
+  if (negado) return { error: negado }
+
   const supabase = await createClient()
 
   // Buscar dados do lead
@@ -502,6 +545,7 @@ export async function convertLeadToClient(leadId: string): Promise<{ clientId?: 
     .from('leads')
     .select('name, phone, city')
     .eq('id', leadId)
+    .eq('organization_id', orgId)
     .single()
 
   if (!lead) return { error: 'Lead não encontrado.' }
