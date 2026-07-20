@@ -32,9 +32,10 @@ export async function GET(
 
   const supabase = createAdminClient()
 
+  // select('*') para tolerar a migration de visibilidade ainda não aplicada.
   const { data: link } = await (supabase as any)
     .from('client_portal_links')
-    .select('client_id, organization_id')
+    .select('*')
     .eq('token', token)
     .eq('active', true)
     .maybeSingle()
@@ -45,6 +46,8 @@ export async function GET(
 
   const clientId = link.client_id
   const orgId = link.organization_id
+  const showProgress = link.show_progress ?? true
+  const showHistory = link.show_history ?? true
 
   // Fetch organization info
   const { data: org } = await (supabase as any)
@@ -238,8 +241,9 @@ export async function GET(
       numero_processo: project.numero_processo,
       status: project.status,
     } : null,
-    timeline,
-    history,
+    visibility: { show_progress: showProgress, show_history: showHistory },
+    timeline: showProgress ? timeline : [],
+    history: showHistory ? history : [],
     notices,
     deadline: {
       start_date: startDate,

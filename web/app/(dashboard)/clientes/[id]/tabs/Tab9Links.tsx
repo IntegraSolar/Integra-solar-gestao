@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import type { Client } from '@/lib/clients/types'
-import { generateClientPortalLink } from '@/lib/clients/portal-actions'
+import { generateClientPortalLink, updateClientPortalVisibility, type PortalVisibility } from '@/lib/clients/portal-actions'
 import { generateInstallerLink } from '@/lib/obra/actions'
 import { generateProjetistaLink } from '@/lib/projetos/actions'
 import { Copy, Check, ExternalLink, Link2, RefreshCw } from 'lucide-react'
@@ -11,6 +11,46 @@ type LinksData = {
   installerToken: string | null
   projetistaToken: string | null
   portalToken: string | null
+  portalVisibility: PortalVisibility
+}
+
+const PORTAL_SECOES: { key: keyof PortalVisibility; label: string }[] = [
+  { key: 'show_progress', label: 'Andamento do Projeto' },
+  { key: 'show_history', label: 'Histórico do Projeto' },
+]
+
+/** Escolha das seções que o cliente enxerga no portal. */
+function PortalSecoes({
+  visibility,
+  onChange,
+  disabled,
+  hint,
+}: {
+  visibility: PortalVisibility
+  onChange: (v: PortalVisibility) => void
+  disabled?: boolean
+  hint: string
+}) {
+  return (
+    <div className="space-y-2 pt-1">
+      <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--theme-text-subtle)' }}>
+        Seções visíveis para o cliente
+      </p>
+      {PORTAL_SECOES.map(({ key, label }) => (
+        <label key={key} className="flex items-center gap-2 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={visibility[key]}
+            disabled={disabled}
+            onChange={(e) => onChange({ ...visibility, [key]: e.target.checked })}
+            className="w-3.5 h-3.5 accent-green-500"
+          />
+          <span className="text-xs" style={{ color: 'var(--theme-text-muted)' }}>{label}</span>
+        </label>
+      ))}
+      <p className="text-[11px]" style={{ color: 'var(--theme-text-subtle)' }}>{hint}</p>
+    </div>
+  )
 }
 
 function LinkCard({
@@ -21,6 +61,7 @@ function LinkCard({
   color,
   onGenerate,
   generating,
+  optionsSlot,
 }: {
   label: string
   description: string
@@ -29,6 +70,8 @@ function LinkCard({
   color: string
   onGenerate: () => void
   generating: boolean
+  /** Opções específicas do link, exibidas tanto antes quanto depois de gerar. */
+  optionsSlot?: React.ReactNode
 }) {
   const [copied, setCopied] = useState(false)
   const url = token ? `${typeof window !== 'undefined' ? window.location.origin : ''}${path}/${token}` : null
@@ -75,6 +118,7 @@ function LinkCard({
               <ExternalLink size={12} /> Abrir
             </a>
           </div>
+          {optionsSlot}
           <button
             type="button"
             onClick={onGenerate}
@@ -87,6 +131,8 @@ function LinkCard({
           </button>
         </>
       ) : (
+        <>
+        {optionsSlot}
         <button
           type="button"
           onClick={onGenerate}
@@ -96,6 +142,7 @@ function LinkCard({
         >
           {generating ? 'Gerando...' : `Gerar ${label}`}
         </button>
+        </>
       )}
     </div>
   )
@@ -105,6 +152,9 @@ export function Tab9Links({ client }: { client: Client }) {
   const [links, setLinks] = useState<LinksData | null>(null)
   const [loading, setLoading] = useState(true)
   const [generatingPortal, setGeneratingPortal] = useState(false)
+  const [portalVisibility, setPortalVisibility] = useState<PortalVisibility>({ show_progress: true, show_history: true })
+  const [savingVisibility, setSavingVisibility] = useState(false)
+  const [visibilityMsg, setVisibilityMsg] = useState<string | null>(null)
   const [generatingInstaller, setGeneratingInstaller] = useState(false)
   const [generatingProjetista, setGeneratingProjetista] = useState(false)
 
@@ -112,11 +162,14 @@ export function Tab9Links({ client }: { client: Client }) {
     fetch(`/api/clients/${client.id}/full-data`)
       .then((r) => r.json())
       .then((d) => {
+        const vis = d.portalVisibility ?? { show_progress: true, show_history: true }
         setLinks({
           installerToken: d.installerToken ?? null,
           projetistaToken: d.projetistaToken ?? null,
           portalToken: d.portalToken ?? null,
+          portalVisibility: vis,
         })
+        setPortalVisibility(vis)
         setLoading(false)
       })
       .catch(() => setLoading(false))
@@ -124,10 +177,32 @@ export function Tab9Links({ client }: { client: Client }) {
 
   async function handleGeneratePortal() {
     setGeneratingPortal(true)
-    const result = await generateClientPortalLink(client.id)
-    if (result.token) setLinks((prev) => prev ? { ...prev, portalToken: result.token! } : prev)
+    setVisibilityMsg(null)
+    // As seções escolhidas já valem no link recém-criado.
+    const result = await generateClientPortalLink(client.id, portalVisibility)
+    if (result.token) {
+      setLinks((prev) => prev ? { ...prev, portalToken: result.token!, portalVisibility } : prev)
+    }
+    if (result.error) setVisibilityMsg(result.error)
     setGeneratingPortal(false)
   }
+
+  // Altera as seções de um link já existente, sem invalidá-lo.
+  async function handleSaveVisibility() {
+    setSavingVisibility(true)
+    setVisibilityMsg(null)
+    const result = await updateClientPortalVisibility(client.id, portalVisibility)
+    setVisibilityMsg(result.error ?? 'Preferências salvas.')
+    if (!result.error) {
+      setLinks((prev) => prev ? { ...prev, portalVisibility } : prev)
+    }
+    setSavingVisibility(false)
+  }
+
+  const visibilityAlterada =
+    !!links &&
+    (links.portalVisibility.show_progress !== portalVisibility.show_progress ||
+      links.portalVisibility.show_history !== portalVisibility.show_history)
 
   async function handleGenerateInstaller() {
     setGeneratingInstaller(true)
@@ -159,6 +234,34 @@ export function Tab9Links({ client }: { client: Client }) {
         color="#10B981"
         onGenerate={handleGeneratePortal}
         generating={generatingPortal}
+        optionsSlot={
+          <div className="space-y-2">
+            <PortalSecoes
+              visibility={portalVisibility}
+              onChange={setPortalVisibility}
+              disabled={savingVisibility}
+              hint={
+                links?.portalToken
+                  ? 'Desmarque para ocultar a seção no portal. A alteração vale para o link atual.'
+                  : 'Desmarque para que a seção não apareça no link que será gerado.'
+              }
+            />
+            {links?.portalToken && visibilityAlterada && (
+              <button
+                type="button"
+                onClick={handleSaveVisibility}
+                disabled={savingVisibility}
+                className="w-full text-xs py-2 rounded-lg transition-colors disabled:opacity-50"
+                style={{ background: '#10B9811A', color: '#10B981', border: '1px solid #10B98133' }}
+              >
+                {savingVisibility ? 'Salvando...' : 'Salvar alterações'}
+              </button>
+            )}
+            {visibilityMsg && (
+              <p className="text-[11px]" style={{ color: 'var(--theme-text-subtle)' }}>{visibilityMsg}</p>
+            )}
+          </div>
+        }
       />
 
       <LinkCard

@@ -9,6 +9,7 @@ type PortalData = {
   timeline: { key: string; label: string; status: 'concluido' | 'em_andamento' | 'aguardando' | 'pendente'; date?: string | null; endDate?: string | null }[]
   history: { date: string; title: string; description: string; category: string; icon: string }[]
   notices: string[]
+  visibility?: { show_progress: boolean; show_history: boolean }
   deadline: { start_date: string | null; max_days: number | null }
   financial: {
     sale_value: number | null
@@ -166,6 +167,10 @@ export default function ClientPortalView({ paramsPromise }: { paramsPromise: Pro
   const completedStages = timeline.filter(s => s.status === 'concluido').length
   const timelineProgress = timeline.length > 0 ? Math.round((completedStages / timeline.length) * 100) : 0
 
+  // Seções que a empresa pode ocultar neste link. Ausente = link antigo, mostra tudo.
+  const showProgress = data.visibility?.show_progress ?? true
+  const showHistory = data.visibility?.show_history ?? true
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -202,7 +207,8 @@ export default function ClientPortalView({ paramsPromise }: { paramsPromise: Pro
           </div>
         )}
 
-        {/* Andamento */}
+        {/* Andamento — pode ser ocultado por link */}
+        {showProgress && (
         <Card icon="📈" title="Andamento do Projeto">
           <div className="mb-3">
             <div className="flex justify-between items-center mb-1">
@@ -235,6 +241,7 @@ export default function ClientPortalView({ paramsPromise }: { paramsPromise: Pro
             ))}
           </div>
         </Card>
+        )}
 
         {/* Prazos */}
         {startDate && maxDays > 0 && (
@@ -456,8 +463,8 @@ export default function ClientPortalView({ paramsPromise }: { paramsPromise: Pro
           </Card>
         )}
 
-        {/* Histórico */}
-        {filteredHistory.length > 0 && (
+        {/* Histórico — pode ser ocultado por link */}
+        {showHistory && filteredHistory.length > 0 && (
           <Card icon="📋" title="Histórico do Projeto">
             <div className="space-y-3">
               {/* Filters */}

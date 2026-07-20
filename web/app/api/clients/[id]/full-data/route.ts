@@ -84,7 +84,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   // Fetch client portal link
   const { data: portalLink } = await (supabase as any)
     .from('client_portal_links')
-    .select('token')
+    .select('*')
     .eq('client_id', clientId)
     .eq('organization_id', orgId)
     .eq('active', true)
@@ -102,5 +102,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     installerToken: installerLink?.token ?? null,
     projetistaToken: projetistaLink?.token ?? null,
     portalToken: portalLink?.token ?? null,
+    portalVisibility: {
+      show_progress: portalLink?.show_progress ?? true,
+      show_history: portalLink?.show_history ?? true,
+    },
   })
 }
