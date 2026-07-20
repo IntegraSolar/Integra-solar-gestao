@@ -1,9 +1,8 @@
 export const metadata = { title: "Contato" }
-import { MessageCircle, Mail } from 'lucide-react'
+import { MessageCircle } from 'lucide-react'
 
 const SUPPORT = {
   whatsapp: { number: '5563992217742', display: '(63) 99221-7742' },
-  email: 'integrasolaradm@gmail.com',
 }
 
 export default function SuportePage() {
@@ -28,20 +27,6 @@ export default function SuportePage() {
           <div>
             <p className="text-xs text-white/40">WhatsApp</p>
             <p className="text-sm font-medium text-white">{SUPPORT.whatsapp.display}</p>
-          </div>
-        </a>
-
-        <a
-          href={`mailto:${SUPPORT.email}`}
-          className="flex items-center gap-4 p-4 rounded-xl transition-all hover:border-white/20"
-          style={{ background: 'var(--theme-surface)', border: '1px solid var(--theme-card-border)' }}
-        >
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(255,208,128,0.08)' }}>
-            <Mail size={20} style={{ color: 'var(--theme-accent)' }} />
-          </div>
-          <div>
-            <p className="text-xs text-white/40">E-mail</p>
-            <p className="text-sm font-medium text-white">{SUPPORT.email}</p>
           </div>
         </a>
       </div>
