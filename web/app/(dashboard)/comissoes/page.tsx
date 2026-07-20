@@ -7,7 +7,7 @@ import ComissoesPainelClient from './ComissoesPainelClient'
 export default async function ComissoesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ month?: string; year?: string; vendedorId?: string; dateField?: string }>
+  searchParams: Promise<{ month?: string; year?: string; vendedor?: string; dateField?: string }>
 }) {
   await requireModuleAccess('comissoes')
 
@@ -15,11 +15,11 @@ export default async function ComissoesPage({
   const now = new Date()
   const month = parseInt(params.month ?? String(now.getMonth() + 1))
   const year = parseInt(params.year ?? String(now.getFullYear()))
-  const vendedorId = params.vendedorId ?? ''
+  const vendedor = params.vendedor ?? ''
   const dateField = (params.dateField === 'paid_at' ? 'paid_at' : 'created_at') as 'created_at' | 'paid_at'
 
   const [painel, members] = await Promise.all([
-    getComissoesPainel({ month, year, vendedorId: vendedorId || undefined, dateField }),
+    getComissoesPainel({ month, year, vendedor: vendedor || undefined, dateField }),
     getComissoesMembers(),
   ])
 
@@ -29,7 +29,7 @@ export default async function ComissoesPage({
       members={members}
       month={month}
       year={year}
-      vendedorId={vendedorId}
+      vendedor={vendedor}
       dateField={dateField}
     />
   )
