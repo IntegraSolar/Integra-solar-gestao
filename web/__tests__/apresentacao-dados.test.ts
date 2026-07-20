@@ -90,3 +90,26 @@ describe('montarApresentacao', () => {
     }
   })
 })
+
+describe('montarApresentacao — dados incompletos não podem virar informação errada', () => {
+  it('sem preço, o investimento fica nulo em vez de R$ 0,00', () => {
+    const r = raw()
+    r.proposta.preco_final = 0
+    expect(montarApresentacao(r).investimento.valor).toBeNull()
+  })
+
+  it('potência de inversor inválida não vira "0 kW"', () => {
+    const r = raw()
+    // 22 propostas antigas gravaram kW num campo que o sistema trata como W.
+    // Dividir por 1000 produziria "0 kW" na frente do cliente final.
+    r.proposta.inverter_power_w = 8
+    const a = montarApresentacao(r)
+    expect(a.equipamentos.inversores.potencia).toBeNull()
+    expect(a.sistema.inversores).toBe('1x Deye SUN8k')
+  })
+
+  it('potência válida em watts continua sendo convertida', () => {
+    const a = montarApresentacao(raw())
+    expect(a.equipamentos.inversores.potencia).toBe('8 kW')
+  })
+})

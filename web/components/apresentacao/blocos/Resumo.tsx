@@ -9,7 +9,9 @@ export function Resumo({ dados }: { dados: ApresentacaoData }) {
       <div className="apr__grid">
         <Indicador rotulo="Potência instalada" valor={dados.sistema.potencia_kwp} />
         <Indicador rotulo="Geração estimada" valor={dados.sistema.geracao_mensal} />
-        <Indicador rotulo="Investimento" valor={dados.investimento.valor} />
+        {dados.investimento.valor && (
+          <Indicador rotulo="Investimento" valor={dados.investimento.valor} />
+        )}
       </div>
     </Secao>
   )

@@ -11,7 +11,7 @@ function CardEquip({
   titulo: string
   marca: string
   quantidade: string
-  potencia: string
+  potencia: string | null
 }) {
   return (
     <div
@@ -34,7 +34,7 @@ function CardEquip({
       </p>
       <p style={{ fontSize: 16, fontWeight: 600, margin: '6px 0 2px' }}>{marca}</p>
       <p style={{ fontSize: 13, color: 'var(--apr-texto-suave)' }}>
-        {quantidade} un · {potencia}
+        {[`${quantidade} un`, potencia].filter(Boolean).join(' · ')}
       </p>
     </div>
   )

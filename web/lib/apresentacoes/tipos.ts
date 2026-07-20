@@ -37,12 +37,13 @@ export type ApresentacaoData = {
     geracao_mensal: string
   }
   equipamentos: {
-    paineis: { marca: string; quantidade: string; potencia: string }
-    inversores: { marca: string; quantidade: string; potencia: string }
+    paineis: { marca: string; quantidade: string; potencia: string | null }
+    inversores: { marca: string; quantidade: string; potencia: string | null }
   }
-  investimento: { valor: string }
+  /** null quando a proposta ainda não teve o orçamento gerado. */
+  investimento: { valor: string | null }
   datas: { emitida_em: string; valida_ate: string }
-  tema: { cor_principal: string; cor_secundaria: string }
+  tema: { cor_principal: string; cor_texto: string; cor_secundaria: string }
 }
 
 export function ehBlocoValido(v: unknown): v is BlocoId {

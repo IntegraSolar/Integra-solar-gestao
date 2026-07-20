@@ -31,7 +31,8 @@ export function Apresentacao({
       // Cores da organização vencem as do tema: identidade da empresa em primeiro lugar.
       style={
         {
-          '--apr-destaque': dados.tema.cor_principal,
+          '--apr-destaque': dados.tema.cor_texto,
+          '--apr-destaque-cheia': dados.tema.cor_principal,
           '--apr-contraste': dados.tema.cor_secundaria,
         } as React.CSSProperties
       }

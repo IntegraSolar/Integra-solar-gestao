@@ -2,6 +2,7 @@
 import { format, addDays } from 'date-fns'
 import { formatCurrency } from '@/lib/format'
 import type { ApresentacaoData } from './tipos'
+import { corLegivelSobreClaro } from './contraste'
 
 const VALIDADE_DIAS = 15
 const COR_PADRAO = '#10B981'
@@ -45,8 +46,17 @@ export function montarApresentacao(raw: ApresentacaoRaw): ApresentacaoData {
 
   const marcaPainel = proposta.panel_brand_model?.trim() || 'Painéis solares'
   const marcaInversor = proposta.inverter_brand_model?.trim() || 'Inversor'
-  const potenciaPainel = `${nf(proposta.panel_power_w)} W`
-  const potenciaInversor = `${nf(proposta.inverter_power_w / 1000)} kW`
+
+  const potenciaPainel = proposta.panel_power_w > 0 ? `${nf(proposta.panel_power_w)} W` : null
+
+  // 22 propostas antigas gravaram kW num campo que o resto do sistema trata como
+  // W (ProposalForm grava kW * 1000). Dividir esses valores por 1000 daria "0 kW"
+  // na frente do cliente final — melhor omitir a potência do que informar errado.
+  const inversorEmWatts = proposta.inverter_power_w >= 100
+  const potenciaInversor = inversorEmWatts ? `${nf(proposta.inverter_power_w / 1000)} kW` : null
+
+  // Proposta sem orçamento gerado não tem preço: "R$ 0,00" seria pior que nada.
+  const temPreco = proposta.preco_final > 0
 
   return {
     titulo: proposta.name?.trim() || 'Proposta Comercial',
@@ -60,8 +70,8 @@ export function montarApresentacao(raw: ApresentacaoRaw): ApresentacaoData {
     },
     cliente: { nome: lead.name, cidade: lead.city },
     sistema: {
-      paineis: `${proposta.panel_qty}x ${marcaPainel} — ${potenciaPainel}`,
-      inversores: `${proposta.inverter_qty}x ${marcaInversor} — ${potenciaInversor}`,
+      paineis: [`${proposta.panel_qty}x ${marcaPainel}`, potenciaPainel].filter(Boolean).join(' — '),
+      inversores: [`${proposta.inverter_qty}x ${marcaInversor}`, potenciaInversor].filter(Boolean).join(' — '),
       potencia_kwp: `${nf(proposta.total_power_kwp, 2)} kWp`,
       geracao_mensal: `${nf(proposta.monthly_generation_kwh)} kWh/mês`,
     },
@@ -77,13 +87,17 @@ export function montarApresentacao(raw: ApresentacaoRaw): ApresentacaoData {
         potencia: potenciaInversor,
       },
     },
-    investimento: { valor: formatCurrency(proposta.preco_final) },
+    investimento: { valor: temPreco ? formatCurrency(proposta.preco_final) : null },
     datas: {
       emitida_em: format(emitida, 'dd/MM/yyyy'),
       valida_ate: format(addDays(emitida, VALIDADE_DIAS), 'dd/MM/yyyy'),
     },
     tema: {
+      // cor_principal pinta áreas amplas (fundos, barras), onde a cor original
+      // funciona. cor_texto é a variante legível, usada nos números em destaque
+      // sobre card claro — sem ela, uma empresa de cor clara fica ilegível.
       cor_principal: org.cor_principal?.trim() || COR_PADRAO,
+      cor_texto: corLegivelSobreClaro(org.cor_principal?.trim() || COR_PADRAO),
       cor_secundaria: org.cor_secundaria?.trim() || COR_SECUNDARIA_PADRAO,
     },
   }
