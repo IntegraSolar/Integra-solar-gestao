@@ -339,12 +339,49 @@ export async function POST(
       throw fetchErr
     }
 
-    const pdfUrl: string = convertResult?.Files?.[0]?.Url ?? ''
-    if (!pdfUrl) {
+    const convertApiUrl: string = convertResult?.Files?.[0]?.Url ?? ''
+    if (!convertApiUrl) {
       return NextResponse.json({ error: 'ConvertAPI não retornou URL do PDF.', step: 'pdf_result' }, { status: 502 })
     }
 
-    // Armazenar URL segura (via API autenticada) em vez de URL pública do bucket
+    // O arquivo hospedado na ConvertAPI é temporário: em poucos dias a URL passa a
+    // devolver 404. Baixamos o PDF e guardamos no nosso Storage, como já é feito
+    // com o DOCX, para que o link da proposta não expire.
+    const pdfPath = `${orgId}/${proposalId}.pdf`
+    try {
+      const pdfResponse = await fetch(convertApiUrl)
+      if (!pdfResponse.ok) {
+        logger.error('proposals/generate', 'Falha ao baixar PDF da ConvertAPI', undefined, {
+          status: pdfResponse.status, proposalId,
+        })
+        return NextResponse.json({
+          error: 'Não foi possível salvar o PDF. Tente gerar novamente.',
+          step: 'pdf_download',
+        }, { status: 502 })
+      }
+
+      const pdfBuffer = Buffer.from(await pdfResponse.arrayBuffer())
+      const { error: pdfUploadError } = await supabase.storage
+        .from('proposals')
+        .upload(pdfPath, pdfBuffer, { contentType: 'application/pdf', upsert: true })
+
+      if (pdfUploadError) {
+        logger.error('proposals/generate', 'Erro ao salvar PDF no storage', pdfUploadError, { proposalId })
+        return NextResponse.json({
+          error: 'Erro ao salvar o PDF: ' + pdfUploadError.message,
+          step: 'pdf_upload',
+        }, { status: 500 })
+      }
+    } catch (pdfErr: any) {
+      logger.error('proposals/generate', 'Erro inesperado ao armazenar o PDF', pdfErr, { proposalId })
+      return NextResponse.json({
+        error: 'Não foi possível salvar o PDF. Tente gerar novamente.',
+        step: 'pdf_store',
+      }, { status: 502 })
+    }
+
+    // URLs próprias e autenticadas — nunca a URL temporária da ConvertAPI.
+    const pdfUrl = `/api/storage/download?bucket=proposals&path=${encodeURIComponent(pdfPath)}`
     const docxUrl = `/api/storage/download?bucket=proposals&path=${encodeURIComponent(docxPath)}`
     await supabase.from('proposals').update({
       template_id: templateId,
