@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import { guardPublicToken } from '@/lib/security/rate-policies'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { montarPropostaPublica } from '@/lib/proposals/proposta-publica'
+import { montarApresentacao } from '@/lib/apresentacoes/dados'
+import { normalizarConfig } from '@/lib/apresentacoes/tipos'
 
 export async function GET(
   _req: Request,
@@ -53,7 +54,7 @@ export async function GET(
       .maybeSingle(),
     (supabase as any)
       .from('org_config')
-      .select('nome_fantasia, razao_social, cnpj, telefone, cor_principal, cor_secundaria, logo_url')
+      .select('nome_fantasia, razao_social, cnpj, telefone, email, cidade, cor_principal, cor_secundaria, logo_url')
       .eq('organization_id', link.organization_id)
       .maybeSingle(),
   ])
@@ -65,8 +66,23 @@ export async function GET(
     return NextResponse.json({ error: 'Proposta não encontrada' }, { status: 404 })
   }
 
-  return NextResponse.json(
-    montarPropostaPublica({
+  // Configuração da apresentação: tabela pode ainda não existir em produção
+  // (migration não aplicada). Qualquer erro aqui não pode derrubar a rota
+  // pública — cfg fica undefined e normalizarConfig(null) aplica os padrões.
+  let cfg: { template?: unknown; tema?: unknown; blocos?: unknown } | null = null
+  try {
+    const { data } = await (supabase as any)
+      .from('proposal_presentations')
+      .select('template, tema, blocos')
+      .eq('proposal_id', link.proposal_id)
+      .maybeSingle()
+    cfg = data ?? null
+  } catch {
+    cfg = null
+  }
+
+  return NextResponse.json({
+    dados: montarApresentacao({
       proposta: {
         name: proposal.name ?? null,
         panel_qty: Number(proposal.total_modules ?? 0),
@@ -90,10 +106,13 @@ export async function GET(
         razao_social: org?.razao_social ?? null,
         cnpj: org?.cnpj ?? null,
         telefone: org?.telefone ?? null,
+        email: org?.email ?? null,
+        cidade: org?.cidade ?? null,
         cor_principal: org?.cor_principal ?? null,
         cor_secundaria: org?.cor_secundaria ?? null,
         logo_url: org?.logo_url ?? null,
       },
-    })
-  )
+    }),
+    config: normalizarConfig(cfg),
+  })
 }
