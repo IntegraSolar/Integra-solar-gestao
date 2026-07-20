@@ -1,7 +1,8 @@
 // web/lib/financeiro/queries.ts
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
-import { getMonthDateRange, getMonthRangeBRT } from '@/lib/utils/date-range'
+import { getMonthDateRange, getMonthRangeBRT, getTodayBRT } from '@/lib/utils/date-range'
+import { computeFinanceiroTotais } from './totais'
 
 export type FinanceiroInstallment = {
   id: string
@@ -18,6 +19,7 @@ export type FinanceiroInstallment = {
 
 export type FinanceiroPainel = {
   faturamento_total: number
+  recebido: number
   a_receber: number
   em_atraso: number
   installments: FinanceiroInstallment[]
@@ -47,13 +49,18 @@ export async function getFinanceiroPainel(params: {
   dateField?: 'due_date' | 'payment_date'
 }): Promise<FinanceiroPainel> {
   const user = await getCurrentUserData()
-  if (!user?.membership) return { faturamento_total: 0, a_receber: 0, em_atraso: 0, installments: [] }
+  if (!user?.membership) {
+    return { faturamento_total: 0, recebido: 0, a_receber: 0, em_atraso: 0, installments: [] }
+  }
 
   const supabase = await createClient()
   const orgId = user.membership.organization.id
   const dateField = params.dateField ?? 'due_date'
 
-  let query = supabase
+  // Busca todas as parcelas da org: os cards são globais (um atraso de meses
+  // anteriores precisa continuar visível). O recorte de mês é aplicado depois,
+  // apenas sobre a lista exibida.
+  const { data } = await supabase
     .from('client_installments')
     .select(`
       id, client_id, position, due_date, amount, notes, status, confirmed_at, payment_proof_url,
@@ -62,17 +69,6 @@ export async function getFinanceiroPainel(params: {
     .eq('organization_id', orgId)
     .order('due_date', { ascending: true })
 
-  if (dateField === 'payment_date') {
-    // confirmed_at é timestamptz — usa intervalo BRT em UTC
-    const { startISO, endISO } = getMonthRangeBRT(params.month, params.year)
-    query = query.gte('confirmed_at', startISO).lte('confirmed_at', endISO)
-  } else {
-    // due_date é date — string comparison funciona corretamente
-    const { startDate, endDate } = getMonthDateRange(params.month, params.year)
-    query = query.gte('due_date', startDate).lte('due_date', endDate)
-  }
-
-  const { data } = await query
   let installments = (data ?? []) as any[]
 
   // Filter by vendedor (JOIN via clients.lead_id → leads.assigned_to_user_id)
@@ -96,8 +92,6 @@ export async function getFinanceiroPainel(params: {
     }
   }
 
-  const today = new Date().toISOString().split('T')[0]
-
   const normalized: FinanceiroInstallment[] = installments.map((i) => ({
     id: i.id,
     client_id: i.client_id,
@@ -111,16 +105,21 @@ export async function getFinanceiroPainel(params: {
     payment_proof_url: i.payment_proof_url ?? null,
   }))
 
-  return {
-    faturamento_total: normalized.reduce((sum, i) => sum + i.amount, 0),
-    a_receber: normalized
-      .filter((i) => i.status === 'pendente' && i.due_date >= today)
-      .reduce((sum, i) => sum + i.amount, 0),
-    em_atraso: normalized
-      .filter((i) => i.status === 'pendente' && i.due_date < today)
-      .reduce((sum, i) => sum + i.amount, 0),
-    installments: normalized,
-  }
+  // Cards: globais, sobre todas as parcelas da org
+  const totais = computeFinanceiroTotais(normalized, getTodayBRT())
+
+  // Lista: apenas as parcelas do mês/ano selecionado
+  const listadas = normalized.filter((i) => {
+    if (dateField === 'payment_date') {
+      if (!i.confirmed_at) return false
+      const { startISO, endISO } = getMonthRangeBRT(params.month, params.year)
+      return i.confirmed_at >= startISO && i.confirmed_at <= endISO
+    }
+    const { startDate, endDate } = getMonthDateRange(params.month, params.year)
+    return i.due_date >= startDate && i.due_date <= endDate
+  })
+
+  return { ...totais, installments: listadas }
 }
 
 export async function getParcelasByClient(clientId: string): Promise<FinanceiroInstallment[]> {
