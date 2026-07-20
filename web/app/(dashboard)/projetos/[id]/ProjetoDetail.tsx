@@ -7,8 +7,7 @@ import type { ProjetoClient, ProjetoMember } from '@/lib/projetos/queries'
 import { upsertProject, uploadProjectAttachment, deleteProjectAttachment, generateProjetistaLink } from '@/lib/projetos/actions'
 import type { ProjectAttachment } from '@/lib/projetos/actions'
 import { DatePicker } from '@/components/ui/inputs'
-import { ExternalLink, FileText, Plus, Trash2, Copy, Check, Link2, BarChart2 } from 'lucide-react'
-import Link from 'next/link'
+import { ExternalLink, FileText, Plus, Trash2, Copy, Check, Link2 } from 'lucide-react'
 
 const STATUS_OPTIONS = [
   { value: 'pendente', label: 'Pendente' },
@@ -278,36 +277,6 @@ export default function ProjetoDetail({
             </button>
           </>
         )}
-      </div>
-
-      {/* Ver DRE */}
-      <div className={cardCls} style={cardStyle}>
-        <div className="flex items-center gap-2 mb-3">
-          <BarChart2 size={16} style={{ color: '#4ade80' }} />
-          <h2 className="text-sm font-semibold text-white/70">Resultado do Projeto (DRE)</h2>
-        </div>
-        <Link
-          href={`/financeiro/dre/${clientId}`}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-colors hover:opacity-90"
-          style={{ background: 'rgba(74,222,128,0.12)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.25)' }}
-        >
-          <BarChart2 size={14} /> Ver DRE do Projeto
-        </Link>
-      </div>
-
-      {/* Recibos */}
-      <div className={cardCls} style={cardStyle}>
-        <div className="flex items-center gap-2 mb-3">
-          <FileText size={16} style={{ color: '#60a5fa' }} />
-          <h2 className="text-sm font-semibold text-white/70">Recibos de Pagamento</h2>
-        </div>
-        <Link
-          href={`/financeiro/recibos`}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-colors hover:opacity-90"
-          style={{ background: 'rgba(96,165,250,0.12)', color: '#60a5fa', border: '1px solid rgba(96,165,250,0.25)' }}
-        >
-          <FileText size={14} /> Ver Recibos
-        </Link>
       </div>
 
       {/* Link do Projetista */}
