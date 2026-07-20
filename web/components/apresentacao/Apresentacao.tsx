@@ -7,6 +7,12 @@ import { Sistema } from './blocos/Sistema'
 import { Equipamentos } from './blocos/Equipamentos'
 import { Condicoes } from './blocos/Condicoes'
 import { Contato } from './blocos/Contato'
+import { Hero } from './blocos/Hero'
+import { Garantias } from './blocos/Garantias'
+import { LinhaDoTempo } from './blocos/LinhaDoTempo'
+import { FluxoInstalacao } from './blocos/FluxoInstalacao'
+import { ComoFunciona } from './blocos/ComoFunciona'
+import { Assinatura } from './blocos/Assinatura'
 
 const REGISTRO: Record<BlocoId, React.FC<{ dados: ApresentacaoData }>> = {
   cover: Cover,
@@ -15,6 +21,12 @@ const REGISTRO: Record<BlocoId, React.FC<{ dados: ApresentacaoData }>> = {
   equipamentos: Equipamentos,
   condicoes: Condicoes,
   contato: Contato,
+  hero: Hero,
+  garantias: Garantias,
+  timeline: LinhaDoTempo,
+  fluxo: FluxoInstalacao,
+  'como-funciona': ComoFunciona,
+  assinatura: Assinatura,
 }
 
 export function Apresentacao({

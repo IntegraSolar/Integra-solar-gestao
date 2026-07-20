@@ -8,6 +8,12 @@ export const BLOCOS_VALIDOS = [
   'equipamentos',
   'condicoes',
   'contato',
+  'hero',
+  'garantias',
+  'timeline',
+  'fluxo',
+  'como-funciona',
+  'assinatura',
 ] as const
 
 export type BlocoId = (typeof BLOCOS_VALIDOS)[number]
