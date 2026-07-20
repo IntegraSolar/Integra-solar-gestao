@@ -37,15 +37,19 @@ import {
   HibridoIdentificacao, DADOS_PROJETO_INICIAL, type DadosProjeto,
 } from './HibridoIdentificacao'
 import { HibridoSimulacoesSalvas } from './HibridoSimulacoesSalvas'
+import { gerarMemorialPdf } from '@/lib/simuladores/hibrido/memorial-pdf'
+import { gerarRelatorioPdf } from '@/lib/simuladores/hibrido/relatorio-pdf'
+import type { EmpresaProposta } from '@/lib/simuladores/proposta-empresa'
 
 type Props = {
   equipamentos: EquipamentosDisponiveis
   biblioteca: CargaBiblioteca[]
   simulacoes: SimulacaoResumo[]
+  empresa: EmpresaProposta
 }
 
 export function SimuladorHibrido({
-  equipamentos: equipamentosIniciais, biblioteca: bibliotecaInicial, simulacoes,
+  equipamentos: equipamentosIniciais, biblioteca: bibliotecaInicial, simulacoes, empresa,
 }: Props) {
   const [campos, setCampos] = useState<CamposHibrido>(CAMPOS_INICIAIS)
   const [cargas, setCargas] = useState<Carga[]>([])
@@ -82,6 +86,34 @@ export function SimuladorHibrido({
     [paramsFin]
   )
   const temTarifa = paramsFin.tarifas.tarifaKwh > 0
+
+  const baseDocumento = {
+    dados: dadosProjeto,
+    projeto: input.projeto,
+    resultado,
+    painel: input.painel,
+    inversor: input.inversor,
+    bateria: input.bateria,
+    // Vem do painel avançado, não de DadosProjeto.
+    tipoSistema: campos.tipoSistema,
+  }
+
+  async function memorialPdf() {
+    await gerarMemorialPdf(baseDocumento, empresa)
+  }
+
+  async function relatorioPdf() {
+    await gerarRelatorioPdf(
+      {
+        ...baseDocumento,
+        financeiro,
+        economiaAno1,
+        camposFin,
+        dataEmissao: new Date(),
+      },
+      empresa
+    )
+  }
 
   function salvar() {
     const snapshot = montarSnapshot(campos, camposFin, cargas, {
@@ -231,7 +263,25 @@ export function SimuladorHibrido({
           </>
         )}
 
-        <div className="flex justify-end">
+        <div className="flex flex-wrap justify-end gap-2">
+          <button
+            type="button"
+            data-testid="btn-memorial-pdf"
+            disabled={!input.painel || !input.inversor}
+            onClick={memorialPdf}
+            className="rounded border px-4 py-2 text-sm font-semibold disabled:opacity-40"
+          >
+            Memorial descritivo (PDF)
+          </button>
+          <button
+            type="button"
+            data-testid="btn-relatorio-pdf"
+            disabled={!input.painel || !input.inversor}
+            onClick={relatorioPdf}
+            className="rounded border px-4 py-2 text-sm font-semibold disabled:opacity-40"
+          >
+            Relatório executivo (PDF)
+          </button>
           <button
             type="button"
             disabled={pending}

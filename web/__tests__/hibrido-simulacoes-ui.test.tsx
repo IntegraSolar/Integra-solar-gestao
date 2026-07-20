@@ -111,7 +111,7 @@ const EQUIP_UI = { paineis: [PAINEL], inversores: [INVERSOR], baterias: [BATERIA
 describe('SimuladorHibrido — salvar e reabrir', () => {
   it('salvar envia o nome, o resumo e o snapshot', async () => {
     const user = userEvent.setup()
-    render(<SimuladorHibrido equipamentos={EQUIP_UI} biblioteca={[]} simulacoes={[]} />)
+    render(<SimuladorHibrido equipamentos={EQUIP_UI} biblioteca={[]} simulacoes={[]} empresa={{ nome: 'Empresa Teste', cnpj: null, endereco: null, telefone: null, email: null, logoBase64: null }} />)
 
     await user.type(screen.getByTestId('ident-nome'), 'Projeto Palmas')
     await user.selectOptions(screen.getByTestId('sel-painel'), PAINEL.id)
@@ -129,7 +129,7 @@ describe('SimuladorHibrido — salvar e reabrir', () => {
   it('reabrir pede confirmação; cancelar não muda nada', async () => {
     const user = userEvent.setup()
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
-    render(<SimuladorHibrido equipamentos={EQUIP_UI} biblioteca={[]} simulacoes={[SIM]} />)
+    render(<SimuladorHibrido equipamentos={EQUIP_UI} biblioteca={[]} simulacoes={[SIM]} empresa={{ nome: 'Empresa Teste', cnpj: null, endereco: null, telefone: null, email: null, logoBase64: null }} />)
 
     await user.click(screen.getByTestId('btn-reabrir-s1'))
     expect(confirmSpy).toHaveBeenCalled()
@@ -154,7 +154,7 @@ describe('SimuladorHibrido — salvar e reabrir', () => {
       altitude: null, tipoLigacao: null, tensaoNominal: null, modoOperacao: null,
     })
 
-    render(<SimuladorHibrido equipamentos={EQUIP_UI} biblioteca={[]} simulacoes={[SIM]} />)
+    render(<SimuladorHibrido equipamentos={EQUIP_UI} biblioteca={[]} simulacoes={[SIM]} empresa={{ nome: 'Empresa Teste', cnpj: null, endereco: null, telefone: null, email: null, logoBase64: null }} />)
     await user.click(screen.getByTestId('btn-reabrir-s1'))
 
     expect(await screen.findByDisplayValue('Projeto Palmas')).toBeInTheDocument()
@@ -174,7 +174,7 @@ describe('SimuladorHibrido — salvar e reabrir', () => {
       altitude: null, tipoLigacao: null, tensaoNominal: null, modoOperacao: null,
     })
 
-    render(<SimuladorHibrido equipamentos={EQUIP_UI} biblioteca={[]} simulacoes={[SIM]} />)
+    render(<SimuladorHibrido equipamentos={EQUIP_UI} biblioteca={[]} simulacoes={[SIM]} empresa={{ nome: 'Empresa Teste', cnpj: null, endereco: null, telefone: null, email: null, logoBase64: null }} />)
     const antes = (screen.getByTestId('temp-media') as HTMLInputElement).value
     await user.click(screen.getByTestId('btn-reabrir-s1'))
 
