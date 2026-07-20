@@ -276,7 +276,13 @@ export function SimuladorHibrido({
           <button
             type="button"
             data-testid="btn-relatorio-pdf"
-            disabled={!input.painel || !input.inversor}
+            // Também exige tarifa: sem ela a economia é zero e o relatório sairia
+            // com VPL negativo e "não se paga no horizonte" — um documento dizendo
+            // ao cliente que o projeto é inviável, só porque um campo ficou em
+            // branco. A tela já suprime esses blocos por isso (Fase 3b2); o PDF,
+            // que sai do escritório, não pode ser menos criterioso.
+            disabled={!input.painel || !input.inversor || !temTarifa}
+            title={!temTarifa ? 'Informe a tarifa de energia para emitir o relatório.' : undefined}
             onClick={relatorioPdf}
             className="rounded border px-4 py-2 text-sm font-semibold disabled:opacity-40"
           >
