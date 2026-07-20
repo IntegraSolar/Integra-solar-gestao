@@ -61,6 +61,24 @@ export function ehBlocoValido(v: unknown): v is BlocoId {
   return typeof v === 'string' && (BLOCOS_VALIDOS as readonly string[]).includes(v)
 }
 
+/** Rótulo amigável de cada bloco, usado na UI de configuração da apresentação. */
+export const ROTULOS_BLOCO: Record<BlocoId, string> = {
+  cover: 'Capa',
+  hero: 'Destaque',
+  resumo: 'Resumo',
+  sistema: 'Sistema',
+  equipamentos: 'Equipamentos',
+  garantias: 'Garantias',
+  'como-funciona': 'Como Funciona',
+  fluxo: 'Fluxo da Instalação',
+  timeline: 'Linha do Tempo',
+  empresa: 'Empresa',
+  depoimentos: 'Depoimentos',
+  condicoes: 'Condições Comerciais',
+  assinatura: 'Assinatura',
+  contato: 'Contato',
+}
+
 // `normalizarConfig` vive em `./templates.ts`: ele precisa de `temaValido`/`TEMA_PADRAO`
 // (de `./temas.ts`) e de `templateValido`/`TEMPLATE_PADRAO`/`blocosDoTemplate` (do próprio
 // `./templates.ts`). Colocar a função aqui exigiria `require()` em runtime para evitar um
