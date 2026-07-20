@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import {
-  HibridoIdentificacao, IDENTIFICACAO_INICIAL, type Identificacao,
+  HibridoIdentificacao, DADOS_PROJETO_INICIAL, type DadosProjeto,
 } from '@/components/simuladores/HibridoIdentificacao'
 
 vi.mock('@/lib/simuladores/hibrido/simulacoes-actions', () => ({
@@ -16,8 +16,8 @@ vi.mock('@/lib/simuladores/hibrido/simulacoes-actions', () => ({
 }))
 
 function IdentComEstado() {
-  const [ident, setIdent] = useState<Identificacao>(IDENTIFICACAO_INICIAL)
-  return <HibridoIdentificacao identificacao={ident} onChange={setIdent} />
+  const [ident, setIdent] = useState<DadosProjeto>(DADOS_PROJETO_INICIAL)
+  return <HibridoIdentificacao dados={ident} onChange={setIdent} />
 }
 
 describe('HibridoIdentificacao', () => {
@@ -150,6 +150,8 @@ describe('SimuladorHibrido — salvar e reabrir', () => {
     vi.mocked(getSimulacaoHibrido).mockResolvedValueOnce({
       ...SIM, clienteUf: 'TO', concessionaria: 'ENERGISA',
       responsavelTecnico: 'Patrick', snapshot,
+      azimute: null, inclinacao: null, latitude: null, longitude: null,
+      altitude: null, tipoLigacao: null, tensaoNominal: null, modoOperacao: null,
     })
 
     render(<SimuladorHibrido equipamentos={EQUIP_UI} biblioteca={[]} simulacoes={[SIM]} />)
@@ -168,6 +170,8 @@ describe('SimuladorHibrido — salvar e reabrir', () => {
     vi.mocked(getSimulacaoHibrido).mockResolvedValueOnce({
       ...SIM, clienteUf: null, concessionaria: null, responsavelTecnico: null,
       snapshot: { versao: 99 },
+      azimute: null, inclinacao: null, latitude: null, longitude: null,
+      altitude: null, tipoLigacao: null, tensaoNominal: null, modoOperacao: null,
     })
 
     render(<SimuladorHibrido equipamentos={EQUIP_UI} biblioteca={[]} simulacoes={[SIM]} />)

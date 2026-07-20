@@ -34,7 +34,7 @@ import {
 import type { SimulacaoResumo } from '@/lib/simuladores/hibrido/simulacoes-schemas'
 import { montarSnapshot, lerSnapshot, mesclarEquipamentos } from '@/lib/simuladores/hibrido/snapshot'
 import {
-  HibridoIdentificacao, IDENTIFICACAO_INICIAL, type Identificacao,
+  HibridoIdentificacao, DADOS_PROJETO_INICIAL, type DadosProjeto,
 } from './HibridoIdentificacao'
 import { HibridoSimulacoesSalvas } from './HibridoSimulacoesSalvas'
 
@@ -53,7 +53,7 @@ export function SimuladorHibrido({
   const [camposFin, setCamposFin] = useState<CamposFinanceiro>(() =>
     camposFinanceiroIniciais(new Date().getFullYear())
   )
-  const [identificacao, setIdentificacao] = useState<Identificacao>(IDENTIFICACAO_INICIAL)
+  const [dadosProjeto, setDadosProjeto] = useState<DadosProjeto>(DADOS_PROJETO_INICIAL)
   // Catálogo pode crescer ao reabrir uma simulação cujo equipamento saiu do cadastro.
   const [equipamentos, setEquipamentos] = useState(equipamentosIniciais)
   const [msg, setMsg] = useState<{ text: string; erro: boolean } | null>(null)
@@ -90,14 +90,23 @@ export function SimuladorHibrido({
       bateria: input.bateria,
     })
     start(async () => {
+      const num = (v: string) => (v.trim() === '' ? null : Number(v))
       const res = await salvarSimulacaoHibrido({
-        nome: identificacao.nome,
+        nome: dadosProjeto.nome,
         snapshot,
-        clienteNome: identificacao.clienteNome || null,
-        clienteCidade: identificacao.clienteCidade || null,
-        clienteUf: identificacao.clienteUf || null,
-        concessionaria: identificacao.concessionaria || null,
-        responsavelTecnico: identificacao.responsavelTecnico || null,
+        clienteNome: dadosProjeto.clienteNome || null,
+        clienteCidade: dadosProjeto.clienteCidade || null,
+        clienteUf: dadosProjeto.clienteUf || null,
+        concessionaria: dadosProjeto.concessionaria || null,
+        responsavelTecnico: dadosProjeto.responsavelTecnico || null,
+        azimute: num(dadosProjeto.azimute),
+        inclinacao: num(dadosProjeto.inclinacao),
+        latitude: num(dadosProjeto.latitude),
+        longitude: num(dadosProjeto.longitude),
+        altitude: num(dadosProjeto.altitude),
+        tipoLigacao: dadosProjeto.tipoLigacao || null,
+        tensaoNominal: num(dadosProjeto.tensaoNominal),
+        modoOperacao: dadosProjeto.modoOperacao || null,
         potenciaKwp: resultado.dimensionamento.potenciaInstaladaKwp,
         investimentoTotal: financeiro.capex.investimentoTotal,
         vpl: financeiro.indicadores.vpl,
@@ -123,13 +132,22 @@ export function SimuladorHibrido({
       setCampos(snap.campos)
       setCamposFin(snap.camposFin)
       setCargas(snap.cargas)
-      setIdentificacao({
+      const txt = (v: number | null) => (v === null ? '' : String(v))
+      setDadosProjeto({
         nome: sim.nome,
         clienteNome: sim.clienteNome ?? '',
         clienteCidade: sim.clienteCidade ?? '',
         clienteUf: sim.clienteUf ?? '',
         concessionaria: sim.concessionaria ?? '',
         responsavelTecnico: sim.responsavelTecnico ?? '',
+        azimute: txt(sim.azimute),
+        inclinacao: txt(sim.inclinacao),
+        latitude: txt(sim.latitude),
+        longitude: txt(sim.longitude),
+        altitude: txt(sim.altitude),
+        tipoLigacao: sim.tipoLigacao ?? '',
+        tensaoNominal: txt(sim.tensaoNominal),
+        modoOperacao: sim.modoOperacao ?? '',
       })
       setMsg({ text: `Simulação "${sim.nome}" reaberta.`, erro: false })
     })
@@ -172,7 +190,7 @@ export function SimuladorHibrido({
       </div>
 
       <div className="space-y-4">
-        <HibridoIdentificacao identificacao={identificacao} onChange={setIdentificacao} />
+        <HibridoIdentificacao dados={dadosProjeto} onChange={setDadosProjeto} />
         <HibridoInputsProjeto campos={campos} onChange={setCampos} />
         <HibridoSelecaoEquipamentos campos={campos} equipamentos={equipamentos} onChange={setCampos} />
 
