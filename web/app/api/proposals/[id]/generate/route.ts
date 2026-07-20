@@ -115,9 +115,6 @@ export async function POST(
     const body = await req.json() as {
       proposalId: string
       templateId: string
-      valor_entrada: number
-      valor_parcelas: number
-      num_parcelas: number
       overrides?: {
         valor_instalacao_por_placa?: number
         valor_projeto_por_kwp?: number
@@ -152,7 +149,7 @@ export async function POST(
       preco_final: number
     } | null = body.ajuste_comercial ?? null
 
-    const { proposalId, templateId, valor_entrada, valor_parcelas, num_parcelas, overrides, extras } = body
+    const { proposalId, templateId, overrides, extras } = body
 
     if (!proposalId) return NextResponse.json({ error: 'proposalId é obrigatório.' }, { status: 400 })
     if (!templateId) return NextResponse.json({ error: 'Selecione um template.' }, { status: 400 })
@@ -273,9 +270,6 @@ export async function POST(
           ajuste_valor: ajuste_comercial?.ajuste_valor ?? null,
           ajuste_percentual: ajuste_comercial?.ajuste_percentual ?? null,
           preco_final,
-          valor_entrada: valor_entrada ?? 0,
-          num_parcelas: num_parcelas ?? 0,
-          valor_parcelas: valor_parcelas ?? 0,
         }
       )
 
@@ -362,9 +356,6 @@ export async function POST(
       custo_instalacao: pricing.custo_instalacao,
       custo_km: pricing.custo_km,
       custo_ca: pricing.custo_ca,
-      valor_entrada: valor_entrada ?? 0,
-      valor_parcelas: valor_parcelas ?? 0,
-      num_parcelas: num_parcelas ?? 0,
       pdf_url: pdfUrl,
       docx_url: docxUrl,
       pricing_overrides: overrides ?? null,

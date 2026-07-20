@@ -10,7 +10,7 @@ const KNOWN_PLACEHOLDERS = [
   'paineis_qtd', 'paineis_potencia', 'paineis_marca',
   'inversor_qtd', 'inversor_potencia', 'inversor_marca',
   'total_kwp', 'geracao_mensal',
-  'preco_total', 'valor_entrada', 'num_parcelas', 'valor_parcelas',
+  'preco_total',
   'data_proposta', 'validade_proposta',
 ]
 

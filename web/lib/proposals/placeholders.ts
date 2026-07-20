@@ -22,9 +22,6 @@ export type PlaceholderData = {
   ajuste_valor: string
   ajuste_pct: string
   preco_final: string
-  valor_entrada: string
-  num_parcelas: string
-  valor_parcelas: string
   data_proposta: string
   validade_proposta: string
 }
@@ -56,9 +53,6 @@ type ProposalData = {
   ajuste_valor: number | null
   ajuste_percentual: number | null
   preco_final: number
-  valor_entrada: number
-  num_parcelas: number
-  valor_parcelas: number
 }
 
 export function buildPlaceholders(
@@ -93,9 +87,6 @@ export function buildPlaceholders(
       ? `${proposal.ajuste_percentual >= 0 ? '+' : ''}${(proposal.ajuste_percentual * 100).toFixed(2)}%`
       : '',
     preco_final:       formatCurrency(proposal.preco_final),
-    valor_entrada:     formatCurrency(proposal.valor_entrada),
-    num_parcelas:      String(proposal.num_parcelas),
-    valor_parcelas:    formatCurrency(proposal.valor_parcelas),
     data_proposta:     fmt(today),
     validade_proposta: fmt(addDays(today, 15)),
   }

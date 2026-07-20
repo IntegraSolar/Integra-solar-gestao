@@ -191,9 +191,6 @@ export default function TemplatesTab({ initialTemplates }: { initialTemplates: P
             ]},
             { group: 'Valores', items: [
               ['preco_total', 'Preço total formatado (R$)'],
-              ['valor_entrada', 'Valor de entrada (R$)'],
-              ['num_parcelas', 'Número de parcelas'],
-              ['valor_parcelas', 'Valor de cada parcela (R$)'],
             ]},
             { group: 'Datas', items: [
               ['data_proposta', 'Data de emissão (dd/MM/yyyy)'],
