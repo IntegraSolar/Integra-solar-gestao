@@ -4,6 +4,7 @@ import '@testing-library/jest-dom/vitest'
 import { render, screen } from '@testing-library/react'
 import { CargasResumo } from '@/components/simuladores/CargasResumo'
 import { CargasCurva24h } from '@/components/simuladores/CargasCurva24h'
+import { CargasBuilder } from '@/components/simuladores/CargasBuilder'
 import { calcularCargas } from '@/lib/simuladores/hibrido/cargas'
 import { PREMISSAS_PADRAO } from '@/lib/simuladores/hibrido/premissas'
 import type { Carga } from '@/lib/simuladores/hibrido/types'
@@ -193,5 +194,43 @@ describe('BibliotecaCargasPanel', () => {
     await user.click(screen.getByTestId('btn-toggle-biblioteca'))
     await user.click(screen.getByTestId('btn-excluir-b1'))
     expect(deleteCargaBiblioteca).toHaveBeenCalledWith('b1')
+  })
+})
+
+describe('CargasBuilder (controlado)', () => {
+  // Este componente é embutido tanto na tela autônoma quanto no simulador,
+  // e o refactor que o tornou controlado não era coberto por nenhum teste.
+  function BuilderComEstado({ cabecalho = false }: { cabecalho?: boolean }) {
+    const [cargas, setCargas] = useState<Carga[]>([CARGA])
+    const [biblioteca, setBiblioteca] = useState<CargaBiblioteca[]>([MODELO])
+    return (
+      <CargasBuilder
+        cargas={cargas}
+        onCargasChange={setCargas}
+        biblioteca={biblioteca}
+        onBibliotecaChange={setBiblioteca}
+        mostrarCabecalho={cabecalho}
+      />
+    )
+  }
+
+  it('embutido: sem título nem aviso de não-persistência', () => {
+    render(<BuilderComEstado />)
+    expect(screen.queryByText('Levantamento de cargas')).not.toBeInTheDocument()
+    expect(screen.queryByText(/ainda não é salvo/)).not.toBeInTheDocument()
+  })
+
+  it('autônomo: mostra título e aviso', () => {
+    render(<BuilderComEstado cabecalho />)
+    expect(screen.getByText('Levantamento de cargas')).toBeInTheDocument()
+    expect(screen.getByText(/ainda não é salvo/)).toBeInTheDocument()
+  })
+
+  it('resume as cargas recebidas via prop', () => {
+    render(<BuilderComEstado />)
+    const esperado = calcularCargas([CARGA], PREMISSAS_PADRAO)
+    expect(screen.getByTestId('consumo-diario')).toHaveTextContent(
+      esperado.consumoDiarioKwh.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    )
   })
 })
