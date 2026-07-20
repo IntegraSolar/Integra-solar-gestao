@@ -1,6 +1,9 @@
 import type { Metadata } from 'next'
 import { createAdminClient } from '@/lib/supabase/admin'
+import Link from 'next/link'
 import { PageHeader, Card, ButtonLink } from '@/components/backoffice/ui'
+import { listarEmpresas } from '@/lib/backoffice/empresas/queries'
+import { NIVEL_ESTILO } from '@/lib/backoffice/inatividade'
 
 export const metadata: Metadata = { title: 'Dashboard — Backoffice Integra Solar' }
 export const dynamic = 'force-dynamic'
@@ -40,8 +43,16 @@ const StatCard = ({ label, value, tone, icon }: { label: string; value: number; 
   </Card>
 )
 
+/** Empresas paradas há 1+ dia útil, das mais críticas para as menos. */
+async function getInativas() {
+  const empresas = await listarEmpresas()
+  return empresas
+    .filter((e) => e.inatividade.tipo === 'inativa' && !e.blocked_at)
+    .sort((a, b) => b.inatividade.dias_uteis - a.inatividade.dias_uteis)
+}
+
 export default async function BackofficeDashboard() {
-  const s = await getStats()
+  const [s, inativas] = await Promise.all([getStats(), getInativas()])
 
   return (
     <div>
@@ -57,6 +68,41 @@ export default async function BackofficeDashboard() {
         <StatCard label="Em trial" value={s.trial} tone="#B45309" icon="◷" />
         <StatCard label="Bloqueadas" value={s.bloqueadas} tone="#C11B1B" icon="⊘" />
       </div>
+
+      <Card className="p-6 mb-6">
+        <div className="flex items-baseline justify-between mb-4">
+          <h2 className="text-sm font-bold text-[#0E1B2A]">Alerta de inatividade</h2>
+          <span className="text-xs text-[#7C8D9E]">sem criar propostas · dias úteis</span>
+        </div>
+
+        {inativas.length === 0 ? (
+          <p className="text-sm text-[#12805C]">Nenhuma empresa parada — todas criaram proposta hoje.</p>
+        ) : (
+          <ul className="divide-y divide-[#F0F4F8]">
+            {inativas.map((e) => {
+              const estilo = NIVEL_ESTILO[e.inatividade.nivel]
+              return (
+                <li key={e.id} className="flex items-center justify-between py-2.5">
+                  <Link href={`/backoffice/empresas/${e.id}`} className="text-sm font-semibold text-[#1A3A5C] hover:text-[#F59E0B] transition-colors">
+                    {e.name}
+                  </Link>
+                  <span className="flex items-center gap-2">
+                    <span className="text-xs text-[#7C8D9E] tabular-nums">
+                      {e.ultima_proposta ? new Date(e.ultima_proposta).toLocaleDateString('pt-BR') : '—'}
+                    </span>
+                    <span
+                      className="rounded-lg px-2 py-0.5 text-xs font-bold tabular-nums"
+                      style={{ background: `${estilo.cor}14`, color: estilo.cor }}
+                    >
+                      {e.inatividade.dias_uteis} dia{e.inatividade.dias_uteis !== 1 ? 's' : ''}
+                    </span>
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </Card>
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="p-6 lg:col-span-2">

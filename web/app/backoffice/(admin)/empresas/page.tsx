@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { listarEmpresas } from '@/lib/backoffice/empresas/queries'
 import { PageHeader, Card, Table, EmptyRow, Badge, ButtonLink, Button, inputCls } from '@/components/backoffice/ui'
+import { NIVEL_ESTILO, type Inatividade } from '@/lib/backoffice/inatividade'
 
 export const metadata: Metadata = { title: 'Empresas — Backoffice Integra Solar' }
 export const dynamic = 'force-dynamic'
@@ -19,6 +20,21 @@ function StatusBadge({ status, bloqueada }: { status: string | null; bloqueada: 
   if (bloqueada) return <Badge tone="red">Bloqueada</Badge>
   const s = STATUS[status ?? ''] ?? { label: status ?? 'Sem plano', tone: 'gray' as Tone }
   return <Badge tone={s.tone}>{s.label}</Badge>
+}
+
+function AtividadeCell({ inatividade }: { inatividade: Inatividade }) {
+  if (inatividade.tipo === 'nunca_usou') {
+    return <span className="text-xs font-semibold text-[#7C8D9E]">Nunca usou</span>
+  }
+  if (inatividade.tipo === 'ativa') {
+    return <span className="text-xs font-semibold" style={{ color: NIVEL_ESTILO[0].cor }}>Ativa</span>
+  }
+  const estilo = NIVEL_ESTILO[inatividade.nivel]
+  return (
+    <span className="text-xs font-semibold" style={{ color: estilo.cor }} title={`${inatividade.dias_uteis} dia(s) útil(eis) sem criar proposta`}>
+      ⚠ {inatividade.dias_uteis} dia{inatividade.dias_uteis !== 1 ? 's' : ''}
+    </span>
+  )
 }
 
 export default async function EmpresasPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
@@ -42,13 +58,14 @@ export default async function EmpresasPage({ searchParams }: { searchParams: Pro
       </form>
 
       <Card className="overflow-hidden">
-        <Table head={['Empresa', 'Plano', 'Status', 'Usuários', 'Cadastro', '']}>
-          {empresas.length === 0 && <EmptyRow colSpan={6}>Nenhuma empresa encontrada.</EmptyRow>}
+        <Table head={['Empresa', 'Plano', 'Status', 'Atividade', 'Usuários', 'Cadastro', '']}>
+          {empresas.length === 0 && <EmptyRow colSpan={7}>Nenhuma empresa encontrada.</EmptyRow>}
           {empresas.map((e) => (
             <tr key={e.id} className="border-b border-[#F0F4F8] last:border-0 hover:bg-[#F7FAFC] transition-colors">
               <td className="px-5 py-3.5 font-semibold text-[#1A3A5C]">{e.name}</td>
               <td className="px-5 py-3.5 text-[#45586E] capitalize">{e.assinatura?.plan ?? e.plan ?? '—'}</td>
               <td className="px-5 py-3.5"><StatusBadge status={e.assinatura?.status ?? e.status ?? null} bloqueada={!!e.blocked_at} /></td>
+              <td className="px-5 py-3.5"><AtividadeCell inatividade={e.inatividade} /></td>
               <td className="px-5 py-3.5 text-center text-[#45586E] tabular-nums">{e.total_users}</td>
               <td className="px-5 py-3.5 text-[#7C8D9E] text-xs tabular-nums">{new Date(e.created_at).toLocaleDateString('pt-BR')}</td>
               <td className="px-5 py-3.5 text-right">
