@@ -10,6 +10,7 @@ import type { OrgConfig } from '@/lib/configuracoes/queries'
 import { formatCurrency } from '@/lib/format'
 import { secureStorageUrl } from '@/lib/storage/url'
 import type { KitPublic } from '@/lib/catalogo/kit-actions'
+import { generateProposalLink, getProposalLink } from '@/lib/proposals/link-actions'
 
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Rascunho',
@@ -25,6 +26,46 @@ const STATUS_COLORS: Record<string, string> = {
   approved: '#10B981',
   rejected: '#EF4444',
   cancelled: 'var(--theme-text-subtle)',
+}
+
+function ProposalLinkButton({ proposalId }: { proposalId: string }) {
+  const [token, setToken] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    getProposalLink(proposalId).then((result) => {
+      if (!cancelled && result?.token) setToken(result.token)
+    })
+    return () => { cancelled = true }
+  }, [proposalId])
+
+  async function handleClick() {
+    if (token) {
+      const url = `${window.location.origin}/proposta/${token}`
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+      return
+    }
+    setLoading(true)
+    const result = await generateProposalLink(proposalId)
+    setLoading(false)
+    if (result.token) setToken(result.token)
+    else if (result.error) alert(result.error)
+  }
+
+  return (
+    <button
+      onClick={handleClick}
+      disabled={loading}
+      className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-all hover:opacity-90 disabled:opacity-50"
+      style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--theme-text-muted)', border: '1px solid var(--theme-border)' }}
+    >
+      {loading ? 'Gerando...' : copied ? 'Copiado!' : token ? 'Copiar link' : 'Gerar link'}
+    </button>
+  )
 }
 
 export function ProposalsList({ lead }: { lead: Lead }) {
@@ -308,6 +349,7 @@ export function ProposalsList({ lead }: { lead: Lead }) {
               >
                 Duplicar
               </button>
+              <ProposalLinkButton proposalId={p.id} />
             </div>
             <button
               onClick={() => handleDelete(p.id)}

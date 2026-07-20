@@ -322,9 +322,26 @@ export async function POST(
       clearTimeout(timeout)
 
       if (!convertResponse.ok) {
+        // O corpo da resposta traz o motivo real (crédito esgotado, credencial
+        // inválida, arquivo recusado). Sem registrá-lo, resta só "tente novamente".
         const errText = await convertResponse.text()
-        logger.error('proposals/generate', 'ConvertAPI retornou erro', undefined, { status: convertResponse.status })
-        return NextResponse.json({ error: 'Erro na conversão para PDF. Tente novamente.', step: 'pdf_conversion' }, { status: 502 })
+        logger.error('proposals/generate', 'ConvertAPI retornou erro', undefined, {
+          status: convertResponse.status,
+          body: errText.slice(0, 500),
+          proposalId,
+        })
+
+        const status = convertResponse.status
+        let motivo = 'Erro na conversão para PDF. Tente novamente.'
+        if (status === 401 || status === 403) {
+          motivo = 'A credencial da ConvertAPI foi recusada. Verifique CONVERTAPI_SECRET.'
+        } else if (status === 402 || /credit|quota|balance|limit/i.test(errText)) {
+          motivo = 'Os créditos da ConvertAPI acabaram. Renove o plano para gerar novas propostas.'
+        } else if (status === 400) {
+          motivo = 'A ConvertAPI recusou o documento. Verifique o template do orçamento.'
+        }
+
+        return NextResponse.json({ error: motivo, step: 'pdf_conversion', upstream_status: status }, { status: 502 })
       }
 
       convertResult = await convertResponse.json()
