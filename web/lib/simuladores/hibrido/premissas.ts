@@ -5,6 +5,7 @@ import type {
   Premissas, TecnologiaBateria, ParamsTecnologia,
   PrecosCapex, PremissasFinanceiras,
 } from './types'
+import { fioBSchedule } from '../fio-b'
 
 export const PREMISSAS_PADRAO: Premissas = {
   // Fatores de perda do sistema (Performance Ratio)
@@ -65,10 +66,16 @@ export const PRECOS_CAPEX_PADRAO: PrecosCapex = {
 }
 
 /**
- * Rampa do TUSD Fio B da Lei 14.300: 60% no 1º ano, 75% no 2º, 90% no 3º e
- * integral do 4º em diante. Mesma escala usada no simulador de viabilidade.
+ * Rampa do TUSD Fio B da Lei 14.300 para conexão no ano corrente.
+ * A tela permite escolher outro ano de conexão; esta constante é só o default.
+ *
+ * `new Date().getFullYear()` é avaliado uma única vez, na carga do módulo — o
+ * valor reflete o ano em que o processo iniciou. Em deploys que reciclam a
+ * instância com frequência (Vercel, serverless) isso é inofensivo; um servidor
+ * de longa duração que atravessasse a virada do ano sem redeploy manteria a
+ * rampa do ano anterior até ser reiniciado.
  */
-export const FIO_B_SCHEDULE_14300: number[] = [0.6, 0.75, 0.9, ...Array<number>(22).fill(1)]
+export const FIO_B_SCHEDULE_14300: number[] = fioBSchedule(new Date().getFullYear(), 25)
 
 export const PREMISSAS_FINANCEIRAS_PADRAO: PremissasFinanceiras = {
   bdi: 0.15,              // aba Financeiro da planilha (a aba Premissas diz 25%)

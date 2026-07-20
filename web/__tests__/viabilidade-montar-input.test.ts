@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { montarViabilidadeInput, PREMISSAS_DEFAULT, type CamposSimulador } from '@/lib/simuladores/viabilidade/montar-input'
 import { CONCESSIONARIAS_SEED } from '@/lib/simuladores/viabilidade/concessionarias-seed'
 import { calcularViabilidade } from '@/lib/simuladores/viabilidade/engine'
+import { fioBSchedule } from '@/lib/simuladores/fio-b'
 
 const RGE = CONCESSIONARIAS_SEED.find((c) => c.nome === 'RGE')!
 const CAMPOS: CamposSimulador = {
@@ -11,9 +12,10 @@ const CAMPOS: CamposSimulador = {
 }
 
 describe('PREMISSAS_DEFAULT', () => {
-  it('fioBSchedule tem 25 elementos começando em 0.6/0.75/0.9', () => {
+  it('fioBSchedule tem 25 elementos derivados do ano corrente (Lei 14.300)', () => {
+    // Derivado, não fixo: em 2026 dá [0.6, 0.75, 0.9, 1…]; em 2027 começa em 0.75.
     expect(PREMISSAS_DEFAULT.fioBSchedule).toHaveLength(25)
-    expect(PREMISSAS_DEFAULT.fioBSchedule.slice(0, 4)).toEqual([0.6, 0.75, 0.9, 1])
+    expect(PREMISSAS_DEFAULT.fioBSchedule).toEqual(fioBSchedule(new Date().getFullYear(), 25))
   })
 })
 
@@ -36,7 +38,8 @@ describe('montarViabilidadeInput (golden RGE)', () => {
     expect(alt.reajusteTarifaAnual).toBe(0.08)
   })
   it('não compartilha a ref do fioBSchedule default (cópia defensiva)', () => {
+    const original = PREMISSAS_DEFAULT.fioBSchedule[0]
     montarViabilidadeInput(CAMPOS, RGE).fioBSchedule[0] = 99
-    expect(PREMISSAS_DEFAULT.fioBSchedule[0]).toBe(0.6)
+    expect(PREMISSAS_DEFAULT.fioBSchedule[0]).toBe(original)
   })
 })
