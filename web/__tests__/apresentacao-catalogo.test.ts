@@ -4,8 +4,15 @@ import { TEMPLATES, templateValido, TEMPLATE_PADRAO, blocosDoTemplate } from '@/
 import { BLOCOS_VALIDOS, normalizarConfig } from '@/lib/apresentacoes/tipos'
 
 describe('catálogo de temas', () => {
-  it('tem os dois temas da fase 1', () => {
-    expect(Object.keys(TEMAS).sort()).toEqual(['executive-black', 'minimal-white'])
+  it('tem os seis temas', () => {
+    expect(Object.keys(TEMAS).sort()).toEqual([
+      'corporate-blue',
+      'executive-black',
+      'green-energy',
+      'minimal-white',
+      'modern-dark',
+      'solar-gold',
+    ])
   })
 
   it('todo tema declara nome e cor de destaque', () => {

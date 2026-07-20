@@ -36,6 +36,50 @@
   --apr-sombra: 0 1px 3px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.24);
 }
 
+.apr[data-tema='corporate-blue'] {
+  --apr-fundo: #f5f7fb;
+  --apr-superficie: #ffffff;
+  --apr-texto: #101828;
+  --apr-texto-suave: #667085;
+  --apr-borda: #e4e7f0;
+  --apr-destaque: #2563eb;
+  --apr-contraste: #ffffff;
+  --apr-sombra: 0 1px 3px rgb(37 99 235 / 0.08), 0 8px 24px rgb(16 24 40 / 0.05);
+}
+
+.apr[data-tema='modern-dark'] {
+  --apr-fundo: #101014;
+  --apr-superficie: #16181d;
+  --apr-texto: #f2f1f7;
+  --apr-texto-suave: #9a97ab;
+  --apr-borda: #26232f;
+  --apr-destaque: #8b5cf6;
+  --apr-contraste: #101014;
+  --apr-sombra: 0 1px 3px rgb(0 0 0 / 0.5), 0 8px 24px rgb(139 92 246 / 0.12);
+}
+
+.apr[data-tema='solar-gold'] {
+  --apr-fundo: #fffdf7;
+  --apr-superficie: #ffffff;
+  --apr-texto: #201a10;
+  --apr-texto-suave: #7a6a52;
+  --apr-borda: #f0e6d2;
+  --apr-destaque: #b45309;
+  --apr-contraste: #ffffff;
+  --apr-sombra: 0 1px 3px rgb(180 83 9 / 0.08), 0 8px 24px rgb(180 83 9 / 0.06);
+}
+
+.apr[data-tema='green-energy'] {
+  --apr-fundo: #f5faf7;
+  --apr-superficie: #ffffff;
+  --apr-texto: #10241b;
+  --apr-texto-suave: #5c7768;
+  --apr-borda: #e0ede5;
+  --apr-destaque: #047857;
+  --apr-contraste: #ffffff;
+  --apr-sombra: 0 1px 3px rgb(4 120 87 / 0.08), 0 8px 24px rgb(4 120 87 / 0.06);
+}
+
 .apr__wrap {
   max-width: var(--apr-max-largura);
   margin: 0 auto;
@@ -101,6 +145,21 @@
   .apr__ind-valor { font-size: 22px; }
 }
 
+@keyframes apr-entrada {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+.apr__card { animation: apr-entrada 420ms ease-out both; }
+.apr__card:nth-child(2) { animation-delay: 60ms; }
+.apr__card:nth-child(3) { animation-delay: 120ms; }
+.apr__card:nth-child(4) { animation-delay: 180ms; }
+.apr__card:nth-child(5) { animation-delay: 240ms; }
+.apr__card:nth-child(6) { animation-delay: 300ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .apr__card { animation: none; }
+}
+
 /* Impressão: A4 limpo, sem sombra, sem fundo cinza, sem card partido ao meio. */
 @media print {
   .apr { background: #fff; }
@@ -110,6 +169,7 @@
     border-color: #d9dde3;
     break-inside: avoid;
     page-break-inside: avoid;
+    animation: none;
   }
   .apr__ind { break-inside: avoid; }
 }
