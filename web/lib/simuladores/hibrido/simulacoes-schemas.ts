@@ -18,6 +18,16 @@ export const salvarSimulacaoSchema = z.object({
   // Nullable de propósito: o investimento pode não se pagar no horizonte, e
   // gravar 0 nesse caso leria como "se paga imediatamente".
   paybackAnos: z.coerce.number().nullable(),
+  // Descritivos do projeto (Memorial). Todos opcionais e nullable: 0 é um
+  // azimute válido (Norte), então "não informado" precisa ser null, não 0.
+  azimute: z.coerce.number().nullish(),
+  inclinacao: z.coerce.number().nullish(),
+  latitude: z.coerce.number().nullish(),
+  longitude: z.coerce.number().nullish(),
+  altitude: z.coerce.number().nullish(),
+  tipoLigacao: z.string().nullish(),
+  tensaoNominal: z.coerce.number().nullish(),
+  modoOperacao: z.string().nullish(),
 })
 
 export type SalvarSimulacaoData = z.infer<typeof salvarSimulacaoSchema>
@@ -42,10 +52,21 @@ export type SimulacaoCompleta = SimulacaoResumo & {
   concessionaria: string | null
   responsavelTecnico: string | null
   snapshot: unknown
+  azimute: number | null
+  inclinacao: number | null
+  latitude: number | null
+  longitude: number | null
+  altitude: number | null
+  tipoLigacao: string | null
+  tensaoNominal: number | null
+  modoOperacao: string | null
 }
 
 const s = (v: unknown): string | null => (v === null || v === undefined ? null : String(v))
 const n = (v: unknown): number => Number(v ?? 0)
+/** Numérico opcional: `null` continua `null` — 0 é valor legítimo. */
+const nOuNull = (v: unknown): number | null =>
+  v === null || v === undefined ? null : Number(v)
 
 export function rowToResumo(r: Record<string, unknown>): SimulacaoResumo {
   return {
@@ -69,6 +90,14 @@ export function rowToCompleta(r: Record<string, unknown>): SimulacaoCompleta {
     concessionaria: s(r.concessionaria),
     responsavelTecnico: s(r.responsavel_tecnico),
     snapshot: r.snapshot,
+    azimute: nOuNull(r.azimute),
+    inclinacao: nOuNull(r.inclinacao),
+    latitude: nOuNull(r.latitude),
+    longitude: nOuNull(r.longitude),
+    altitude: nOuNull(r.altitude),
+    tipoLigacao: s(r.tipo_ligacao),
+    tensaoNominal: nOuNull(r.tensao_nominal),
+    modoOperacao: s(r.modo_operacao),
   }
 }
 
@@ -86,5 +115,13 @@ export function salvarDataToRow(d: SalvarSimulacaoData) {
     vpl: d.vpl,
     tir: d.tir,
     payback_anos: d.paybackAnos,
+    azimute: d.azimute ?? null,
+    inclinacao: d.inclinacao ?? null,
+    latitude: d.latitude ?? null,
+    longitude: d.longitude ?? null,
+    altitude: d.altitude ?? null,
+    tipo_ligacao: d.tipoLigacao ?? null,
+    tensao_nominal: d.tensaoNominal ?? null,
+    modo_operacao: d.modoOperacao ?? null,
   }
 }
