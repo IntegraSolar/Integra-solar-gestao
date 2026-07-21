@@ -4,9 +4,9 @@ import { Secao } from '../primitivos/Secao'
 import { Indicador } from '../primitivos/Indicador'
 
 export function Hero({ dados }: { dados: ApresentacaoData }) {
-  const frase = dados.cliente.cidade
-    ? `Energia solar para ${dados.cliente.cidade}`
-    : 'Sua usina solar'
+  const frase =
+    dados.textos.abertura ??
+    (dados.cliente.cidade ? `Energia solar para ${dados.cliente.cidade}` : 'Sua usina solar')
 
   return (
     <Secao>

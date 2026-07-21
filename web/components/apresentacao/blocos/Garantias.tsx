@@ -1,25 +1,10 @@
 // web/components/apresentacao/blocos/Garantias.tsx
 import type { ApresentacaoData } from '@/lib/apresentacoes/tipos'
+import type { ItemGarantia } from '@/lib/apresentacoes/textos'
 import { Secao } from '../primitivos/Secao'
-import { Icone, type NomeIcone } from '../primitivos/Icone'
+import { Icone } from '../primitivos/Icone'
 
-const GARANTIAS: { icone: NomeIcone; titulo: string; prazo: string; descricao: string }[] = [
-  { icone: 'sol', titulo: 'Painéis', prazo: '25 anos', descricao: 'Garantia de performance' },
-  { icone: 'raio', titulo: 'Inversor', prazo: '10 anos', descricao: 'Garantia do fabricante' },
-  { icone: 'ferramenta', titulo: 'Instalação', prazo: '1 ano', descricao: 'Serviço e mão de obra' },
-]
-
-function CardGarantia({
-  icone,
-  titulo,
-  prazo,
-  descricao,
-}: {
-  icone: NomeIcone
-  titulo: string
-  prazo: string
-  descricao: string
-}) {
+function CardGarantia({ icone, titulo, prazo, descricao }: ItemGarantia) {
   return (
     <div
       style={{
@@ -59,11 +44,11 @@ function CardGarantia({
   )
 }
 
-export function Garantias({ dados: _dados }: { dados: ApresentacaoData }) {
+export function Garantias({ dados }: { dados: ApresentacaoData }) {
   return (
     <Secao titulo="Garantias">
       <div className="apr__grid">
-        {GARANTIAS.map((g) => (
+        {dados.textos.garantias.map((g) => (
           <CardGarantia key={g.titulo} {...g} />
         ))}
       </div>
