@@ -34,6 +34,7 @@ function ProposalLinkButton({ proposalId }: { proposalId: string }) {
   const [token, setToken] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [erro, setErro] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -52,21 +53,34 @@ function ProposalLinkButton({ proposalId }: { proposalId: string }) {
       return
     }
     setLoading(true)
-    const result = await generateProposalLink(proposalId)
-    setLoading(false)
-    if (result.token) setToken(result.token)
-    else if (result.error) alert(result.error)
+    setErro(null)
+    try {
+      const result = await generateProposalLink(proposalId)
+      if (result.token) setToken(result.token)
+      else if (result.error) setErro(result.error)
+    } catch (e: any) {
+      // Sem este catch, uma excecao deixava o botao presoem "Gerando..." para
+      // sempre, sem mensagem — so recarregando a pagina.
+      setErro(e?.message === 'Failed to fetch'
+        ? 'Sem conexão com o servidor. Tente novamente.'
+        : 'Não foi possível gerar o link. Tente novamente.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
-    <button
-      onClick={handleClick}
-      disabled={loading}
-      className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-all hover:opacity-90 disabled:opacity-50"
-      style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--theme-text-muted)', border: '1px solid var(--theme-border)' }}
-    >
-      {loading ? 'Gerando...' : copied ? 'Copiado!' : token ? 'Copiar link' : 'Gerar link'}
-    </button>
+    <span className="inline-flex flex-col gap-1">
+      <button
+        onClick={handleClick}
+        disabled={loading}
+        className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-all hover:opacity-90 disabled:opacity-50"
+        style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--theme-text-muted)', border: '1px solid var(--theme-border)' }}
+      >
+        {loading ? 'Gerando...' : copied ? 'Copiado!' : token ? 'Copiar link' : 'Gerar link'}
+      </button>
+      {erro && <span className="text-[11px] text-red-400 max-w-[220px]">{erro}</span>}
+    </span>
   )
 }
 
