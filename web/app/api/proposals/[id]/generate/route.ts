@@ -1,109 +1,14 @@
 import { NextResponse } from 'next/server'
-import PizZip from 'pizzip'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserData } from '@/lib/org/queries'
 import { getOrgConfig } from '@/lib/configuracoes/queries'
 import { calcularPreco } from '@/lib/proposals/pricing'
-import { buildPlaceholders } from '@/lib/proposals/placeholders'
 import { rateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { acquireSlot } from '@/lib/security/concurrency'
 import { logSecurityEvent } from '@/lib/security/rate-policies'
 import { logger } from '@/lib/logger'
 
 const CONVERT_TIMEOUT_MS = 90_000
-
-/**
- * Sanitize and replace placeholders in DOCX XML in one pass.
- * Word fragments {{tag}} across multiple <w:r> runs. This function:
- * 1. Finds each {{ in text content
- * 2. Scans forward collecting text (skipping XML tags) until }} or }
- * 3. If the collected text is a known placeholder, replaces inline
- * 4. Clears the original {{ }} characters from their text nodes
- */
-function processDocxPlaceholders(zip: PizZip, data: Record<string, string>): void {
-  for (const fileName of Object.keys(zip.files)) {
-    if (!fileName.endsWith('.xml') || zip.files[fileName].dir) continue
-    let content = zip.files[fileName].asText()
-    if (!content.includes('{{')) continue
-    let changed = false
-    let i = 0
-
-    while (i < content.length) {
-      const openIdx = content.indexOf('{{', i)
-      if (openIdx === -1) break
-
-      // Skip if inside an XML tag attribute
-      const prevClose = content.lastIndexOf('>', openIdx)
-      const prevOpen = content.lastIndexOf('<', openIdx)
-      if (prevOpen > prevClose) { i = openIdx + 2; continue }
-
-      // Collect text positions: each entry is [startInContent, endInContent, textContent]
-      type TextSpan = { start: number; end: number; text: string }
-      const textSpans: TextSpan[] = []
-      let j = openIdx
-      let textBuf = ''
-      let found = false
-      const limit = Math.min(openIdx + 3000, content.length)
-
-      while (j < limit) {
-        if (content[j] === '<') {
-          const closeAngle = content.indexOf('>', j)
-          if (closeAngle === -1) break
-          j = closeAngle + 1
-          continue
-        }
-        // Start of a text segment
-        const textStart = j
-        while (j < limit && content[j] !== '<') {
-          textBuf += content[j]
-          j++
-          if (textBuf.endsWith('}}')) { found = true; break }
-        }
-        textSpans.push({ start: textStart, end: j, text: content.substring(textStart, j) })
-        if (found) break
-      }
-
-      // Handle single-brace closing
-      if (!found) {
-        const sm = textBuf.match(/^\{\{([a-z_][a-z0-9_]*)\}$/i)
-        if (sm) { found = true; textBuf += '}' }
-      }
-
-      if (!found) { i = openIdx + 2; continue }
-
-      const match = textBuf.match(/^\{\{([a-z_][a-z0-9_]*)\}\}$/i)
-      if (!match) { i = openIdx + 2; continue }
-
-      const tag = match[1]
-      const value = data[tag]
-      if (value === undefined) { i = openIdx + 2; continue }
-
-      const escaped = value
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-
-      // Replace: put the value in the first text span, clear the rest
-      // Work backwards to preserve indices
-      for (let k = textSpans.length - 1; k >= 0; k--) {
-        const span = textSpans[k]
-        if (k === 0) {
-          // First span: replace with the value
-          content = content.substring(0, span.start) + escaped + content.substring(span.end)
-        } else {
-          // Other spans: clear them
-          content = content.substring(0, span.start) + content.substring(span.end)
-        }
-      }
-
-      changed = true
-      i = textSpans[0].start + escaped.length
-    }
-
-    if (changed) zip.file(fileName, content)
-  }
-}
 
 export async function POST(
   req: Request,
@@ -114,7 +19,8 @@ export async function POST(
     await params // params not used in this handler (proposalId comes from body)
     const body = await req.json() as {
       proposalId: string
-      templateId: string
+      template?: string
+      tema?: string
       overrides?: {
         valor_instalacao_por_placa?: number
         valor_projeto_por_kwp?: number
@@ -149,10 +55,9 @@ export async function POST(
       preco_final: number
     } | null = body.ajuste_comercial ?? null
 
-    const { proposalId, templateId, overrides, extras } = body
+    const { proposalId, template, tema, overrides, extras } = body
 
     if (!proposalId) return NextResponse.json({ error: 'proposalId é obrigatório.' }, { status: 400 })
-    if (!templateId) return NextResponse.json({ error: 'Selecione um template.' }, { status: 400 })
 
     const user = await getCurrentUserData()
     const orgId = user?.membership?.organization.id
@@ -225,183 +130,56 @@ export async function POST(
     // Se há ajuste comercial, usa o preco_final negociado; caso contrário usa o calculado
     const preco_final = ajuste_comercial ? ajuste_comercial.preco_final : preco_calculado_final
 
-    const { data: templateMeta } = await (supabase as any)
-      .from('proposal_templates')
-      .select('file_path')
-      .eq('id', templateId)
-      .eq('org_id', orgId)
-      .single()
+    // A apresentacao vive num link publico: nao ha mais DOCX, ConvertAPI nem
+    // arquivo intermediario. Garantimos o link (reaproveitando o ativo, se houver)
+    // e a configuracao da apresentacao.
+    let token: string | null = null
+    const { data: linkAtivo } = await (supabase as any)
+      .from('proposal_links')
+      .select('token')
+      .eq('proposal_id', proposalId)
+      .eq('organization_id', orgId)
+      .eq('active', true)
+      .maybeSingle()
 
-    if (!templateMeta) return NextResponse.json({ error: 'Template não encontrado.' }, { status: 404 })
-
-    const { data: templateBlob, error: downloadError } = await supabase.storage
-      .from('proposal-templates')
-      .download(templateMeta.file_path)
-
-    if (downloadError || !templateBlob) {
-      return NextResponse.json({ error: 'Erro ao baixar template: ' + downloadError?.message }, { status: 500 })
-    }
-
-    const templateBuffer = Buffer.from(await templateBlob.arrayBuffer())
-
-    let docxBuffer: Buffer
-    try {
-      const zip = new PizZip(templateBuffer)
-
-      const placeholders = buildPlaceholders(
-        lead as any,
-        {
-          razao_social: orgConfig.razao_social,
-          nome_fantasia: orgConfig.nome_fantasia,
-          cnpj: orgConfig.cnpj,
-          telefone: orgConfig.telefone,
-        },
-        {
-          panel_qty: p.total_modules ?? 0,
-          panel_power_w: p.module_power_wp ?? 0,
-          panel_brand_model: p.panel_brand_model ?? null,
-          inverter_qty: p.total_inverters ?? 0,
-          inverter_power_w: p.inverter_power_w ?? 0,
-          inverter_brand_model: p.inverter_brand_model ?? null,
-          total_power_kwp: p.total_power_kwp ?? 0,
-          monthly_generation_kwh: p.monthly_generation_kwh ?? 0,
-          preco_total: preco_final,
-          preco_calculado: preco_calculado_final,
-          ajuste_valor: ajuste_comercial?.ajuste_valor ?? null,
-          ajuste_percentual: ajuste_comercial?.ajuste_percentual ?? null,
-          preco_final,
-        }
-      )
-
-      processDocxPlaceholders(zip, placeholders)
-      docxBuffer = Buffer.from(zip.generate({ type: 'nodebuffer' }))
-    } catch (templateErr: any) {
-      logger.error('proposals/generate', 'Erro ao processar template', templateErr, { proposalId, templateId })
-      return NextResponse.json({
-        error: `Erro ao processar template: ${templateErr?.message ?? 'Erro desconhecido'}`,
-        step: 'template_processing',
-      }, { status: 422 })
-    }
-
-    const proposalName = (p.name ?? 'Proposta').replace(/[<>:"/\\|?*]/g, '_')
-    const docxPath = `${orgId}/${proposalId}.docx`
-    const { error: uploadError } = await supabase.storage
-      .from('proposals')
-      .upload(docxPath, docxBuffer, {
-        contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        upsert: true,
-      })
-
-    if (uploadError) {
-      return NextResponse.json({ error: 'Erro ao salvar DOCX: ' + uploadError.message, step: 'docx_upload' }, { status: 500 })
-    }
-
-    const convertSecret = process.env.CONVERTAPI_SECRET
-    if (!convertSecret) {
-      return NextResponse.json({ error: 'CONVERTAPI_SECRET não configurado.', step: 'config' }, { status: 500 })
-    }
-
-    const formData = new FormData()
-    formData.append(
-      'File',
-      new Blob([new Uint8Array(docxBuffer)], {
-        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      }),
-      `${proposalName}.docx`
-    )
-
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), CONVERT_TIMEOUT_MS)
-
-    let convertResult: any
-    try {
-      const convertResponse = await fetch(
-        `https://v2.convertapi.com/convert/docx/to/pdf?Secret=${convertSecret}&StoreFile=true`,
-        { method: 'POST', body: formData, signal: controller.signal }
-      )
-      clearTimeout(timeout)
-
-      if (!convertResponse.ok) {
-        // O corpo da resposta traz o motivo real (crédito esgotado, credencial
-        // inválida, arquivo recusado). Sem registrá-lo, resta só "tente novamente".
-        const errText = await convertResponse.text()
-        logger.error('proposals/generate', 'ConvertAPI retornou erro', undefined, {
-          status: convertResponse.status,
-          body: errText.slice(0, 500),
-          proposalId,
-        })
-
-        const status = convertResponse.status
-        let motivo = 'Erro na conversão para PDF. Tente novamente.'
-        if (status === 401 || status === 403) {
-          motivo = 'A credencial da ConvertAPI foi recusada. Verifique CONVERTAPI_SECRET.'
-        } else if (status === 402 || /credit|quota|balance|limit/i.test(errText)) {
-          motivo = 'Os créditos da ConvertAPI acabaram. Renove o plano para gerar novas propostas.'
-        } else if (status === 400) {
-          motivo = 'A ConvertAPI recusou o documento. Verifique o template do orçamento.'
-        }
-
-        return NextResponse.json({ error: motivo, step: 'pdf_conversion', upstream_status: status }, { status: 502 })
+    if (linkAtivo?.token) {
+      token = linkAtivo.token
+    } else {
+      const novoToken = crypto.randomUUID().replace(/-/g, '').slice(0, 24)
+      const { error: linkError } = await (supabase as any)
+        .from('proposal_links')
+        .insert({ proposal_id: proposalId, organization_id: orgId, token: novoToken })
+      if (linkError) {
+        logger.error('proposals/generate', 'Erro ao criar link da apresentacao', linkError, { proposalId })
+        return NextResponse.json(
+          { error: 'Orçamento calculado, mas não foi possível criar o link.', step: 'link' },
+          { status: 500 }
+        )
       }
-
-      convertResult = await convertResponse.json()
-    } catch (fetchErr: any) {
-      clearTimeout(timeout)
-      if (fetchErr.name === 'AbortError') {
-        return NextResponse.json({
-          error: 'A conversão para PDF excedeu o tempo limite.',
-          step: 'pdf_timeout',
-        }, { status: 504 })
-      }
-      throw fetchErr
+      token = novoToken
     }
 
-    const convertApiUrl: string = convertResult?.Files?.[0]?.Url ?? ''
-    if (!convertApiUrl) {
-      return NextResponse.json({ error: 'ConvertAPI não retornou URL do PDF.', step: 'pdf_result' }, { status: 502 })
+    // Template e tema da apresentacao. Sem blocos: lista vazia significa
+    // "usar os blocos do template escolhido".
+    if (template || tema) {
+      try {
+        await (supabase as any).from('proposal_presentations').upsert(
+          {
+            proposal_id: proposalId,
+            organization_id: orgId,
+            ...(template ? { template } : {}),
+            ...(tema ? { tema } : {}),
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'proposal_id' }
+        )
+      } catch (cfgErr: any) {
+        // Sem configuracao, a apresentacao usa os padroes — nao vale falhar aqui.
+        logger.error('proposals/generate', 'Erro ao salvar configuracao da apresentacao', cfgErr, { proposalId })
+      }
     }
 
-    // O arquivo hospedado na ConvertAPI é temporário: em poucos dias a URL passa a
-    // devolver 404. Baixamos o PDF e guardamos no nosso Storage, como já é feito
-    // com o DOCX, para que o link da proposta não expire.
-    const pdfPath = `${orgId}/${proposalId}.pdf`
-    try {
-      const pdfResponse = await fetch(convertApiUrl)
-      if (!pdfResponse.ok) {
-        logger.error('proposals/generate', 'Falha ao baixar PDF da ConvertAPI', undefined, {
-          status: pdfResponse.status, proposalId,
-        })
-        return NextResponse.json({
-          error: 'Não foi possível salvar o PDF. Tente gerar novamente.',
-          step: 'pdf_download',
-        }, { status: 502 })
-      }
-
-      const pdfBuffer = Buffer.from(await pdfResponse.arrayBuffer())
-      const { error: pdfUploadError } = await supabase.storage
-        .from('proposals')
-        .upload(pdfPath, pdfBuffer, { contentType: 'application/pdf', upsert: true })
-
-      if (pdfUploadError) {
-        logger.error('proposals/generate', 'Erro ao salvar PDF no storage', pdfUploadError, { proposalId })
-        return NextResponse.json({
-          error: 'Erro ao salvar o PDF: ' + pdfUploadError.message,
-          step: 'pdf_upload',
-        }, { status: 500 })
-      }
-    } catch (pdfErr: any) {
-      logger.error('proposals/generate', 'Erro inesperado ao armazenar o PDF', pdfErr, { proposalId })
-      return NextResponse.json({
-        error: 'Não foi possível salvar o PDF. Tente gerar novamente.',
-        step: 'pdf_store',
-      }, { status: 502 })
-    }
-
-    // URLs próprias e autenticadas — nunca a URL temporária da ConvertAPI.
-    const pdfUrl = `/api/storage/download?bucket=proposals&path=${encodeURIComponent(pdfPath)}`
-    const docxUrl = `/api/storage/download?bucket=proposals&path=${encodeURIComponent(docxPath)}`
     await supabase.from('proposals').update({
-      template_id: templateId,
       preco_total: preco_total_final,
       preco_calculado: preco_calculado_final,
       preco_final: preco_final,
@@ -410,8 +188,6 @@ export async function POST(
       custo_instalacao: pricing.custo_instalacao,
       custo_km: pricing.custo_km,
       custo_ca: pricing.custo_ca,
-      pdf_url: pdfUrl,
-      docx_url: docxUrl,
       pricing_overrides: overrides ?? null,
       gerado_em: new Date().toISOString(),
       ...(ajuste_comercial ? {
@@ -422,7 +198,11 @@ export async function POST(
       } : {}),
     } as any).eq('id', proposalId)
 
-    return NextResponse.json({ pdf_url: pdfUrl, pdf_filename: `${proposalName}.pdf` })
+    return NextResponse.json({
+      token,
+      apresentacao_path: `/proposta/${token}`,
+      preco_final,
+    })
 
   } catch (err: any) {
     logger.error('proposals/generate', 'Erro interno inesperado', err)
