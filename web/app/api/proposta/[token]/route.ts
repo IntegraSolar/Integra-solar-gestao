@@ -83,6 +83,26 @@ export async function GET(
     cfg = null
   }
 
+  // Padrão da empresa (Configurações → Apresentação): textos personalizados e,
+  // quando a proposta não tem configuração própria, template/tema/blocos.
+  // Mesma proteção das demais: tabela ausente não pode derrubar a rota pública.
+  let orgCfg: {
+    template?: unknown
+    tema?: unknown
+    blocos?: unknown
+    textos?: unknown
+  } | null = null
+  try {
+    const { data } = await (supabase as any)
+      .from('org_apresentacao_config')
+      .select('template, tema, blocos, textos')
+      .eq('organization_id', link.organization_id)
+      .maybeSingle()
+    orgCfg = data ?? null
+  } catch {
+    orgCfg = null
+  }
+
   // Depoimentos: tabela pode ainda não existir em produção (migration não
   // aplicada). Qualquer erro aqui não pode derrubar a rota pública.
   let depoimentos: { autor: string; cidade: string | null; texto: string }[] = []
@@ -139,7 +159,10 @@ export async function GET(
         logo_url: org?.logo_url ?? null,
       },
       depoimentos,
+      textos: orgCfg?.textos,
     }),
-    config: normalizarConfig(cfg),
+    // Configuração da proposta vence a da empresa; sem nenhuma das duas,
+    // normalizarConfig aplica os padrões do sistema.
+    config: normalizarConfig(cfg ?? orgCfg),
   })
 }
