@@ -23,7 +23,8 @@ export function FluxoInstalacao({ dados }: { dados: ApresentacaoData }) {
             >
               Passo {i + 1}
             </p>
-            <p style={{ fontSize: 14, fontWeight: 600, marginTop: 2 }}>{p.descricao}</p>
+            <p style={{ fontSize: 14, fontWeight: 600, marginTop: 2 }}>{p.titulo}</p>
+            <p style={{ fontSize: 12, marginTop: 2, color: 'var(--apr-texto-suave)' }}>{p.descricao}</p>
           </div>
         ))}
       </div>
