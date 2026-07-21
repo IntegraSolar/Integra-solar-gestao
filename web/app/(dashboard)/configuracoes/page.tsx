@@ -3,17 +3,17 @@ import { requireModuleAccess } from '@/lib/org/permissions'
 import { getOrgConfig, getLeadOrigins } from '@/lib/configuracoes/queries'
 import { getColaboradores } from '@/lib/colaboradores/queries'
 import { getAuditLogs } from '@/lib/auditoria/queries'
-import { getProposalTemplates } from '@/lib/proposals/templates'
+import { getConfigApresentacao } from '@/lib/apresentacoes/config-actions'
 import ConfiguracoesClient from './ConfiguracoesClient'
 
 export default async function ConfiguracoesPage() {
   await requireModuleAccess('configuracoes')
-  const [config, origins, colaboradores, { logs, total }, proposalTemplates] = await Promise.all([
+  const [config, origins, colaboradores, { logs, total }, apresentacaoConfig] = await Promise.all([
     getOrgConfig(),
     getLeadOrigins(),
     getColaboradores(),
     getAuditLogs(1, 20),
-    getProposalTemplates(),
+    getConfigApresentacao(),
   ])
 
   return (
@@ -23,7 +23,7 @@ export default async function ConfiguracoesPage() {
       colaboradores={colaboradores}
       auditLogs={logs}
       auditTotal={total}
-      proposalTemplates={proposalTemplates}
+      apresentacaoConfig={apresentacaoConfig}
     />
   )
 }
