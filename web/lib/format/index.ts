@@ -51,6 +51,27 @@ export function formatDate(v: string | null | undefined): string {
   return `${parts[2]}/${parts[1]}/${parts[0]}`
 }
 
+/**
+ * Data e hora de um timestamp, em horário de Brasília.
+ *
+ * Diferente de formatDate, que fatia a string ISO: aqui o valor vem do banco em
+ * UTC, e fatiar mostraria o dia seguinte para qualquer registro criado depois
+ * das 21h em Brasília.
+ */
+export function formatDateTime(v: string | null | undefined): string {
+  if (!v) return '—'
+  const d = new Date(v)
+  if (isNaN(d.getTime())) return v
+  return d.toLocaleString('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
 export function formatPercent(v: number | string | null | undefined): string {
   if (v == null || v === '') return '—'
   const n = typeof v === 'string' ? parseFloat(v.replace(',', '.')) : v

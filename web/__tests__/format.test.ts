@@ -7,6 +7,7 @@ import {
   formatCpfCnpj,
   formatCEP,
   formatDate,
+  formatDateTime,
   cleanDigits,
   cleanCurrency,
   toISODate,
@@ -211,5 +212,27 @@ describe('validateCEP', () => {
   })
   it('rejeita inválido', () => {
     expect(validateCEP('1234')).toBe(false)
+  })
+})
+
+describe('formatDateTime', () => {
+  it('converte UTC para horário de Brasília', () => {
+    expect(formatDateTime('2026-07-21T14:30:00Z')).toBe('21/07/2026, 11:30')
+  })
+
+  it('não adianta o dia em registro criado à noite no Brasil', () => {
+    // 21/07 às 22h em Brasília é 22/07 às 01h em UTC. Fatiar a string ISO
+    // mostraria 22/07 — a razão de existir desta função.
+    expect(formatDateTime('2026-07-22T01:00:00Z')).toBe('21/07/2026, 22:00')
+  })
+
+  it('devolve travessão para valor ausente', () => {
+    expect(formatDateTime(null)).toBe('—')
+    expect(formatDateTime(undefined)).toBe('—')
+    expect(formatDateTime('')).toBe('—')
+  })
+
+  it('devolve o valor original quando não é data', () => {
+    expect(formatDateTime('nao-e-data')).toBe('nao-e-data')
   })
 })
