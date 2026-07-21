@@ -138,3 +138,24 @@ describe('normalizarConfig', () => {
     expect(c.blocos).toEqual(blocosDoTemplate('premium'))
   })
 })
+
+describe('config sem personalização segue o template escolhido', () => {
+  it('blocos vazios usam os blocos do template salvo, não os do padrão', () => {
+    // Regressão: o DEFAULT da coluna blocos vinha preenchido e sobrepunha o
+    // template — escolher "Luxury" renderizava os blocos da Fase 1.
+    const c = normalizarConfig({ template: 'luxury', tema: 'executive-black', blocos: [] })
+    expect(c.blocos).toEqual(blocosDoTemplate('luxury'))
+    expect(c.blocos).toContain('depoimentos')
+  })
+
+  it('trocar o template troca os blocos quando não há personalização', () => {
+    const minimalista = normalizarConfig({ template: 'minimalista', tema: 'minimal-white', blocos: [] })
+    const industrial = normalizarConfig({ template: 'industrial', tema: 'executive-black', blocos: [] })
+    expect(minimalista.blocos).not.toEqual(industrial.blocos)
+  })
+
+  it('personalização explícita vence o template', () => {
+    const c = normalizarConfig({ template: 'luxury', tema: 'executive-black', blocos: ['cover', 'contato'] })
+    expect(c.blocos).toEqual(['cover', 'contato'])
+  })
+})

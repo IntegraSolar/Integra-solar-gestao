@@ -344,23 +344,12 @@ export function ProposalsList({ lead }: { lead: Lead }) {
           )}
           <div className="flex items-center justify-between mt-3">
             <div className="flex items-center gap-2">
-              {p.pdf_url && (
-                <a
-                  href={secureStorageUrl(p.pdf_url) ?? '#'}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-all hover:opacity-90"
-                  style={{ background: 'rgba(255,208,128,0.15)', color: 'var(--theme-accent)', border: '1px solid rgba(255,208,128,0.3)' }}
-                >
-                  ↓ PDF
-                </a>
-              )}
               <button
                 onClick={() => setReviewProposal(p)}
                 className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-all hover:opacity-90"
                 style={{ background: 'var(--theme-accent)', color: 'var(--theme-accent-text)' }}
               >
-                {p.pdf_url ? 'Editar Orçamento' : 'Gerar Orçamento'}
+                {p.gerado_em ? 'Editar Orçamento' : 'Gerar Orçamento'}
               </button>
               <button
                 onClick={() => handleDuplicate(p.id)}

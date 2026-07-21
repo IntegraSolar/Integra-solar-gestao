@@ -8,6 +8,8 @@ import { formatCurrency } from '@/lib/format'
 import type { OrgConfig } from '@/lib/configuracoes/queries'
 import { CommercialAdjustmentModal } from './CommercialAdjustmentModal'
 import { applyCommercialAdjustment, removeCommercialAdjustment } from '@/lib/crm/actions'
+import { TEMPLATES, TEMPLATE_PADRAO } from '@/lib/apresentacoes/templates'
+import { TEMAS, TEMA_PADRAO } from '@/lib/apresentacoes/temas'
 
 interface ProposalPricingReviewProps {
   proposal: Proposal
@@ -34,12 +36,10 @@ export function ProposalPricingReview({
   onClose,
   onGenerated,
 }: ProposalPricingReviewProps) {
-  const [selectedTemplateId, setSelectedTemplateId] = useState(
-    proposal.template_id ??
-    templates.find((t) => t.is_default)?.id ??
-    templates[0]?.id ??
-    ''
-  )
+  const [templateApr, setTemplateApr] = useState(TEMPLATE_PADRAO)
+  const [temaApr, setTemaApr] = useState(TEMPLATES[TEMPLATE_PADRAO]?.temaPadrao ?? TEMA_PADRAO)
+  const [linkGerado, setLinkGerado] = useState<string | null>(null)
+  const [copiado, setCopiado] = useState(false)
   const [extraCosts, setExtraCosts] = useState<ExtraCost[]>([])
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -188,7 +188,6 @@ export function ProposalPricingReview({
   }
 
   function handleGenerate() {
-    if (!selectedTemplateId) { setError('Selecione um template.'); return }
     setError(null)
 
     startTransition(async () => {
@@ -204,7 +203,8 @@ export function ProposalPricingReview({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             proposalId: proposal.id,
-            templateId: selectedTemplateId,
+            template: templateApr,
+            tema: temaApr,
             overrides: {
               valor_instalacao_por_placa: vInstalacao,
               valor_projeto_por_kwp: vProjeto,
@@ -233,8 +233,9 @@ export function ProposalPricingReview({
         }
 
         setProgressMsg('')
-        window.open(data.pdf_url, '_blank')
-        onGenerated(data.pdf_url)
+        const url = `${window.location.origin}${data.apresentacao_path}`
+        setLinkGerado(url)
+        onGenerated(url)
       } catch (fetchErr: any) {
         clearTimeout(timeoutId)
         setProgressMsg('')
@@ -516,27 +517,79 @@ export function ProposalPricingReview({
             </div>
           )}
 
-          {/* Seleção de template */}
-          <div>
-            <label className={labelCls}>Template do Orçamento *</label>
-            {templates.length === 0 ? (
-              <p className="text-xs text-red-400">Nenhum template ativo. Cadastre um em Configurações → Templates.</p>
-            ) : (
+          {/* Apresentação: template e tema */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={labelCls}>Modelo da Apresentação</label>
               <select
-                value={selectedTemplateId}
-                onChange={(e) => setSelectedTemplateId(e.target.value)}
+                value={templateApr}
+                onChange={(e) => {
+                  const id = e.target.value
+                  setTemplateApr(id)
+                  // Cada modelo tem seu tema natural; o usuário ainda pode trocar.
+                  setTemaApr(TEMPLATES[id]?.temaPadrao ?? TEMA_PADRAO)
+                }}
                 className="w-full px-3 py-2.5 rounded-xl text-sm text-white outline-none border border-white/10 focus:border-white/30"
                 style={{ background: 'var(--theme-input-bg)' }}
               >
-                <option value="">— Selecione —</option>
-                {templates.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}{t.category ? ` (${t.category})` : ''}{t.is_default ? ' ★' : ''}
-                  </option>
+                {Object.values(TEMPLATES).map((t) => (
+                  <option key={t.id} value={t.id}>{t.nome}</option>
                 ))}
               </select>
-            )}
+              <p className="text-[11px] mt-1" style={{ color: 'var(--theme-text-subtle)' }}>
+                {TEMPLATES[templateApr]?.descricao}
+              </p>
+            </div>
+
+            <div>
+              <label className={labelCls}>Tema</label>
+              <div className="flex items-center gap-2">
+                <select
+                  value={temaApr}
+                  onChange={(e) => setTemaApr(e.target.value)}
+                  className="flex-1 px-3 py-2.5 rounded-xl text-sm text-white outline-none border border-white/10 focus:border-white/30"
+                  style={{ background: 'var(--theme-input-bg)' }}
+                >
+                  {Object.values(TEMAS).map((t) => (
+                    <option key={t.id} value={t.id}>{t.nome}</option>
+                  ))}
+                </select>
+                <span
+                  className="w-8 h-8 rounded-lg flex-shrink-0 border border-white/10"
+                  style={{ background: TEMAS[temaApr]?.corDestaque ?? '#10B981' }}
+                  title="Cor de destaque do tema"
+                />
+              </div>
+            </div>
           </div>
+
+          {linkGerado && (
+            <div className="rounded-xl p-4 space-y-3" style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)' }}>
+              <p className="text-sm font-semibold text-green-400">Orçamento gerado</p>
+              <p className="text-[11px] font-mono break-all" style={{ color: 'var(--theme-text-muted)' }}>{linkGerado}</p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(linkGerado)
+                    setCopiado(true)
+                    setTimeout(() => setCopiado(false), 2000)
+                  }}
+                  className="flex-1 text-xs py-2 rounded-lg border border-green-500/40 text-green-400 transition-colors hover:bg-green-500/10"
+                >
+                  {copiado ? 'Copiado!' : 'Copiar link'}
+                </button>
+                <a
+                  href={linkGerado}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 text-xs py-2 rounded-lg border border-green-500/40 text-green-400 text-center transition-colors hover:bg-green-500/10"
+                >
+                  Abrir apresentação
+                </a>
+              </div>
+            </div>
+          )}
 
             {error && (
             <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2">{error}</p>
@@ -550,11 +603,11 @@ export function ProposalPricingReview({
           </button>
           <button
             onClick={handleGenerate}
-            disabled={isPending || templates.length === 0}
+            disabled={isPending}
             className="flex-1 py-3 rounded-xl text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-50"
             style={{ background: 'var(--theme-accent)', color: 'var(--theme-accent-text)' }}
           >
-            {isPending ? (progressMsg || 'Gerando...') : 'Gerar Orçamento'}
+            {isPending ? (progressMsg || 'Gerando...') : linkGerado ? 'Gerar novamente' : 'Gerar Orçamento'}
           </button>
         </div>
       </div>
