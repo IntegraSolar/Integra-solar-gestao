@@ -4,8 +4,15 @@ import { TEMPLATES, templateValido, TEMPLATE_PADRAO, blocosDoTemplate } from '@/
 import { BLOCOS_VALIDOS, normalizarConfig } from '@/lib/apresentacoes/tipos'
 
 describe('catálogo de temas', () => {
-  it('tem os dois temas da fase 1', () => {
-    expect(Object.keys(TEMAS).sort()).toEqual(['executive-black', 'minimal-white'])
+  it('tem os seis temas', () => {
+    expect(Object.keys(TEMAS).sort()).toEqual([
+      'corporate-blue',
+      'executive-black',
+      'green-energy',
+      'minimal-white',
+      'modern-dark',
+      'solar-gold',
+    ])
   })
 
   it('todo tema declara nome e cor de destaque', () => {
@@ -34,10 +41,19 @@ describe('catálogo de templates', () => {
     expect(TEMPLATES[TEMPLATE_PADRAO]).toBeDefined()
   })
 
-  it('premium usa os seis blocos da fase 1, nesta ordem', () => {
-    expect(blocosDoTemplate('premium')).toEqual([
-      'cover', 'resumo', 'sistema', 'equipamentos', 'condicoes', 'contato',
-    ])
+  it('premium inclui os blocos essenciais', () => {
+    expect(blocosDoTemplate('premium')).toEqual(
+      expect.arrayContaining(['cover', 'hero', 'sistema', 'equipamentos', 'condicoes', 'contato'])
+    )
+  })
+
+  it('nenhum template usa hero e resumo juntos', () => {
+    // Os dois exibem os mesmos indicadores. Lado a lado, a apresentação repete
+    // potência e geração em sequência — o oposto de "pouco texto, muito impacto".
+    for (const id of Object.keys(TEMPLATES)) {
+      const blocos = blocosDoTemplate(id)
+      expect(blocos.includes('hero') && blocos.includes('resumo')).toBe(false)
+    }
   })
 
   it('todo bloco de todo template é um bloco válido', () => {
@@ -51,6 +67,42 @@ describe('catálogo de templates', () => {
   it('valida ids de template', () => {
     expect(templateValido('premium')).toBe(true)
     expect(templateValido('inexistente')).toBe(false)
+  })
+
+  it('tem exatamente dez templates', () => {
+    expect(Object.keys(TEMPLATES)).toHaveLength(10)
+  })
+
+  it('todo temaPadrao existe no catálogo de temas', () => {
+    for (const template of Object.values(TEMPLATES)) {
+      expect(TEMAS[template.temaPadrao]).toBeDefined()
+    }
+  })
+
+  it('todo template começa em cover e termina em contato', () => {
+    for (const template of Object.values(TEMPLATES)) {
+      expect(template.blocos[0]).toBe('cover')
+      expect(template.blocos[template.blocos.length - 1]).toBe('contato')
+    }
+  })
+
+  it('todo template contém o bloco condicoes', () => {
+    for (const template of Object.values(TEMPLATES)) {
+      expect(template.blocos).toContain('condicoes')
+    }
+  })
+
+  it('nenhum template repete um bloco', () => {
+    for (const template of Object.values(TEMPLATES)) {
+      expect(new Set(template.blocos).size).toBe(template.blocos.length)
+    }
+  })
+
+  it('todo template tem nome e descrição não vazios', () => {
+    for (const template of Object.values(TEMPLATES)) {
+      expect(template.nome.length).toBeGreaterThan(0)
+      expect(template.descricao.length).toBeGreaterThan(0)
+    }
   })
 })
 

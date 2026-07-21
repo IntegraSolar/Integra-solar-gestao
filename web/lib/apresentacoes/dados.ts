@@ -30,10 +30,34 @@ export type ApresentacaoRaw = {
     telefone: string | null
     email: string | null
     cidade: string | null
+    estado: string | null
+    endereco: string | null
+    bairro: string | null
+    numero: string | null
     cor_principal: string | null
     cor_secundaria: string | null
     logo_url: string | null
   }
+  depoimentos: { autor: string; cidade: string | null; texto: string }[]
+}
+
+/**
+ * Monta "Rua X, 123 — Bairro, Cidade/UF", omitindo as partes ausentes sem
+ * deixar vírgulas soltas ou traços órfãos. Retorna null quando não há nada.
+ */
+function montarEnderecoResumido(org: ApresentacaoRaw['org']): string | null {
+  const rua = org.endereco?.trim() || null
+  const numero = org.numero?.trim() || null
+  const bairro = org.bairro?.trim() || null
+  const cidade = org.cidade?.trim() || null
+  const estado = org.estado?.trim() || null
+
+  const ruaComNumero = [rua, numero].filter(Boolean).join(', ') || null
+  const cidadeComEstado = [cidade, estado].filter(Boolean).join('/') || null
+  const bairroECidade = [bairro, cidadeComEstado].filter(Boolean).join(', ') || null
+
+  const partes = [ruaComNumero, bairroECidade].filter(Boolean)
+  return partes.length > 0 ? partes.join(' — ') : null
 }
 
 function nf(v: number, casas = 0): string {
@@ -62,12 +86,15 @@ export function montarApresentacao(raw: ApresentacaoRaw): ApresentacaoData {
     titulo: proposta.name?.trim() || 'Proposta Comercial',
     empresa: {
       nome: org.nome_fantasia?.trim() || org.razao_social?.trim() || 'Empresa',
+      razao_social: org.razao_social,
       cnpj: org.cnpj,
       telefone: org.telefone,
       email: org.email,
       cidade: org.cidade,
       logo_url: org.logo_url,
+      endereco_resumido: montarEnderecoResumido(org),
     },
+    depoimentos: raw.depoimentos,
     cliente: { nome: lead.name, cidade: lead.city },
     sistema: {
       paineis: [`${proposta.panel_qty}x ${marcaPainel}`, potenciaPainel].filter(Boolean).join(' — '),

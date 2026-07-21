@@ -10,7 +10,9 @@ import type { OrgConfig } from '@/lib/configuracoes/queries'
 import { formatCurrency } from '@/lib/format'
 import { secureStorageUrl } from '@/lib/storage/url'
 import type { KitPublic } from '@/lib/catalogo/kit-actions'
-import { generateProposalLink, getProposalLink } from '@/lib/proposals/link-actions'
+import { generateProposalLink, getProposalLink, getPresentationConfig } from '@/lib/proposals/link-actions'
+import { ApresentacaoConfigurador } from './ApresentacaoConfigurador'
+import type { ApresentacaoConfig } from '@/lib/apresentacoes/tipos'
 
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Rascunho',
@@ -66,6 +68,25 @@ function ProposalLinkButton({ proposalId }: { proposalId: string }) {
       {loading ? 'Gerando...' : copied ? 'Copiado!' : token ? 'Copiar link' : 'Gerar link'}
     </button>
   )
+}
+
+function ApresentacaoConfiguradorLoader({ proposalId }: { proposalId: string }) {
+  const [config, setConfig] = useState<ApresentacaoConfig | null>(null)
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    getPresentationConfig(proposalId).then((result) => {
+      if (!cancelled) {
+        setConfig(result)
+        setLoaded(true)
+      }
+    })
+    return () => { cancelled = true }
+  }, [proposalId])
+
+  if (!loaded) return null
+  return <ApresentacaoConfigurador proposalId={proposalId} configInicial={config} />
 }
 
 export function ProposalsList({ lead }: { lead: Lead }) {
@@ -350,6 +371,7 @@ export function ProposalsList({ lead }: { lead: Lead }) {
                 Duplicar
               </button>
               <ProposalLinkButton proposalId={p.id} />
+              <ApresentacaoConfiguradorLoader proposalId={p.id} />
             </div>
             <button
               onClick={() => handleDelete(p.id)}

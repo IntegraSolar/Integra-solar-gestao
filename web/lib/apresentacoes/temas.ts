@@ -22,6 +22,30 @@ export const TEMAS: Record<string, Tema> = {
     corDestaque: '#D4A017',
     escuro: true,
   },
+  'corporate-blue': {
+    id: 'corporate-blue',
+    nome: 'Corporate Blue',
+    corDestaque: '#2563EB',
+    escuro: false,
+  },
+  'modern-dark': {
+    id: 'modern-dark',
+    nome: 'Modern Dark',
+    corDestaque: '#8B5CF6',
+    escuro: true,
+  },
+  'solar-gold': {
+    id: 'solar-gold',
+    nome: 'Solar Gold',
+    corDestaque: '#B45309',
+    escuro: false,
+  },
+  'green-energy': {
+    id: 'green-energy',
+    nome: 'Green Energy',
+    corDestaque: '#047857',
+    escuro: false,
+  },
 }
 
 export const TEMA_PADRAO = 'minimal-white'

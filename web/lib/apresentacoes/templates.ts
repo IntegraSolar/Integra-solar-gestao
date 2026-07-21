@@ -14,9 +14,76 @@ export const TEMPLATES: Record<string, Template> = {
   premium: {
     id: 'premium',
     nome: 'Premium',
-    descricao: 'Apresentação completa, com indicadores em destaque.',
+    descricao: 'Apresentação completa, com todos os diferenciais.',
     temaPadrao: 'minimal-white',
-    blocos: ['cover', 'resumo', 'sistema', 'equipamentos', 'condicoes', 'contato'],
+    blocos: [
+      // Sem 'resumo': o Hero logo acima ja exibe potencia, geracao e investimento.
+      'cover', 'hero', 'sistema', 'equipamentos', 'garantias',
+      'como-funciona', 'timeline', 'condicoes', 'empresa', 'assinatura', 'contato',
+    ],
+  },
+  minimalista: {
+    id: 'minimalista',
+    nome: 'Minimalista',
+    descricao: 'Só o essencial, direto ao ponto.',
+    temaPadrao: 'minimal-white',
+    blocos: ['cover', 'resumo', 'sistema', 'condicoes', 'contato'],
+  },
+  corporativo: {
+    id: 'corporativo',
+    nome: 'Corporativo',
+    descricao: 'Formal, para empresas e licitações.',
+    temaPadrao: 'corporate-blue',
+    blocos: ['cover', 'resumo', 'sistema', 'equipamentos', 'garantias', 'empresa', 'condicoes', 'assinatura', 'contato'],
+  },
+  industrial: {
+    id: 'industrial',
+    nome: 'Industrial',
+    descricao: 'Foco técnico, para grandes instalações.',
+    temaPadrao: 'executive-black',
+    blocos: ['cover', 'resumo', 'sistema', 'equipamentos', 'fluxo', 'timeline', 'garantias', 'condicoes', 'contato'],
+  },
+  residencial: {
+    id: 'residencial',
+    nome: 'Residencial',
+    descricao: 'Didático, para o cliente final.',
+    temaPadrao: 'green-energy',
+    blocos: ['cover', 'hero', 'como-funciona', 'sistema', 'garantias', 'timeline', 'condicoes', 'contato'],
+  },
+  agronegocio: {
+    id: 'agronegocio',
+    nome: 'Agronegócio',
+    descricao: 'Para propriedades rurais e irrigação.',
+    temaPadrao: 'solar-gold',
+    blocos: ['cover', 'hero', 'sistema', 'equipamentos', 'fluxo', 'garantias', 'empresa', 'condicoes', 'contato'],
+  },
+  luxury: {
+    id: 'luxury',
+    nome: 'Luxury',
+    descricao: 'Sofisticado, para alto padrão.',
+    temaPadrao: 'executive-black',
+    blocos: ['cover', 'hero', 'sistema', 'garantias', 'empresa', 'depoimentos', 'condicoes', 'assinatura', 'contato'],
+  },
+  executive: {
+    id: 'executive',
+    nome: 'Executive',
+    descricao: 'Objetivo, para decisor com pouco tempo.',
+    temaPadrao: 'executive-black',
+    blocos: ['cover', 'resumo', 'sistema', 'condicoes', 'assinatura', 'contato'],
+  },
+  dark: {
+    id: 'dark',
+    nome: 'Dark',
+    descricao: 'Visual escuro e moderno.',
+    temaPadrao: 'modern-dark',
+    blocos: ['cover', 'hero', 'sistema', 'equipamentos', 'garantias', 'timeline', 'condicoes', 'contato'],
+  },
+  modern: {
+    id: 'modern',
+    nome: 'Modern',
+    descricao: 'Contemporâneo, com bastante respiro.',
+    temaPadrao: 'minimal-white',
+    blocos: ['cover', 'hero', 'como-funciona', 'sistema', 'garantias', 'empresa', 'condicoes', 'contato'],
   },
 }
 
