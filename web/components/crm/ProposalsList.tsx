@@ -7,7 +7,7 @@ import { ProposalPricingReview } from './ProposalPricingReview'
 import { deleteProposal, duplicateProposal } from '@/lib/crm/actions'
 import type { Lead, Proposal, Supplier, ProposalTemplate } from '@/lib/crm/types'
 import type { OrgConfig } from '@/lib/configuracoes/queries'
-import { formatCurrency } from '@/lib/format'
+import { formatCurrency, formatDateTime } from '@/lib/format'
 import { secureStorageUrl } from '@/lib/storage/url'
 import type { KitPublic } from '@/lib/catalogo/kit-actions'
 import { generateProposalLink, getProposalLink, getPresentationConfig } from '@/lib/proposals/link-actions'
@@ -292,9 +292,15 @@ export function ProposalsList({ lead }: { lead: Lead }) {
           style={{ background: 'var(--theme-surface)', border: '1px solid var(--theme-card-border)' }}
         >
           <div className="flex items-start justify-between gap-2">
-            <p className="text-sm font-semibold" style={{ color: 'var(--theme-text)' }}>
-              {p.name}
-            </p>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold" style={{ color: 'var(--theme-text)' }}>
+                {p.name}
+              </p>
+              {/* Propostas do mesmo kit têm título idêntico; a data é o que as distingue. */}
+              <p className="text-xs mt-0.5" style={{ color: 'var(--theme-text-subtle)' }}>
+                Criada em {formatDateTime(p.created_at)}
+              </p>
+            </div>
             <span
               className="text-xs px-2 py-0.5 rounded-full flex-shrink-0"
               style={{
