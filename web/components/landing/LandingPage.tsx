@@ -8,7 +8,7 @@ import {
   Users, FileText, DollarSign, Wrench, FolderOpen, BarChart2,
   Check, ChevronDown, ArrowRight, X as XIcon,
   Calendar, AlertTriangle, TrendingUp, Clock, Shield, MessageCircle,
-  Headphones, RefreshCw, Zap, GitBranch,
+  Headphones, RefreshCw, Zap, GitBranch, BatteryCharging, LineChart,
 } from 'lucide-react'
 
 const WHATSAPP_NUMBER = '5563992217642'
@@ -58,16 +58,18 @@ const FEATURES = [
   { icon: Users, title: 'CRM com funil visual', desc: 'Do lead ao pós-venda. Cada oportunidade rastreada, cada follow-up agendado, nenhum cliente esquecido.' },
   { icon: FileText, title: 'Orçamentos automáticos', desc: 'Dimensionamento, precificação com margem real e PDF profissional em segundos — não em horas.' },
   { icon: DollarSign, title: 'Financeiro integrado', desc: 'Parcelas, comprovantes, comissões e confirmações de pagamento. Tudo vinculado ao cliente.' },
-  { icon: Wrench, title: 'Gestão de obras', desc: 'Prazos, equipes, adaptações, checklist de entrega e monitoramento. Cada instalação sob controle.' },
+  { icon: Wrench, title: 'Gestão de obras', desc: 'Prazos, equipes, adaptações, checklist e acompanhamento da entrega. Cada instalação sob controle.' },
   { icon: FolderOpen, title: 'Documentação completa', desc: 'ART, projeto, parecer de acesso, NF, romaneio — organizados por cliente e etapa.' },
   { icon: BarChart2, title: 'Indicadores reais', desc: 'Ticket médio, SLA por etapa, crescimento, conversão. Dados para decisão, não para decoração.' },
+  { icon: BatteryCharging, title: 'Simulador híbrido e off-grid', desc: 'Cargas, banco de baterias, dimensionamento e autonomia. Memorial técnico e relatório comercial em PDF.' },
+  { icon: LineChart, title: 'Viabilidade de usinas de investimento', desc: 'Payback, VPL, TIR e projeção de 25 anos. Mostre ao investidor o retorno antes de ele perguntar.' },
 ]
 
 const STEPS = [
   { num: '01', title: 'Cadastre o lead', desc: 'Registre a oportunidade com dados do cliente, consumo e tipo de instalação.' },
   { num: '02', title: 'Gere o orçamento', desc: 'Dimensione o sistema, calcule custos e margem, exporte em PDF profissional.' },
   { num: '03', title: 'Gerencie o projeto', desc: 'Contratos, financeiro, documentação, compras e obra — cada etapa rastreada.' },
-  { num: '04', title: 'Entregue e acompanhe', desc: 'Checklist de entrega, monitoramento e pós-venda com NPS do cliente.' },
+  { num: '04', title: 'Entregue e acompanhe', desc: 'Checklist de entrega, acompanhamento da obra e pós-venda com NPS do cliente.' },
 ]
 
 const METRICS = [
@@ -83,6 +85,7 @@ const FAQ = [
   { q: 'Meus dados ficam seguros?', a: 'Os dados ficam em infraestrutura de nível bancário (Supabase/AWS) com criptografia, backups automáticos e isolamento por organização.' },
   { q: 'Consigo migrar meus dados atuais?', a: 'Sim. Oferecemos suporte para importação de dados. Você não precisa começar do zero.' },
   { q: 'Como funciona o acesso à plataforma?', a: 'O acesso é liberado após uma apresentação comercial. Nossa equipe faz um onboarding personalizado para garantir que você aproveite ao máximo desde o primeiro dia.' },
+  { q: 'A Integra Solar gerencia aplicativos de monitoramento?', a: 'Não. A plataforma gerencia os processos internos de uma empresa integradora de energia solar: CRM, orçamentos, financeiro, obras, documentação e pós-venda. O acompanhamento da geração continua sendo feito pelo aplicativo do fabricante do inversor.' },
 ]
 
 // ── Page ─────────────────────────────────────────────────────────
@@ -220,7 +223,7 @@ export default function LandingPage() {
             { icon: Headphones, title: 'Suporte técnico ágil e especializado', desc: 'Atendimento rápido com quem entende do setor solar — sem filas, sem respostas genéricas.' },
             { icon: RefreshCw, title: 'Plataforma que evolui com o integrador', desc: 'Estamos sempre melhorando com base no seu feedback. Mande suas sugestões pelo suporte!' },
             { icon: Zap, title: 'Propostas rápidas em PDF', desc: 'Cálculos automáticos e configuráveis — gere orçamentos profissionais em segundos, não em horas.' },
-            { icon: GitBranch, title: 'Fluxo automático do cliente', desc: 'Do lead ao pós-venda, o cliente avança pelas etapas da plataforma de forma automática e organizada.' },
+            { icon: GitBranch, title: 'Fluxo automático do fechamento à entrega da obra', desc: 'Aprovou o contrato e o cliente segue sozinho pelas etapas: financeiro, documentação, compras, instalação e entrega. Ninguém precisa lembrar de mover nada.' },
           ].map((item) => (
             <motion.div key={item.title} variants={fadeUp} className="bg-[#28944a]/5 rounded-xl p-6 border border-[#28944a]/10">
               <div className="w-10 h-10 rounded-lg bg-[#28944a]/10 flex items-center justify-center mb-3">
