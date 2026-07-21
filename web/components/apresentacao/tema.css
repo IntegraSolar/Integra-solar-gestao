@@ -162,6 +162,14 @@
 
 /* Impressão: A4 limpo, sem sombra, sem fundo cinza, sem card partido ao meio. */
 @media print {
+  /* Por padrão o navegador descarta cores de fundo ao imprimir (economia de tinta),
+     e a apresentação sairia sem a capa e sem os cards. Aqui as cores são conteúdo. */
+  .apr,
+  .apr * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
   .apr { background: #fff; }
   .apr__wrap { max-width: none; padding: 0; gap: 12px; }
   .apr__card {
