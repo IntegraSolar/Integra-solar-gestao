@@ -1,5 +1,6 @@
 // web/components/apresentacao/Apresentacao.tsx
 import './tema.css'
+import { BarraAcoes } from './BarraAcoes'
 import type { ApresentacaoData, ApresentacaoConfig, BlocoId } from '@/lib/apresentacoes/tipos'
 import { Cover } from './blocos/Cover'
 import { Resumo } from './blocos/Resumo'
@@ -36,9 +37,12 @@ const REGISTRO: Record<BlocoId, React.FC<{ dados: ApresentacaoData }>> = {
 export function Apresentacao({
   dados,
   config,
+  token,
 }: {
   dados: ApresentacaoData
   config: ApresentacaoConfig
+  /** Quando presente, exibe as ações de PDF e modo apresentação. */
+  token?: string
 }) {
   return (
     <div
@@ -61,6 +65,7 @@ export function Apresentacao({
           return <Bloco key={id} dados={dados} />
         })}
       </div>
+      {token && <BarraAcoes token={token} totalBlocos={config.blocos.length} />}
     </div>
   )
 }

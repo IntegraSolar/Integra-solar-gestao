@@ -46,5 +46,5 @@ export default function PropostaView({ paramsPromise }: { paramsPromise: Promise
     )
   }
 
-  return <Apresentacao dados={data.dados} config={data.config} />
+  return <Apresentacao dados={data.dados} config={data.config} token={token} />
 }

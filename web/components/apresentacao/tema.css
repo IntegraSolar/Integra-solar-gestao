@@ -178,3 +178,77 @@
   size: A4;
   margin: 14mm;
 }
+
+/* ── Ações flutuantes (baixar PDF / apresentar) ───────────────────────── */
+.apr__acoes {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  gap: 8px;
+  z-index: 20;
+}
+.apr__acoes button {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--apr-borda);
+  background: var(--apr-superficie);
+  color: var(--apr-texto);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.12);
+  cursor: pointer;
+  transition: transform 120ms ease, opacity 120ms ease;
+}
+.apr__acoes button:hover { transform: translateY(-1px); }
+.apr__acoes button:disabled { opacity: 0.6; cursor: default; transform: none; }
+
+/* Modo apresentação: um bloco por vez, centralizado e sem distração. */
+body.apr-apresentando { overflow: hidden; }
+body.apr-apresentando .apr__wrap {
+  min-height: 100vh;
+  justify-content: center;
+  max-width: 1000px;
+}
+body.apr-apresentando .apr__card { animation: none; }
+
+.apr__apresentando-barra {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--apr-superficie);
+  border: 1px solid var(--apr-borda);
+  box-shadow: 0 4px 20px rgb(0 0 0 / 0.18);
+  z-index: 30;
+  font-size: 13px;
+  color: var(--apr-texto);
+}
+.apr__apresentando-barra button {
+  font: inherit;
+  border: none;
+  background: transparent;
+  color: var(--apr-texto);
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+.apr__apresentando-barra button:hover:not(:disabled) { background: var(--apr-fundo); }
+.apr__apresentando-barra button:disabled { opacity: 0.35; cursor: default; }
+.apr__apresentando-barra .apr__sair {
+  color: var(--apr-texto-suave);
+  border-left: 1px solid var(--apr-borda);
+  margin-left: 4px;
+}
+
+/* Nada disso vai para o papel. */
+@media print {
+  .apr__acoes,
+  .apr__apresentando-barra { display: none !important; }
+}
