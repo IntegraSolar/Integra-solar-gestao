@@ -144,9 +144,26 @@ export async function generateProposalLink(
   // pode impedir a geração do link: sem configuração, normalizarConfig
   // aplica os padrões.
   try {
-    const upsertData = config
+    // Sem config da proposta, herda o padrão da empresa (Configurações →
+    // Apresentação). Gravar só os ids deixaria o DEFAULT da coluna ('premium')
+    // vencer o modelo que a empresa escolheu como padrão.
+    let base = config
+    if (!base) {
+      try {
+        const { data } = await (supabase as any)
+          .from('org_apresentacao_config')
+          .select('template, tema, blocos')
+          .eq('organization_id', orgId)
+          .maybeSingle()
+        base = data ?? undefined
+      } catch {
+        base = undefined
+      }
+    }
+
+    const upsertData = base
       ? (() => {
-          const normalizada = normalizarConfig(config)
+          const normalizada = normalizarConfig(base)
           return {
             proposal_id: proposalId,
             organization_id: orgId,
