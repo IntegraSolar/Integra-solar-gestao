@@ -2,6 +2,14 @@ import { withSentryConfig } from '@sentry/nextjs'
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // O binário do Chromium (~67 MB) é carregado por caminho de arquivo em tempo de
+  // execução, não por import. Sem estas duas linhas o Next não o enxerga, não o
+  // empacota, e a função de PDF sobe para a Vercel sem o navegador que precisa
+  // abrir — falhando só em produção.
+  serverExternalPackages: ['@sparticuz/chromium', 'puppeteer-core'],
+  outputFileTracingIncludes: {
+    '/api/proposta/**': ['./node_modules/@sparticuz/chromium/**'],
+  },
   images: {
     // Serve AVIF/WebP (menores) para imagens via next/image quando o browser suporta.
     formats: ['image/avif', 'image/webp'],

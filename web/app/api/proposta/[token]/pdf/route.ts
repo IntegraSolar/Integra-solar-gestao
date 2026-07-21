@@ -72,11 +72,24 @@ export async function GET(
   try {
     pdf = await gerarPdfDaApresentacao(url)
   } catch (err: any) {
-    logger.error('proposta/pdf', 'Falha ao renderizar PDF', err, { token: token.slice(0, 8) })
-    return NextResponse.json(
-      { error: 'Não foi possível gerar o PDF agora. Tente novamente.' },
-      { status: 502 }
-    )
+    const detalhe = String(err?.message ?? err ?? 'erro desconhecido')
+    logger.error('proposta/pdf', 'Falha ao renderizar PDF', err, {
+      token: token.slice(0, 8),
+      detalhe: detalhe.slice(0, 300),
+    })
+
+    // Mensagem util em vez de "tente novamente": sem o motivo, a unica saida e
+    // ler os logs da Vercel, que nem sempre estao a mao.
+    let motivo = 'Não foi possível gerar o PDF agora. Tente novamente.'
+    if (/executablePath|Browser was not found|ENOENT|spawn/i.test(detalhe)) {
+      motivo = 'O renderizador de PDF não está disponível no servidor. Avise o suporte.'
+    } else if (/timeout|TimeoutError/i.test(detalhe)) {
+      motivo = 'A apresentação demorou demais para carregar. Tente novamente em instantes.'
+    } else if (/memory|out of memory|OOM/i.test(detalhe)) {
+      motivo = 'O servidor ficou sem memória ao gerar o PDF. Avise o suporte.'
+    }
+
+    return NextResponse.json({ error: motivo, detalhe: detalhe.slice(0, 200) }, { status: 502 })
   }
 
   // Guarda para as próximas visitas. Falha aqui não impede a entrega do arquivo.
