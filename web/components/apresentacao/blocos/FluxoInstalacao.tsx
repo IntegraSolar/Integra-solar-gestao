@@ -1,21 +1,16 @@
 // web/components/apresentacao/blocos/FluxoInstalacao.tsx
 import type { ApresentacaoData } from '@/lib/apresentacoes/tipos'
 import { Secao } from '../primitivos/Secao'
-import { Icone, type NomeIcone } from '../primitivos/Icone'
+import { Icone } from '../primitivos/Icone'
 
-const PASSOS: { icone: NomeIcone; texto: string }[] = [
-  { icone: 'local', texto: 'Visita técnica' },
-  { icone: 'ferramenta', texto: 'Montagem das estruturas' },
-  { icone: 'sol', texto: 'Instalação dos módulos' },
-  { icone: 'raio', texto: 'Conexão e testes' },
-]
+export function FluxoInstalacao({ dados }: { dados: ApresentacaoData }) {
+  const passos = dados.textos.fluxo
 
-export function FluxoInstalacao({ dados: _dados }: { dados: ApresentacaoData }) {
   return (
     <Secao titulo="Fluxo de instalação">
       <div className="apr__grid">
-        {PASSOS.map((p, i) => (
-          <div key={p.texto} style={{ textAlign: 'center' }}>
+        {passos.map((p, i) => (
+          <div key={p.titulo} style={{ textAlign: 'center' }}>
             <div style={{ color: 'var(--apr-destaque)', display: 'flex', justifyContent: 'center' }}>
               <Icone nome={p.icone} tamanho={22} />
             </div>
@@ -28,7 +23,8 @@ export function FluxoInstalacao({ dados: _dados }: { dados: ApresentacaoData }) 
             >
               Passo {i + 1}
             </p>
-            <p style={{ fontSize: 14, fontWeight: 600, marginTop: 2 }}>{p.texto}</p>
+            <p style={{ fontSize: 14, fontWeight: 600, marginTop: 2 }}>{p.titulo}</p>
+            <p style={{ fontSize: 12, marginTop: 2, color: 'var(--apr-texto-suave)' }}>{p.descricao}</p>
           </div>
         ))}
       </div>

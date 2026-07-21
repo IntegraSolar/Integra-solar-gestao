@@ -3,6 +3,7 @@ import { format, addDays } from 'date-fns'
 import { formatCurrency } from '@/lib/format'
 import type { ApresentacaoData } from './tipos'
 import { corLegivelSobreClaro } from './contraste'
+import { mesclarTextos } from './textos'
 
 const VALIDADE_DIAS = 15
 const COR_PADRAO = '#10B981'
@@ -39,6 +40,7 @@ export type ApresentacaoRaw = {
     logo_url: string | null
   }
   depoimentos: { autor: string; cidade: string | null; texto: string }[]
+  textos?: unknown
 }
 
 /**
@@ -127,5 +129,6 @@ export function montarApresentacao(raw: ApresentacaoRaw): ApresentacaoData {
       cor_texto: corLegivelSobreClaro(org.cor_principal?.trim() || COR_PADRAO),
       cor_secundaria: org.cor_secundaria?.trim() || COR_SECUNDARIA_PADRAO,
     },
+    textos: mesclarTextos(raw.textos),
   }
 }

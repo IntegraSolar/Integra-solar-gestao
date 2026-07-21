@@ -1,361 +1,482 @@
 'use client'
 
-import { useState, useTransition } from 'react'
-import type { ProposalTemplate } from '@/lib/crm/types'
-import {
-  uploadProposalTemplate,
-  updateProposalTemplate,
-  deleteProposalTemplate,
-} from '@/lib/proposals/actions'
+import { useState, useTransition, useRef } from 'react'
+import { TEMPLATES, blocosDoTemplate } from '@/lib/apresentacoes/templates'
+import { TEMAS } from '@/lib/apresentacoes/temas'
+import { BLOCOS_VALIDOS, ROTULOS_BLOCO, type BlocoId } from '@/lib/apresentacoes/tipos'
+import { TEXTOS_PADRAO, type TextosApresentacao, type ItemGarantia, type ItemEtapa, type ItemPasso } from '@/lib/apresentacoes/textos'
+import { salvarConfigApresentacao, uploadLogo, type ConfigApresentacaoCompleta } from '@/lib/apresentacoes/config-actions'
 
-export default function TemplatesTab({ initialTemplates }: { initialTemplates: ProposalTemplate[] }) {
-  const [templates, setTemplates] = useState(initialTemplates)
-  const [showUpload, setShowUpload] = useState(false)
-  const [name, setName] = useState('')
-  const [category, setCategory] = useState('')
-  const [file, setFile] = useState<File | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
-  const [isPending, startTransition] = useTransition()
-  const [diagResult, setDiagResult] = useState<any>(null)
-  const [diagLoading, setDiagLoading] = useState<string | null>(null)
+/** Blocos que todo template exige — não podem ser removidos pelo usuário. */
+const BLOCOS_OBRIGATORIOS: BlocoId[] = ['cover', 'contato']
 
-  const inputCls = 'w-full px-3 py-2.5 rounded-xl text-sm text-white outline-none border border-white/10 focus:border-white/30 bg-white/5'
+const inputCls = 'w-full px-3 py-2.5 rounded-xl text-sm text-white outline-none border border-white/10 focus:border-white/30 bg-white/5'
+const labelCls = 'text-xs text-white/50 mb-1 block'
+const cardCls = 'rounded-2xl p-5 border border-white/10 space-y-4'
+const cardStyle = { background: 'var(--theme-surface)' }
 
-  function handleUpload() {
-    if (!name.trim()) { setError('Nome é obrigatório.'); return }
-    if (!file) { setError('Selecione um arquivo .docx.'); return }
-    if (!file.name.endsWith('.docx')) { setError('Apenas arquivos .docx são aceitos.'); return }
+function moverBloco(blocos: BlocoId[], index: number, direcao: -1 | 1): BlocoId[] {
+  const alvo = index + direcao
+  if (alvo < 0 || alvo >= blocos.length) return blocos
+  const copia = [...blocos]
+  ;[copia[index], copia[alvo]] = [copia[alvo], copia[index]]
+  return copia
+}
 
-    setError(null)
-    startTransition(async () => {
+function hexValido(v: string): boolean {
+  return /^#[0-9a-fA-F]{6}$/.test(v)
+}
+
+export default function TemplatesTab({ initialConfig }: { initialConfig: ConfigApresentacaoCompleta }) {
+  const [template, setTemplate] = useState(initialConfig.template)
+  const [tema, setTema] = useState(initialConfig.tema)
+  const [blocos, setBlocos] = useState<BlocoId[]>(initialConfig.blocos)
+  const [textos, setTextos] = useState<TextosApresentacao>(initialConfig.textos)
+  const [corPrincipal, setCorPrincipal] = useState(initialConfig.cor_principal)
+  const [corSecundaria, setCorSecundaria] = useState(initialConfig.cor_secundaria)
+  const [logoUrl, setLogoUrl] = useState<string | null>(initialConfig.logo_url)
+
+  const [salvando, startSalvar] = useTransition()
+  const [salvo, setSalvo] = useState(false)
+  const [erro, setErro] = useState<string | null>(null)
+
+  const [uploadPending, startUpload] = useTransition()
+  const [uploadErro, setUploadErro] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const [secoesAbertas, setSecoesAbertas] = useState<Record<string, boolean>>({})
+
+  const disponiveis = BLOCOS_VALIDOS.filter((b) => !blocos.includes(b))
+
+  function handleTrocarTemplate(novoTemplate: string) {
+    setTemplate(novoTemplate)
+    setTema(TEMPLATES[novoTemplate]?.temaPadrao ?? 'minimal-white')
+    setBlocos(blocosDoTemplate(novoTemplate))
+  }
+
+  function handleToggleBloco(bloco: BlocoId) {
+    if (BLOCOS_OBRIGATORIOS.includes(bloco)) return
+    setBlocos((prev) => prev.filter((b) => b !== bloco))
+  }
+
+  function handleAdicionarBloco(bloco: BlocoId) {
+    setBlocos((prev) => [...prev, bloco])
+  }
+
+  function handleMover(index: number, direcao: -1 | 1) {
+    setBlocos((prev) => moverBloco(prev, index, direcao))
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadErro(null)
+    startUpload(async () => {
       const fd = new FormData()
-      fd.append('name', name.trim())
-      fd.append('category', category.trim())
       fd.append('file', file)
-      const result = await uploadProposalTemplate(fd)
-      if (result.error) { setError(result.error); return }
-      window.location.reload()
+      const result = await uploadLogo(fd)
+      if (result.error) { setUploadErro(result.error); return }
+      if (result.url) setLogoUrl(result.url)
     })
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  function handleToggleActive(t: ProposalTemplate) {
-    startTransition(async () => {
-      const result = await updateProposalTemplate(t.id, { is_active: !t.is_active })
-      if (result.error) { setError(result.error); return }
-      setTemplates((prev) => prev.map((x) => x.id === t.id ? { ...x, is_active: !t.is_active } : x))
-    })
+  function toggleSecao(chave: string) {
+    setSecoesAbertas((prev) => ({ ...prev, [chave]: !prev[chave] }))
   }
 
-  function handleSetDefault(t: ProposalTemplate) {
-    startTransition(async () => {
-      const result = await updateProposalTemplate(t.id, { is_default: true })
-      if (result.error) { setError(result.error); return }
-      setTemplates((prev) => prev.map((x) => ({ ...x, is_default: x.id === t.id })))
-    })
+  function restaurarSecao(chave: keyof TextosApresentacao) {
+    setTextos((prev) => ({ ...prev, [chave]: TEXTOS_PADRAO[chave] }))
   }
 
-  async function handleDiagnose(id: string) {
-    setDiagLoading(id)
-    setDiagResult(null)
-    try {
-      const res = await fetch(`/api/templates/${id}/diagnose`)
-      const data = await res.json()
-      setDiagResult(data)
-    } catch {
-      setDiagResult({ error: 'Erro ao diagnosticar template.' })
-    } finally {
-      setDiagLoading(null)
-    }
-  }
-
-  function handleDelete(id: string) {
-    startTransition(async () => {
-      try {
-        const result = await deleteProposalTemplate(id)
-        if (result.error) { setError(result.error); return }
-        setTemplates((prev) => prev.filter((x) => x.id !== id))
-        setConfirmDelete(null)
-      } catch (e: any) {
-        setError(e?.message ?? 'Erro ao excluir template.')
-      }
+  function handleSalvar() {
+    setErro(null)
+    setSalvo(false)
+    startSalvar(async () => {
+      const result = await salvarConfigApresentacao({
+        template,
+        tema,
+        blocos,
+        textos,
+        cor_principal: corPrincipal,
+        cor_secundaria: corSecundaria,
+      })
+      if (result.error) { setErro(result.error); return }
+      setSalvo(true)
+      setTimeout(() => setSalvo(false), 2000)
     })
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <p className="text-white/50 text-sm">
-          Templates Word (.docx) usados na geração de propostas em PDF.
-        </p>
-        <button
-          onClick={() => { setShowUpload(true); setError(null) }}
-          className="px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-90 transition-all"
-          style={{ background: 'var(--theme-accent)', color: 'var(--theme-accent-text)' }}
-        >
-          + Novo Template
-        </button>
+      <p className="text-white/50 text-sm">
+        Configuração padrão da apresentação comercial: é o ponto de partida de toda proposta nova.
+        O vendedor ainda pode ajustar modelo, tema e blocos numa proposta específica.
+      </p>
+
+      {/* ── Identidade visual ────────────────────────────────────────── */}
+      <div className={cardCls} style={cardStyle}>
+        <h3 className="text-sm font-semibold text-white">Identidade visual</h3>
+
+        <div className="flex items-center gap-4">
+          <div
+            className="w-20 h-20 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden border border-white/10"
+            style={{ background: 'var(--theme-input-bg)' }}
+          >
+            {logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={logoUrl} alt="Logomarca" className="max-w-full max-h-full object-contain" />
+            ) : (
+              <span className="text-xs text-white/30">Sem logo</span>
+            )}
+          </div>
+          <div className="space-y-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/svg+xml"
+              onChange={handleFileChange}
+              className="text-sm text-white/70 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-white/10 file:text-white hover:file:bg-white/15 cursor-pointer"
+              disabled={uploadPending}
+            />
+            <p className="text-xs text-white/30">PNG, JPEG, WEBP ou SVG — máx. 2 MB.</p>
+            {uploadPending && <p className="text-xs text-white/50">Enviando...</p>}
+            {uploadErro && <p className="text-xs text-red-400">{uploadErro}</p>}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className={labelCls}>Cor principal</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                value={hexValido(corPrincipal) ? corPrincipal : '#FFD080'}
+                onChange={(e) => setCorPrincipal(e.target.value)}
+                className="w-10 h-10 rounded-lg border border-white/10 bg-transparent cursor-pointer"
+              />
+              <input
+                className={inputCls}
+                value={corPrincipal}
+                onChange={(e) => setCorPrincipal(e.target.value)}
+                placeholder="#FFD080"
+              />
+            </div>
+          </div>
+          <div>
+            <label className={labelCls}>Cor secundária</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                value={hexValido(corSecundaria) ? corSecundaria : '#0a0e1a'}
+                onChange={(e) => setCorSecundaria(e.target.value)}
+                className="w-10 h-10 rounded-lg border border-white/10 bg-transparent cursor-pointer"
+              />
+              <input
+                className={inputCls}
+                value={corSecundaria}
+                onChange={(e) => setCorSecundaria(e.target.value)}
+                placeholder="#0a0e1a"
+              />
+            </div>
+          </div>
+        </div>
       </div>
 
-      {showUpload && (
-        <div
-          className="rounded-2xl p-5 border border-white/10 space-y-4"
-          style={{ background: 'var(--theme-surface)' }}
-        >
-          <h3 className="text-sm font-semibold text-white">Enviar Template</h3>
-          <div className="space-y-3">
-            <div>
-              <label className="text-xs text-white/50 mb-1 block">Nome *</label>
-              <input
-                className={inputCls}
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Ex: Proposta Residencial"
-              />
-            </div>
-            <div>
-              <label className="text-xs text-white/50 mb-1 block">Categoria</label>
-              <input
-                className={inputCls}
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                placeholder="Ex: residencial, comercial"
-              />
-            </div>
-            <div>
-              <label className="text-xs text-white/50 mb-1 block">Arquivo .docx *</label>
-              <input
-                type="file"
-                accept=".docx"
-                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                className="text-sm text-white/70 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-white/10 file:text-white hover:file:bg-white/15 cursor-pointer"
-              />
-            </div>
-          </div>
-          {error && <p className="text-xs text-red-400">{error}</p>}
-          <div className="flex gap-2">
-            <button
-              onClick={() => setShowUpload(false)}
-              className="flex-1 py-2.5 rounded-xl text-sm text-white/50 border border-white/10 hover:text-white transition-colors"
+      {/* ── Modelo padrão ────────────────────────────────────────────── */}
+      <div className={cardCls} style={cardStyle}>
+        <h3 className="text-sm font-semibold text-white">Modelo padrão</h3>
+
+        <div>
+          <label className={labelCls}>Template</label>
+          <select
+            value={template}
+            onChange={(e) => handleTrocarTemplate(e.target.value)}
+            className={inputCls}
+          >
+            {Object.values(TEMPLATES).map((t) => (
+              <option key={t.id} value={t.id}>{t.nome} — {t.descricao}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className={labelCls}>Tema</label>
+          <div className="flex items-center gap-2">
+            <select
+              value={tema}
+              onChange={(e) => setTema(e.target.value)}
+              className={inputCls}
             >
-              Cancelar
-            </button>
-            <button
-              onClick={handleUpload}
-              disabled={isPending}
-              className="flex-1 py-2.5 rounded-xl text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-all"
-              style={{ background: 'var(--theme-accent)', color: 'var(--theme-accent-text)' }}
-            >
-              {isPending ? 'Enviando...' : 'Enviar'}
-            </button>
+              {Object.values(TEMAS).map((t) => (
+                <option key={t.id} value={t.id}>{t.nome}</option>
+              ))}
+            </select>
+            <span
+              className="w-8 h-8 rounded-md flex-shrink-0 border border-white/10"
+              style={{ background: TEMAS[tema]?.corDestaque ?? '#000' }}
+              title={TEMAS[tema]?.corDestaque}
+            />
           </div>
         </div>
-      )}
+      </div>
 
-      {templates.length === 0 && !showUpload && (
-        <p className="text-sm text-white/30 text-center py-8">
-          Nenhum template cadastrado. Envie um arquivo .docx para começar.
-        </p>
-      )}
+      {/* ── Blocos padrão ────────────────────────────────────────────── */}
+      <div className={cardCls} style={cardStyle}>
+        <h3 className="text-sm font-semibold text-white">Blocos padrão</h3>
 
-      {/* Placeholders disponíveis */}
-      <div
-        className="rounded-2xl p-5 border border-white/10 space-y-4"
-        style={{ background: 'var(--theme-surface)' }}
-      >
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-white">Placeholders Disponíveis</h3>
-          <p className="text-xs text-white/30">Use no template .docx com {'{{ }}'}</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0.5">
-          {[
-            { group: 'Cliente', items: [
-              ['cliente_nome', 'Nome do lead/cliente'],
-              ['cliente_cidade', 'Cidade do lead'],
-              ['cliente_telefone', 'Telefone formatado'],
-            ]},
-            { group: 'Empresa', items: [
-              ['empresa_nome', 'Nome fantasia ou razão social'],
-              ['empresa_cnpj', 'CNPJ da empresa'],
-              ['empresa_telefone', 'Telefone da empresa'],
-            ]},
-            { group: 'Sistema Solar', items: [
-              ['paineis_qtd', 'Quantidade de painéis'],
-              ['paineis_potencia', 'Potência do painel (ex: 610W)'],
-              ['paineis_marca', 'Marca/modelo do painel'],
-              ['inversor_qtd', 'Quantidade de inversores'],
-              ['inversor_potencia', 'Potência do inversor'],
-              ['inversor_marca', 'Marca/modelo do inversor'],
-              ['total_kwp', 'Potência total (ex: 8.54 kWp)'],
-              ['geracao_mensal', 'Geração mensal estimada'],
-            ]},
-            { group: 'Valores', items: [
-              ['preco_total', 'Preço total formatado (R$)'],
-            ]},
-            { group: 'Datas', items: [
-              ['data_proposta', 'Data de emissão (dd/MM/yyyy)'],
-              ['validade_proposta', 'Validade — 15 dias após emissão'],
-            ]},
-          ].map(({ group, items }) => (
-            <div key={group} className="mb-3">
-              <p className="text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--theme-accent)' }}>
-                {group}
-              </p>
-              {items.map(([tag, desc]) => (
-                <div key={tag} className="flex items-baseline gap-2 py-0.5">
-                  <code
-                    className="text-xs px-1.5 py-0.5 rounded flex-shrink-0"
-                    style={{ background: 'rgba(255,208,128,0.1)', color: 'var(--theme-accent)' }}
+        <div>
+          <label className={labelCls}>Blocos ativos</label>
+          <div className="flex flex-col gap-1.5">
+            {blocos.map((bloco, index) => {
+              const obrigatorio = BLOCOS_OBRIGATORIOS.includes(bloco)
+              return (
+                <div
+                  key={bloco}
+                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-white/10"
+                  style={{ background: 'var(--theme-input-bg)' }}
+                >
+                  <input
+                    type="checkbox"
+                    checked
+                    disabled={obrigatorio}
+                    onChange={() => handleToggleBloco(bloco)}
+                    className="w-3.5 h-3.5 accent-green-500"
+                  />
+                  <span className="text-xs flex-1 text-white/70">
+                    {ROTULOS_BLOCO[bloco]}
+                    {obrigatorio && <span className="text-white/30"> (obrigatório)</span>}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleMover(index, -1)}
+                    disabled={index === 0}
+                    className="text-xs px-1.5 text-white/40 disabled:opacity-30"
+                    aria-label={`Mover ${ROTULOS_BLOCO[bloco]} para cima`}
                   >
-                    {`{{${tag}}}`}
-                  </code>
-                  <span className="text-xs text-white/40">{desc}</span>
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleMover(index, 1)}
+                    disabled={index === blocos.length - 1}
+                    className="text-xs px-1.5 text-white/40 disabled:opacity-30"
+                    aria-label={`Mover ${ROTULOS_BLOCO[bloco]} para baixo`}
+                  >
+                    ↓
+                  </button>
                 </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {disponiveis.length > 0 && (
+          <div>
+            <label className={labelCls}>Adicionar bloco</label>
+            <div className="flex flex-wrap gap-1.5">
+              {disponiveis.map((bloco) => (
+                <button
+                  key={bloco}
+                  type="button"
+                  onClick={() => handleAdicionarBloco(bloco)}
+                  className="text-xs px-2.5 py-1 rounded-lg border border-white/10 text-white/60 hover:text-white transition-colors"
+                  style={{ background: 'var(--theme-input-bg)' }}
+                >
+                  + {ROTULOS_BLOCO[bloco]}
+                </button>
               ))}
             </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="space-y-3">
-        {templates.map((t) => (
-          <div
-            key={t.id}
-            className="rounded-xl p-4 border border-white/10 flex items-center justify-between gap-4"
-            style={{ background: 'var(--theme-surface)' }}
-          >
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <p className="text-sm font-medium text-white truncate">{t.name}</p>
-                {t.is_default && (
-                  <span
-                    className="text-xs px-2 py-0.5 rounded-full"
-                    style={{ background: 'rgba(255,208,128,0.15)', color: 'var(--theme-accent)', border: '1px solid rgba(255,208,128,0.3)' }}
-                  >
-                    Padrão
-                  </span>
-                )}
-                {!t.is_active && (
-                  <span className="text-xs px-2 py-0.5 rounded-full text-white/40 border border-white/10">
-                    Inativo
-                  </span>
-                )}
-              </div>
-              {t.category && (
-                <p className="text-xs text-white/40 mt-0.5">{t.category}</p>
-              )}
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <button
-                onClick={() => handleDiagnose(t.id)}
-                disabled={diagLoading === t.id}
-                className="text-xs px-3 py-1.5 rounded-lg text-white/50 hover:text-white transition-colors"
-                style={{ background: 'var(--theme-input-bg)' }}
-              >
-                {diagLoading === t.id ? 'Analisando...' : '🔍 Diagnóstico'}
-              </button>
-              <a
-                href={`/api/templates/${t.id}/download`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs px-3 py-1.5 rounded-lg text-white/50 hover:text-white transition-colors"
-                style={{ background: 'var(--theme-input-bg)' }}
-              >
-                ↓ Baixar
-              </a>
-              {!t.is_default && (
-                <button
-                  onClick={() => handleSetDefault(t)}
-                  disabled={isPending}
-                  className="text-xs px-3 py-1.5 rounded-lg text-white/50 hover:text-white transition-colors"
-                  style={{ background: 'var(--theme-input-bg)' }}
-                >
-                  Definir padrão
-                </button>
-              )}
-              <button
-                onClick={() => handleToggleActive(t)}
-                disabled={isPending}
-                className="text-xs px-3 py-1.5 rounded-lg text-white/50 hover:text-white transition-colors"
-                style={{ background: 'var(--theme-input-bg)' }}
-              >
-                {t.is_active ? 'Desativar' : 'Ativar'}
-              </button>
-              {confirmDelete === t.id ? (
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => handleDelete(t.id)}
-                    disabled={isPending}
-                    className="text-xs px-3 py-1.5 rounded-lg font-semibold text-white"
-                    style={{ background: '#ef4444' }}
-                  >
-                    Confirmar
-                  </button>
-                  <button
-                    onClick={() => setConfirmDelete(null)}
-                    className="text-xs px-3 py-1.5 rounded-lg text-white/40"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => setConfirmDelete(t.id)}
-                  className="text-xs px-3 py-1.5 rounded-lg text-red-400/70 hover:text-red-400 transition-colors"
-                  style={{ background: 'var(--theme-input-bg)' }}
-                >
-                  Excluir
-                </button>
-              )}
-            </div>
           </div>
-        ))}
+        )}
       </div>
 
-      {/* Resultado do Diagnóstico */}
-      {diagResult && !diagResult.error && (
-        <div
-          className="rounded-2xl p-5 border border-white/10 space-y-4"
-          style={{ background: 'var(--theme-surface)' }}
+      {/* ── Textos dos blocos ────────────────────────────────────────── */}
+      <div className={cardCls} style={cardStyle}>
+        <h3 className="text-sm font-semibold text-white">Textos dos blocos</h3>
+
+        <SecaoLista
+          titulo="Garantias"
+          aberta={!!secoesAbertas.garantias}
+          onToggle={() => toggleSecao('garantias')}
+          onRestaurar={() => restaurarSecao('garantias')}
         >
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-white">
-              Diagnóstico: {diagResult.templateName}
-            </h3>
-            <div className="flex items-center gap-2">
-              <span
-                className="text-xs px-3 py-1 rounded-full font-semibold"
-                style={{
-                  background: diagResult.status === 'aprovado' ? 'rgba(16,185,129,0.15)' : diagResult.status === 'aprovado_com_alertas' ? 'rgba(251,191,36,0.15)' : 'rgba(239,68,68,0.15)',
-                  color: diagResult.status === 'aprovado' ? '#10B981' : diagResult.status === 'aprovado_com_alertas' ? '#FBBF24' : '#EF4444',
-                  border: `1px solid ${diagResult.status === 'aprovado' ? 'rgba(16,185,129,0.3)' : diagResult.status === 'aprovado_com_alertas' ? 'rgba(251,191,36,0.3)' : 'rgba(239,68,68,0.3)'}`,
-                }}
-              >
-                {diagResult.status === 'aprovado' ? '✓ Aprovado' : diagResult.status === 'aprovado_com_alertas' ? '⚠ Aprovado com alertas' : '✖ Reprovado'}
-              </span>
-              <button onClick={() => setDiagResult(null)} className="text-xs text-white/30 hover:text-white/60">✕</button>
-            </div>
+          {textos.garantias.map((item, i) => (
+            <ItemGarantiaCampo
+              key={i}
+              item={item}
+              onChange={(novo) =>
+                setTextos((prev) => ({
+                  ...prev,
+                  garantias: prev.garantias.map((it, idx) => (idx === i ? novo : it)),
+                }))
+              }
+            />
+          ))}
+        </SecaoLista>
+
+        <SecaoLista
+          titulo="Etapas do projeto"
+          aberta={!!secoesAbertas.timeline}
+          onToggle={() => toggleSecao('timeline')}
+          onRestaurar={() => restaurarSecao('timeline')}
+        >
+          {textos.timeline.map((item, i) => (
+            <ItemEtapaCampo
+              key={i}
+              item={item}
+              onChange={(novo) =>
+                setTextos((prev) => ({
+                  ...prev,
+                  timeline: prev.timeline.map((it, idx) => (idx === i ? novo : it)),
+                }))
+              }
+            />
+          ))}
+        </SecaoLista>
+
+        <SecaoLista
+          titulo="Como funciona"
+          aberta={!!secoesAbertas.como_funciona}
+          onToggle={() => toggleSecao('como_funciona')}
+          onRestaurar={() => restaurarSecao('como_funciona')}
+        >
+          {textos.como_funciona.map((item, i) => (
+            <ItemPassoCampo
+              key={i}
+              item={item}
+              onChange={(novo) =>
+                setTextos((prev) => ({
+                  ...prev,
+                  como_funciona: prev.como_funciona.map((it, idx) => (idx === i ? novo : it)),
+                }))
+              }
+            />
+          ))}
+        </SecaoLista>
+
+        <SecaoLista
+          titulo="Fluxo da instalação"
+          aberta={!!secoesAbertas.fluxo}
+          onToggle={() => toggleSecao('fluxo')}
+          onRestaurar={() => restaurarSecao('fluxo')}
+        >
+          {textos.fluxo.map((item, i) => (
+            <ItemPassoCampo
+              key={i}
+              item={item}
+              onChange={(novo) =>
+                setTextos((prev) => ({
+                  ...prev,
+                  fluxo: prev.fluxo.map((it, idx) => (idx === i ? novo : it)),
+                }))
+              }
+            />
+          ))}
+        </SecaoLista>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+          <div>
+            <label className={labelCls}>Frase de abertura</label>
+            <input
+              className={inputCls}
+              value={textos.abertura ?? ''}
+              onChange={(e) => setTextos((prev) => ({ ...prev, abertura: e.target.value || null }))}
+              placeholder="Ex: Sua energia, seu futuro."
+            />
           </div>
-          <div className="space-y-1.5">
-            {diagResult.findings?.map((f: any, i: number) => (
-              <div key={i} className="flex items-start gap-2 text-xs">
-                <span className="flex-shrink-0 mt-0.5">
-                  {f.type === 'ok' ? '✓' : f.type === 'warn' ? '⚠' : '✖'}
-                </span>
-                <span style={{ color: f.type === 'ok' ? '#10B981' : f.type === 'warn' ? '#FBBF24' : '#EF4444' }}>
-                  {f.message}
-                </span>
-              </div>
-            ))}
+          <div>
+            <label className={labelCls}>Mensagem de encerramento</label>
+            <input
+              className={inputCls}
+              value={textos.encerramento ?? ''}
+              onChange={(e) => setTextos((prev) => ({ ...prev, encerramento: e.target.value || null }))}
+              placeholder="Ex: Obrigado pela confiança."
+            />
           </div>
         </div>
-      )}
+      </div>
 
-      {diagResult?.error && (
-        <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2">
-          {diagResult.error}
-        </p>
+      {/* ── Salvar ───────────────────────────────────────────────────── */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={handleSalvar}
+          disabled={salvando}
+          className="px-5 py-2.5 rounded-xl text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-all"
+          style={{ background: 'var(--theme-accent)', color: 'var(--theme-accent-text)' }}
+        >
+          {salvando ? 'Salvando...' : salvo ? 'Salvo!' : 'Salvar'}
+        </button>
+        {erro && <p className="text-xs text-red-400">{erro}</p>}
+      </div>
+    </div>
+  )
+}
+
+function SecaoLista({
+  titulo,
+  aberta,
+  onToggle,
+  onRestaurar,
+  children,
+}: {
+  titulo: string
+  aberta: boolean
+  onToggle: () => void
+  onRestaurar: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <div className="rounded-xl border border-white/10 overflow-hidden">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full flex items-center justify-between px-4 py-3 text-sm text-white/80 hover:text-white transition-colors"
+        style={{ background: 'var(--theme-input-bg)' }}
+      >
+        <span className="font-medium">{titulo}</span>
+        <span className="text-white/40 text-xs">{aberta ? '▲ recolher' : '▼ expandir'}</span>
+      </button>
+      {aberta && (
+        <div className="p-4 space-y-3">
+          {children}
+          <button
+            type="button"
+            onClick={onRestaurar}
+            className="text-xs text-white/40 hover:text-white/70 transition-colors"
+          >
+            Restaurar padrão
+          </button>
+        </div>
       )}
+    </div>
+  )
+}
+
+function ItemGarantiaCampo({ item, onChange }: { item: ItemGarantia; onChange: (v: ItemGarantia) => void }) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 pb-2 border-b border-white/5 last:border-0">
+      <input className={inputCls} value={item.titulo} onChange={(e) => onChange({ ...item, titulo: e.target.value })} placeholder="Título" />
+      <input className={inputCls} value={item.prazo} onChange={(e) => onChange({ ...item, prazo: e.target.value })} placeholder="Prazo" />
+      <input className={inputCls} value={item.descricao} onChange={(e) => onChange({ ...item, descricao: e.target.value })} placeholder="Descrição" />
+    </div>
+  )
+}
+
+function ItemEtapaCampo({ item, onChange }: { item: ItemEtapa; onChange: (v: ItemEtapa) => void }) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pb-2 border-b border-white/5 last:border-0">
+      <input className={inputCls} value={item.titulo} onChange={(e) => onChange({ ...item, titulo: e.target.value })} placeholder="Título" />
+      <input className={inputCls} value={item.descricao} onChange={(e) => onChange({ ...item, descricao: e.target.value })} placeholder="Descrição" />
+    </div>
+  )
+}
+
+function ItemPassoCampo({ item, onChange }: { item: ItemPasso; onChange: (v: ItemPasso) => void }) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pb-2 border-b border-white/5 last:border-0">
+      <input className={inputCls} value={item.titulo} onChange={(e) => onChange({ ...item, titulo: e.target.value })} placeholder="Título" />
+      <input className={inputCls} value={item.descricao} onChange={(e) => onChange({ ...item, descricao: e.target.value })} placeholder="Descrição" />
     </div>
   )
 }

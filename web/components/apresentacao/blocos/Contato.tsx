@@ -12,6 +12,11 @@ export function Contato({ dados }: { dados: ApresentacaoData }) {
 
   return (
     <Secao titulo="Fale com a gente">
+      {dados.textos.encerramento && (
+        <p style={{ fontSize: 14, color: 'var(--apr-texto-suave)', marginBottom: 12 }}>
+          {dados.textos.encerramento}
+        </p>
+      )}
       <p style={{ fontSize: 17, fontWeight: 600, marginBottom: 12 }}>{empresa.nome}</p>
       <div className="apr__grid">
         {linhas.map((l) => (

@@ -1,4 +1,5 @@
 // web/lib/apresentacoes/tipos.ts
+import type { TextosApresentacao } from './textos'
 
 /** Blocos disponíveis na Fase 1. Novos blocos entram aqui primeiro. */
 export const BLOCOS_VALIDOS = [
@@ -55,6 +56,7 @@ export type ApresentacaoData = {
   investimento: { valor: string | null }
   datas: { emitida_em: string; valida_ate: string }
   tema: { cor_principal: string; cor_texto: string; cor_secundaria: string }
+  textos: TextosApresentacao
 }
 
 export function ehBlocoValido(v: unknown): v is BlocoId {
