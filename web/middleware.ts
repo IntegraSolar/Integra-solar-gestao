@@ -12,6 +12,9 @@ const PUBLIC_ROUTES = [
   '/privacidade',
   '/subscription-expired',
   '/agendar-demo',
+  // Landing page das campanhas do Google Ads. Sem isto o visitante do anúncio
+  // cai na tela de login, e o clique é pago do mesmo jeito.
+  '/lp',
   // Portais públicos com acesso por token (segurança via DB, não por sessão)
   '/instalador',
   '/projetista',
