@@ -63,8 +63,14 @@ const leadSchema = z.object({
 
 export async function createLead(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
   try { await requirePermission('leads', 'add') } catch { return { error: 'Sem permissão para criar leads.' } }
-  const orgId = await getOrgId()
+  const user = await getCurrentUserData()
+  const orgId = user?.membership?.organization.id ?? null
   if (!orgId) return { error: 'Sem organização ativa.' }
+
+  // Sem autor, o lead criado por um vendedor sem responsável definido sairia do
+  // funil dele no mesmo instante — o filtro do CRM só alcança lead próprio.
+  const userId = user?.profile?.id ?? null
+  if (!userId) return { error: 'Não foi possível identificar o usuário.' }
 
   const parsed = leadSchema.safeParse(Object.fromEntries(formData))
   if (!parsed.success) return { error: parsed.error.issues[0].message }
@@ -80,6 +86,7 @@ export async function createLead(_prev: ActionResult, formData: FormData): Promi
     lead_source_id: lead_source_id || null,
     next_action_date: next_action_date || null,
     organization_id: orgId,
+    created_by: userId,
   })
 
   if (error) return { error: error.message }

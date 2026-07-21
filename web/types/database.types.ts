@@ -1071,6 +1071,7 @@ export type Database = {
           converted: boolean
           converted_to_client_id: string | null
           created_at: string
+          created_by: string | null
           current_stage_id: string
           estimated_kwp: number | null
           estimated_value: number | null
@@ -1093,6 +1094,7 @@ export type Database = {
           converted?: boolean
           converted_to_client_id?: string | null
           created_at?: string
+          created_by?: string | null
           current_stage_id: string
           estimated_kwp?: number | null
           estimated_value?: number | null
@@ -1115,6 +1117,7 @@ export type Database = {
           converted?: boolean
           converted_to_client_id?: string | null
           created_at?: string
+          created_by?: string | null
           current_stage_id?: string
           estimated_kwp?: number | null
           estimated_value?: number | null
