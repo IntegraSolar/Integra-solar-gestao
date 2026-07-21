@@ -103,12 +103,31 @@ export async function generateProposalLink(
 
   const supabase = await createClient()
 
-  // Invalida o link anterior: um link ativo por proposta.
-  await (supabase as any)
+  // Reaproveita o link ativo em vez de criar outro. Regerar invalidaria o
+  // endereço que o cliente possivelmente já recebeu, e ele veria "link inválido"
+  // sem ninguém entender o motivo. Para trocar o link de propósito existe
+  // regenerateProposalLink().
+  const { data: existente } = await (supabase as any)
     .from('proposal_links')
-    .update({ active: false })
+    .select('token')
     .eq('proposal_id', proposalId)
     .eq('organization_id', orgId)
+    .eq('active', true)
+    .maybeSingle()
+
+  if (existente?.token && !config) {
+    return { success: 'Link já existente.', token: existente.token }
+  }
+
+  // Com configuração nova, o link é refeito para que o destinatário não receba
+  // uma apresentação diferente da que foi revisada.
+  if (existente?.token) {
+    await (supabase as any)
+      .from('proposal_links')
+      .update({ active: false })
+      .eq('proposal_id', proposalId)
+      .eq('organization_id', orgId)
+  }
 
   const token = crypto.randomUUID().replace(/-/g, '').slice(0, 24)
 
@@ -148,6 +167,35 @@ export async function generateProposalLink(
 
   revalidatePath('/leads')
   return { success: 'Link gerado.', token }
+}
+
+/**
+ * Invalida o link atual e emite outro. Uso deliberado — o endereço anterior
+ * para de funcionar imediatamente, inclusive para quem já o recebeu.
+ */
+export async function regenerateProposalLink(
+  proposalId: string
+): Promise<ActionResult & { token?: string }> {
+  const user = await getCurrentUserData()
+  const orgId = user?.membership?.organization.id ?? null
+  if (!orgId) return { error: 'Sem organização ativa.' }
+
+  const supabase = await createClient()
+  await (supabase as any)
+    .from('proposal_links')
+    .update({ active: false })
+    .eq('proposal_id', proposalId)
+    .eq('organization_id', orgId)
+
+  const token = crypto.randomUUID().replace(/-/g, '').slice(0, 24)
+  const { error } = await (supabase as any)
+    .from('proposal_links')
+    .insert({ proposal_id: proposalId, organization_id: orgId, token })
+
+  if (error) return { error: 'Erro ao gerar novo link: ' + error.message }
+
+  revalidatePath('/leads')
+  return { success: 'Novo link gerado.', token }
 }
 
 export async function revokeProposalLink(proposalId: string): Promise<ActionResult> {
