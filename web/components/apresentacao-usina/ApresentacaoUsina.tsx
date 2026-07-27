@@ -13,7 +13,9 @@ import { Projecao } from './blocos/Projecao'
 import { Empresa } from './blocos/Empresa'
 import { Contato } from './blocos/Contato'
 
-const BLOCOS = [Capa, Indicadores, Usina, Premissas, Custos, Financiamento, Retorno, Projecao, Empresa, Contato]
+// Indicadores ("Retorno do investimento") fica perto do fim, entre os Cenários
+// de retorno e a Projeção — fecha o raciocínio depois de mostrar o projeto.
+const BLOCOS = [Capa, Usina, Premissas, Custos, Financiamento, Retorno, Indicadores, Projecao, Empresa, Contato]
 
 export function ApresentacaoUsina({ dados, token }: { dados: ApresentacaoUsinaData; token?: string }) {
   return (

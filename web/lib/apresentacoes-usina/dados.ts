@@ -105,7 +105,7 @@ export function montarApresentacaoUsina(s: SnapshotUsina): ApresentacaoUsinaData
       ],
     },
     projecao: {
-      svg: svgFluxoAcumulado(r.projecao.map((l) => l.fluxoProprioAcum)),
+      svg: svgFluxoAcumulado(r.projecao.map((l) => ({ ano: l.ano, valor: l.fluxoProprioAcum }))),
       tabela: r.projecao.map((l) => ({
         ano: String(l.ano),
         producao: num(l.producaoKwh),
