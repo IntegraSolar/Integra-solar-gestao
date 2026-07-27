@@ -8,6 +8,7 @@ import { calcularViabilidade } from '@/lib/simuladores/viabilidade/engine'
 import { gerarPropostaPdf } from '@/lib/simuladores/viabilidade/proposta-pdf'
 import type { EmpresaProposta } from '@/lib/simuladores/proposta-empresa'
 import { HelpTooltip } from '@/components/ui/HelpTooltip'
+import { fracToPct, pctToFrac } from '@/lib/simuladores/viabilidade/pct'
 
 type Props = { concessionarias: ConcessionariaRow[]; simulacoes: SimulacaoResumo[]; empresa: EmpresaProposta }
 
@@ -17,15 +18,17 @@ const CAMPOS_INICIAIS: CamposSimulador = {
   descontoLocacao: 0.2, pctFinanciado: 0,
 }
 
-// Premissas avançadas (chave do input → rótulo pt-BR e texto de ajuda).
-const PREMISSAS_LABEL: { key: keyof typeof PREMISSAS_DEFAULT; label: string; ajuda: string }[] = [
-  { key: 'reajusteTarifaAnual', label: 'Reajuste / IPCA (fração)', ajuda: 'Reajuste anual esperado da tarifa de energia, usado para projetar a receita ano a ano. Ex.: 0,08 = 8% ao ano.' },
-  { key: 'tma', label: 'TMA (fração)', ajuda: 'Taxa Mínima de Atratividade: retorno mínimo exigido do investimento. É a taxa que desconta o fluxo de caixa no cálculo do VPL. Ex.: 0,10 = 10% ao ano.' },
-  { key: 'impostoPct', label: 'Imposto (fração)', ajuda: 'Alíquota de imposto aplicada sobre a receita da usina. Ex.: 0,045 = 4,5%.' },
-  { key: 'opexPct', label: 'OPEX anual (fração)', ajuda: 'Custo anual de operação e manutenção (O&M, seguros), reajustado a cada ano. Expresso como fração da base de custo.' },
-  { key: 'degradacaoAnual', label: 'Indisponibilidade (fração)', ajuda: 'Perda anual de geração por degradação dos módulos e indisponibilidade do sistema. Ex.: 0,015 = 1,5% ao ano.' },
-  { key: 'd23', label: 'Gestão (fração)', ajuda: 'Taxa de gestão do contrato, retida sobre a receita a cada ano. Ex.: 0,125 = 12,5%.' },
-  { key: 'jurosAnual', label: 'Juros do financiamento (fração)', ajuda: 'Taxa de juros anual do financiamento do CAPEX. Só afeta o cenário com financiamento. Ex.: 0,10 = 10% ao ano.' },
+// Premissas avançadas (chave do input → rótulo pt-BR, texto de ajuda e se o
+// campo é digitado em porcentagem). `pct: true` significa que a tela mostra e
+// recebe o valor em % (ex.: 8), mas o estado e o motor seguem em fração (0,08).
+const PREMISSAS_LABEL: { key: keyof typeof PREMISSAS_DEFAULT; label: string; ajuda: string; pct?: boolean }[] = [
+  { key: 'reajusteTarifaAnual', label: 'Reajuste / IPCA (%)', pct: true, ajuda: 'Reajuste anual esperado da tarifa de energia, usado para projetar a receita ano a ano. Ex.: 8 = 8% ao ano.' },
+  { key: 'tma', label: 'TMA (%)', pct: true, ajuda: 'Taxa Mínima de Atratividade: retorno mínimo exigido do investimento. É a taxa que desconta o fluxo de caixa no cálculo do VPL. Ex.: 10 = 10% ao ano.' },
+  { key: 'impostoPct', label: 'Imposto (%)', pct: true, ajuda: 'Alíquota de imposto aplicada sobre a receita da usina. Ex.: 4,5 = 4,5%.' },
+  { key: 'opexPct', label: 'OPEX anual (%)', pct: true, ajuda: 'Custo anual de operação e manutenção (O&M, seguros), reajustado a cada ano. Expresso como porcentagem da base de custo.' },
+  { key: 'degradacaoAnual', label: 'Indisponibilidade (%)', pct: true, ajuda: 'Perda anual de geração por degradação dos módulos e indisponibilidade do sistema. Ex.: 1,5 = 1,5% ao ano.' },
+  { key: 'd23', label: 'Gestão (%)', pct: true, ajuda: 'Taxa de gestão do contrato, retida sobre a receita a cada ano. Ex.: 12,5 = 12,5%.' },
+  { key: 'jurosAnual', label: 'Juros do financiamento (%)', pct: true, ajuda: 'Taxa de juros anual do financiamento do CAPEX. Só afeta o cenário com financiamento. Ex.: 10 = 10% ao ano.' },
   { key: 'prazoMeses', label: 'Prazo do financiamento (meses)', ajuda: 'Número de parcelas do financiamento, em meses.' },
   { key: 'horizonteAnos', label: 'Horizonte (anos)', ajuda: 'Período de análise do investimento. Payback, TIR e VPL são calculados dentro dessa janela. Padrão: 25 anos.' },
   { key: 'anoInicial', label: 'Ano inicial', ajuda: 'Ano de início da operação. Serve de base para a projeção e para a rampa do Fio B da Lei 14.300, que é por ano-calendário.' },
@@ -33,8 +36,9 @@ const PREMISSAS_LABEL: { key: keyof typeof PREMISSAS_DEFAULT; label: string; aju
 
 // Textos de ajuda dos campos principais do cenário.
 const AJUDA_CAPEX = 'Custo total do investimento no sistema (equipamentos, instalação e projeto). É a base para o cálculo de payback, TIR e VPL.'
-const AJUDA_DESCONTO = 'Desconto oferecido ao cliente sobre a tarifa da concessionária. Ex.: 0,20 = o cliente paga 20% menos que na conta de luz.'
-const AJUDA_FINANCIAMENTO = 'Parcela do CAPEX financiada por banco, de 0 a 1. 0 = tudo capital próprio; 0,70 = 70% financiado.'
+const AJUDA_DESCONTO = 'Desconto oferecido ao cliente sobre a tarifa da concessionária. Ex.: 20 = o cliente paga 20% menos que na conta de luz.'
+const AJUDA_FINANCIAMENTO = 'Parcela do CAPEX financiada por banco. Ex.: 70 = 70% financiado; 0 = tudo capital próprio.'
+const AJUDA_FATOR = 'Fator de capacidade: geração média em relação à capacidade máxima da usina. Ex.: 14 = 14%.'
 
 const brl = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 const pct = (v: number) => `${(v * 100).toFixed(1)}%`
@@ -59,8 +63,11 @@ export function SimuladorViabilidade({ concessionarias, simulacoes, empresa }: P
 
   const setNum = (k: keyof CamposSimulador, v: string) =>
     setCampos((c) => ({ ...c, [k]: v === '' ? 0 : Number(v) }))
-  const setPrem = (k: keyof typeof PREMISSAS_DEFAULT, v: string) =>
-    setCampos((c) => ({ ...c, premissas: { ...c.premissas, [k]: v === '' ? 0 : Number(v) } }))
+  // Campo em % de CamposSimulador: recebe %, guarda fração.
+  const setNumPct = (k: keyof CamposSimulador, v: string) =>
+    setCampos((c) => ({ ...c, [k]: pctToFrac(v) }))
+  const setPrem = (k: keyof typeof PREMISSAS_DEFAULT, v: string, pct?: boolean) =>
+    setCampos((c) => ({ ...c, premissas: { ...c.premissas, [k]: pct ? pctToFrac(v) : v === '' ? 0 : Number(v) } }))
   const premVal = (k: keyof typeof PREMISSAS_DEFAULT) =>
     (campos.premissas?.[k] as number | undefined) ?? (PREMISSAS_DEFAULT[k] as number)
 
@@ -125,15 +132,15 @@ export function SimuladorViabilidade({ concessionarias, simulacoes, empresa }: P
               <label className="text-xs">Potência do painel (Wp)<input type="number" step="any" className={N} value={String(campos.potenciaPainelWp)} onChange={(e) => setNum('potenciaPainelWp', e.target.value)} /></label>
               <label className="text-xs">Nº de inversores<input type="number" step="any" className={N} value={String(campos.numInversores)} onChange={(e) => setNum('numInversores', e.target.value)} /></label>
               <label className="text-xs">Potência do inversor (kW)<input type="number" step="any" className={N} value={String(campos.potenciaInversorKw)} onChange={(e) => setNum('potenciaInversorKw', e.target.value)} /></label>
-              <label className="text-xs">Fator de capacidade<input type="number" step="any" className={N} value={String(campos.fatorCapacidade)} onChange={(e) => setNum('fatorCapacidade', e.target.value)} /></label>
+              <label className="text-xs"><span className="inline-flex items-center">Fator de capacidade (%)<HelpTooltip content={AJUDA_FATOR} /></span><input type="number" step="any" className={N} value={fracToPct(campos.fatorCapacidade)} onChange={(e) => setNumPct('fatorCapacidade', e.target.value)} /></label>
               <label className="text-xs">Modalidade
                 <select className={N} value={campos.modalidade} onChange={(e) => setCampos((c) => ({ ...c, modalidade: e.target.value as 'GD1' | 'GD2' }))}>
                   <option value="GD1">GD1</option><option value="GD2">GD2</option>
                 </select>
               </label>
               <label className="text-xs"><span className="inline-flex items-center">CAPEX (R$)<HelpTooltip content={AJUDA_CAPEX} /></span><input type="number" step="any" className={N} value={String(campos.valorInvestimento)} onChange={(e) => setNum('valorInvestimento', e.target.value)} /></label>
-              <label className="text-xs"><span className="inline-flex items-center">Desconto do consumidor<HelpTooltip content={AJUDA_DESCONTO} /></span><input type="number" step="any" className={N} value={String(campos.descontoLocacao)} onChange={(e) => setNum('descontoLocacao', e.target.value)} /></label>
-              <label className="text-xs"><span className="inline-flex items-center">Financiamento (%)<HelpTooltip content={AJUDA_FINANCIAMENTO} /></span><input type="number" step="any" className={N} value={String(campos.pctFinanciado)} onChange={(e) => setNum('pctFinanciado', e.target.value)} /></label>
+              <label className="text-xs"><span className="inline-flex items-center">Desconto do consumidor (%)<HelpTooltip content={AJUDA_DESCONTO} /></span><input type="number" step="any" className={N} value={fracToPct(campos.descontoLocacao)} onChange={(e) => setNumPct('descontoLocacao', e.target.value)} /></label>
+              <label className="text-xs"><span className="inline-flex items-center">Financiamento (%)<HelpTooltip content={AJUDA_FINANCIAMENTO} /></span><input type="number" step="any" className={N} value={fracToPct(campos.pctFinanciado)} onChange={(e) => setNumPct('pctFinanciado', e.target.value)} /></label>
               <label className="text-xs">Modelo do painel<input className={N} value={modeloPainel} onChange={(e) => setModeloPainel(e.target.value)} /></label>
               <label className="text-xs">Modelo do inversor<input className={N} value={modeloInversor} onChange={(e) => setModeloInversor(e.target.value)} /></label>
             </div>
@@ -145,9 +152,11 @@ export function SimuladorViabilidade({ concessionarias, simulacoes, empresa }: P
             </button>
             {avancadas && (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 mt-3">
-                {PREMISSAS_LABEL.map(({ key, label, ajuda }) => (
+                {PREMISSAS_LABEL.map(({ key, label, ajuda, pct }) => (
                   <label key={key} className="text-xs"><span className="inline-flex items-center">{label}<HelpTooltip content={ajuda} /></span>
-                    <input type="number" step="any" className={N} value={String(premVal(key))} onChange={(e) => setPrem(key, e.target.value)} />
+                    <input type="number" step="any" className={N}
+                      value={pct ? fracToPct(premVal(key)) : String(premVal(key))}
+                      onChange={(e) => setPrem(key, e.target.value, pct)} />
                   </label>
                 ))}
               </div>
