@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 import { useMemo, useState, useTransition } from 'react'
 import type { ConcessionariaRow } from '@/lib/simuladores/viabilidade/concessionarias-actions'
 import { salvarSimulacao, deleteSimulacao, type SimulacaoResumo } from '@/lib/simuladores/viabilidade/simulacoes-actions'
@@ -91,8 +92,15 @@ export function SimuladorViabilidade({ concessionarias, simulacoes, empresa }: P
 
   return (
     <div className="p-6">
-      <h1 className="text-xl font-bold mb-1 text-[var(--theme-text,#1a2340)]">Viabilidade de usina</h1>
-      <p className="text-sm text-[var(--theme-text-muted,#6b7280)] mb-4">Escolha a concessionária, ajuste os dados e veja o retorno ao vivo.</p>
+      <div className="flex items-start justify-between gap-4 mb-4">
+        <div>
+          <h1 className="text-xl font-bold mb-1 text-[var(--theme-text,#1a2340)]">Viabilidade de usina</h1>
+          <p className="text-sm text-[var(--theme-text-muted,#6b7280)]">Escolha a concessionária, ajuste os dados e veja o retorno ao vivo.</p>
+        </div>
+        <Link href="/simuladores/viabilidade-usina/concessionarias" className="shrink-0 rounded border border-[#E7CE7A] bg-[#FFF7DC] text-sm px-3 py-1.5 hover:bg-[#FBEFC4] text-[#1a1a1a]">
+          Gerenciar concessionárias
+        </Link>
+      </div>
       {msg && <div className={`mb-3 text-sm ${msg.erro ? 'text-[#c0392b]' : 'text-[#1f9d55]'}`}>{msg.text}</div>}
 
       <div className="grid gap-6 lg:grid-cols-[1fr_360px] items-start">
@@ -164,7 +172,10 @@ export function SimuladorViabilidade({ concessionarias, simulacoes, empresa }: P
               </div>
             </>
           ) : (
-            <p className="text-sm text-[#6b7280]">Cadastre uma concessionária primeiro (aba Concessionárias).</p>
+            <p className="text-sm text-[#6b7280]">
+              Cadastre uma concessionária primeiro em{' '}
+              <Link href="/simuladores/viabilidade-usina/concessionarias" className="underline font-medium text-[#1a2340]">Gerenciar concessionárias</Link>.
+            </p>
           )}
         </div>
       </div>

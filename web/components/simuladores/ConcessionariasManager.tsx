@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 import { useMemo, useState, useTransition } from 'react'
 import {
   createConcessionaria, updateConcessionaria, deleteConcessionaria,
@@ -77,6 +78,7 @@ export function ConcessionariasManager({ inicial }: { inicial: ConcessionariaRow
 
   return (
     <div className="p-6">
+      <Link href="/simuladores/viabilidade-usina" className="text-sm text-[#6b7280] hover:underline inline-block mb-2">← Voltar para Viabilidade de usina</Link>
       <h1 className="text-xl font-bold mb-1 text-[var(--theme-text,#1a2340)]">Concessionárias — Viabilidade</h1>
       <p className="text-sm text-[var(--theme-text-muted,#6b7280)] mb-4">
         Campos <span className="px-1 rounded bg-[#FFF7DC] border border-[#E7CE7A]">amarelos</span> são editáveis;
