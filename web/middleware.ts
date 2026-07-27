@@ -20,10 +20,12 @@ const PUBLIC_ROUTES = [
   '/projetista',
   '/cliente',
   '/proposta',
+  '/proposta-usina',
   '/api/instalador',
   '/api/projetista',
   '/api/cliente',
   '/api/proposta',
+  '/api/proposta-usina',
 ]
 
 function isPublicRoute(pathname: string): boolean {

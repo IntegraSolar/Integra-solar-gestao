@@ -9,6 +9,7 @@ const nextConfig = {
   serverExternalPackages: ['@sparticuz/chromium', 'puppeteer-core'],
   outputFileTracingIncludes: {
     '/api/proposta/**': ['./node_modules/@sparticuz/chromium/**'],
+    '/api/proposta-usina/**': ['./node_modules/@sparticuz/chromium/**'],
   },
   images: {
     // Serve AVIF/WebP (menores) para imagens via next/image quando o browser suporta.
