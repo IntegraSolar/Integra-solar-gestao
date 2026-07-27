@@ -2,7 +2,7 @@
 import Link from 'next/link'
 import { useMemo, useState, useTransition } from 'react'
 import {
-  createConcessionaria, updateConcessionaria, deleteConcessionaria,
+  createConcessionaria, updateConcessionaria, deleteConcessionaria, setConcessionariaConfigurada,
   type ConcessionariaRow,
 } from '@/lib/simuladores/viabilidade/concessionarias-actions'
 import {
@@ -49,10 +49,26 @@ export function ConcessionariasManager({ inicial }: { inicial: ConcessionariaRow
 
   function editar(row: ConcessionariaRow) {
     setEditId(row.id)
-    const { id: _id, ...bruta } = row
-    void _id
+    // configurada é flag de exibição, não campo do formulário de tarifas.
+    const { id: _id, configurada: _cfg, ...bruta } = row
+    void _id; void _cfg
     setForm(bruta)
     setMsg(null)
+  }
+
+  function alternarConfigurada(c: ConcessionariaRow) {
+    const proximo = !c.configurada
+    // Otimista: reflete na hora e reverte se a action falhar.
+    setLista((l) => l.map((x) => (x.id === c.id ? { ...x, configurada: proximo } : x)))
+    start(async () => {
+      const res = await setConcessionariaConfigurada(c.id, proximo)
+      if ('error' in res) {
+        setMsg({ text: res.error ?? 'Erro.', erro: true })
+        setLista((l) => l.map((x) => (x.id === c.id ? { ...x, configurada: c.configurada } : x)))
+        return
+      }
+      setMsg({ text: res.success ?? '', erro: false })
+    })
   }
 
   function salvar() {
@@ -144,10 +160,15 @@ export function ConcessionariasManager({ inicial }: { inicial: ConcessionariaRow
       </div>
 
       {/* Lista */}
+      <p className="text-sm text-[var(--theme-text-muted,#6b7280)] mb-2">
+        Marque <b>Configurada</b> nas concessionárias que sua empresa atende — só elas aparecem no seletor da
+        Viabilidade. <b>{lista.filter((c) => c.configurada).length}</b> de {lista.length} configuradas.
+      </p>
       <div className="overflow-x-auto">
         <table className="w-full text-xs border-collapse">
           <thead>
             <tr className="text-left border-b">
+              <th className="py-1 pr-2">Configurada</th>
               <th className="py-1 pr-2">Concessionária</th>
               <th className="py-1 pr-2">Fio B / Tarifa</th>
               <th className="py-1 pr-2">Tarifa loc. (R$/kWh)</th>
@@ -159,12 +180,19 @@ export function ConcessionariasManager({ inicial }: { inicial: ConcessionariaRow
             {lista.map((c) => {
               const d = derivarConcessionaria(c)
               return (
-                <tr key={c.id} className="border-b">
+                <tr key={c.id} className={`border-b ${c.configurada ? '' : 'opacity-60'}`}>
+                  <td className="py-1 pr-2">
+                    <label className="inline-flex items-center gap-1.5 cursor-pointer">
+                      <input type="checkbox" checked={c.configurada} disabled={pending}
+                        onChange={() => alternarConfigurada(c)} />
+                      {c.configurada && <span className="text-[#1f9d55] font-medium">ativa</span>}
+                    </label>
+                  </td>
                   <td className="py-1 pr-2 font-medium">{c.nome}</td>
                   <td className="py-1 pr-2 font-mono">{d.fracFioB.toFixed(5)}</td>
                   <td className="py-1 pr-2 font-mono">{(d.tarifaCompensavelCompartilhada / 1000).toFixed(4)}</td>
                   <td className="py-1 pr-2 font-mono">{d.demandaGeracaoComImp.toFixed(4)}</td>
-                  <td className="py-1 pr-2">
+                  <td className="py-1 pr-2 whitespace-nowrap">
                     <button className="text-[#3b6fd6] mr-3" onClick={() => editar(c)}>editar</button>
                     <button className="text-[#c0392b]" onClick={() => excluir(c.id)}>excluir</button>
                   </td>
