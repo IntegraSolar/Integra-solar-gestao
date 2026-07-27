@@ -11,7 +11,16 @@ import { useEffect, useState } from 'react'
  * O modo apresentação existe para o vendedor mostrar ao vivo numa reunião: tela
  * cheia, um bloco por vez, navegação por setas ou clique.
  */
-export function BarraAcoes({ token, totalBlocos }: { token: string; totalBlocos: number }) {
+export function BarraAcoes({
+  token,
+  totalBlocos,
+  pdfEndpoint = '/api/proposta',
+}: {
+  token: string
+  totalBlocos: number
+  /** Base da rota de PDF. A proposta de usina usa '/api/proposta-usina'. */
+  pdfEndpoint?: string
+}) {
   const [apresentando, setApresentando] = useState(false)
   const [indice, setIndice] = useState(0)
   const [baixando, setBaixando] = useState(false)
@@ -71,7 +80,7 @@ export function BarraAcoes({ token, totalBlocos }: { token: string; totalBlocos:
   function baixarPdf() {
     setBaixando(true)
     // A primeira geração leva alguns segundos; as seguintes vêm do cache.
-    window.open(`/api/proposta/${token}/pdf`, '_blank')
+    window.open(`${pdfEndpoint}/${token}/pdf`, '_blank')
     setTimeout(() => setBaixando(false), 4000)
   }
 
