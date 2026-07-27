@@ -260,3 +260,17 @@ body.apr-apresentando .apr__card { animation: none; }
   .apr__acoes,
   .apr__apresentando-barra { display: none !important; }
 }
+
+/* ── Proposta de usina ─────────────────────────────────────────── */
+.apr-usina__lista { display: grid; gap: .35rem; }
+.apr-usina__linha { display: flex; justify-content: space-between; gap: 1rem; padding: .35rem 0; border-bottom: 1px solid rgba(0,0,0,.06); }
+.apr-usina__linha dt { color: var(--apr-texto-suave, #667); }
+.apr-usina__linha dd { font-weight: 600; text-align: right; }
+.apr-usina__resumo { font-weight: 700; color: var(--apr-destaque); margin-bottom: .5rem; }
+.apr-usina__tabela { width: 100%; border-collapse: collapse; font-size: .8rem; }
+.apr-usina__tabela th, .apr-usina__tabela td { padding: .3rem .5rem; text-align: right; border-bottom: 1px solid rgba(0,0,0,.06); }
+.apr-usina__tabela th:first-child, .apr-usina__tabela td:first-child { text-align: left; }
+.apr-usina__tabela-scroll { overflow-x: auto; }
+.apr-usina__grafico { width: 100%; height: auto; }
+.apr-usina__cta { display: inline-block; padding: .6rem 1.2rem; border-radius: .5rem; background: var(--apr-destaque-cheia); color: #fff; font-weight: 700; text-decoration: none; }
+@media print { .apr-usina__grafico { break-inside: avoid; } }
