@@ -2299,6 +2299,7 @@ export type Database = {
       simulador_concessionarias: {
         Row: {
           aplica_reajuste_1430: boolean
+          configurada: boolean
           created_at: string
           demanda_contratada_sem_imp: number
           demanda_geracao_sem_imp: number
@@ -2318,6 +2319,7 @@ export type Database = {
         }
         Insert: {
           aplica_reajuste_1430?: boolean
+          configurada?: boolean
           created_at?: string
           demanda_contratada_sem_imp?: number
           demanda_geracao_sem_imp?: number
@@ -2337,6 +2339,7 @@ export type Database = {
         }
         Update: {
           aplica_reajuste_1430?: boolean
+          configurada?: boolean
           created_at?: string
           demanda_contratada_sem_imp?: number
           demanda_geracao_sem_imp?: number

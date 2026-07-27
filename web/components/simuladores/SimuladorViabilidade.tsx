@@ -108,8 +108,10 @@ export function SimuladorViabilidade({ concessionarias, simulacoes, empresa }: P
           <div className="rounded-xl border p-4">
             <label className="text-xs block">Concessionária
               <select className="mt-1 w-full rounded border px-2 py-1 bg-[#FFF7DC] border-[#E7CE7A]"
-                value={concId} onChange={(e) => setConcId(e.target.value)}>
-                {concessionarias.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                value={concId} onChange={(e) => setConcId(e.target.value)} disabled={concessionarias.length === 0}>
+                {concessionarias.length === 0
+                  ? <option value="">Nenhuma configurada</option>
+                  : concessionarias.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
               </select>
             </label>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 mt-3">
@@ -173,7 +175,7 @@ export function SimuladorViabilidade({ concessionarias, simulacoes, empresa }: P
             </>
           ) : (
             <p className="text-sm text-[#6b7280]">
-              Cadastre uma concessionária primeiro em{' '}
+              Nenhuma concessionária configurada. Marque as que atende em{' '}
               <Link href="/simuladores/viabilidade-usina/concessionarias" className="underline font-medium text-[#1a2340]">Gerenciar concessionárias</Link>.
             </p>
           )}

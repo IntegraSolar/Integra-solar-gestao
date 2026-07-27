@@ -14,8 +14,9 @@ import { CONCESSIONARIAS_SEED } from './concessionarias-seed'
 
 const ROUTE = '/simuladores/viabilidade-usina/concessionarias'
 
-// Linha do banco (snake_case) com id.
-export type ConcessionariaRow = ConcessionariaBruta & { id: string }
+// Linha do banco (snake_case) com id e a flag de gestão "configurada" — esta não
+// pertence aos campos tarifários brutos, é uma escolha da empresa sobre exibição.
+export type ConcessionariaRow = ConcessionariaBruta & { id: string; configurada: boolean }
 
 // Mapeia coluna do banco -> tipo bruto (camelCase).
 function rowToBruta(r: Record<string, unknown>): ConcessionariaRow {
@@ -30,6 +31,8 @@ function rowToBruta(r: Record<string, unknown>): ConcessionariaRow {
     demandaContratadaSemImp: Number(r.demanda_contratada_sem_imp),
     demandaGeracaoSemImp: Number(r.demanda_geracao_sem_imp),
     aplicaReajuste1430: Boolean(r.aplica_reajuste_1430),
+    // Coluna nova (migration 20260721000006). Ausente em banco desatualizado → false.
+    configurada: Boolean(r.configurada),
   }
 }
 
@@ -63,15 +66,50 @@ export async function listConcessionarias(): Promise<ConcessionariaRow[]> {
   return data.map((r) => rowToBruta(r as Record<string, unknown>))
 }
 
+// Só as concessionárias que a empresa marcou como configuradas — as que o
+// seletor da Viabilidade deve oferecer.
+export async function listConcessionariasConfiguradas(): Promise<ConcessionariaRow[]> {
+  const ctx = await requireOrg()
+  if ('error' in ctx) return []
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('simulador_concessionarias')
+    .select('*')
+    .eq('organization_id', ctx.orgId)
+    .eq('configurada', true)
+    .order('nome', { ascending: true })
+  if (error || !data) return []
+  return data.map((r) => rowToBruta(r as Record<string, unknown>))
+}
+
+// Liga/desliga a exibição de uma concessionária no seletor da Viabilidade.
+// Não toca nos valores tarifários — é só a escolha de exibição.
+export async function setConcessionariaConfigurada(id: string, configurada: boolean): Promise<ActionResult> {
+  const ctx = await requireOrg()
+  if ('error' in ctx) return ctx
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('simulador_concessionarias')
+    .update({ configurada })
+    .eq('id', id)
+    .eq('organization_id', ctx.orgId)
+  if (error) return { error: error.message }
+  await logAction(configurada ? 'Concessionária configurada' : 'Concessionária desativada', `ID: ${id}`)
+  revalidatePath(ROUTE)
+  return { success: configurada ? 'Concessionária configurada.' : 'Concessionária removida da viabilidade.' }
+}
+
 export async function createConcessionaria(data: ConcessionariaBruta): Promise<ActionResult> {
   const ctx = await requireOrg()
   if ('error' in ctx) return ctx
   const parsed = concessionariaBrutaSchema.safeParse(data)
   if (!parsed.success) return { error: parsed.error.issues[0].message }
   const supabase = await createClient()
+  // Criada à mão já entra configurada: o ato de cadastrar sinaliza que a empresa
+  // quer usá-la. As do seed é que começam desmarcadas.
   const { error } = await supabase
     .from('simulador_concessionarias')
-    .insert({ organization_id: ctx.orgId, ...brutaToRow(parsed.data) })
+    .insert({ organization_id: ctx.orgId, ...brutaToRow(parsed.data), configurada: true })
   if (error) return { error: error.message }
   await logAction('Concessionária criada', `Nome: ${parsed.data.nome}`)
   revalidatePath(ROUTE)
