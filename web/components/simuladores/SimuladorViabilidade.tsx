@@ -5,7 +5,7 @@ import type { ConcessionariaRow } from '@/lib/simuladores/viabilidade/concession
 import { salvarSimulacao, deleteSimulacao, type SimulacaoResumo } from '@/lib/simuladores/viabilidade/simulacoes-actions'
 import { montarViabilidadeInput, PREMISSAS_DEFAULT, type CamposSimulador } from '@/lib/simuladores/viabilidade/montar-input'
 import { calcularViabilidade } from '@/lib/simuladores/viabilidade/engine'
-import { gerarPropostaPdf } from '@/lib/simuladores/viabilidade/proposta-pdf'
+import { gerarPropostaUsina } from '@/lib/apresentacoes-usina/actions'
 import type { EmpresaProposta } from '@/lib/simuladores/proposta-empresa'
 import { HelpTooltip } from '@/components/ui/HelpTooltip'
 import { fracToPct, pctToFrac } from '@/lib/simuladores/viabilidade/pct'
@@ -53,6 +53,7 @@ export function SimuladorViabilidade({ concessionarias, simulacoes, empresa }: P
   const [clienteCidade, setClienteCidade] = useState('')
   const [nome, setNome] = useState('')
   const [msg, setMsg] = useState<{ text: string; erro: boolean } | null>(null)
+  const [propostaUrl, setPropostaUrl] = useState<string | null>(null)
   const [pending, start] = useTransition()
 
   const conc = concessionarias.find((c) => c.id === concId)
@@ -87,12 +88,19 @@ export function SimuladorViabilidade({ concessionarias, simulacoes, empresa }: P
     })
   }
 
-  async function pdf() {
+  function gerarProposta() {
     if (!conc || !resultado || !input) return
-    await gerarPropostaPdf({
-      empresa, clienteNome: clienteNome || null, clienteCidade: clienteCidade || null,
-      concessionariaNome: conc.nome, modeloPainel, modeloInversor,
-      input, resultado,
+    setPropostaUrl(null)
+    start(async () => {
+      const res = await gerarPropostaUsina({
+        input, resultado,
+        clienteNome: clienteNome || null, clienteCidade: clienteCidade || null,
+        concessionariaNome: conc.nome, modeloPainel, modeloInversor,
+      })
+      if ('error' in res) { setMsg({ text: res.error ?? 'Erro.', erro: true }); return }
+      const url = `${window.location.origin}/proposta-usina/${res.token}`
+      setPropostaUrl(url)
+      setMsg({ text: 'Proposta gerada.', erro: false })
     })
   }
 
@@ -185,8 +193,16 @@ export function SimuladorViabilidade({ concessionarias, simulacoes, empresa }: P
               </div>
               <div className="mt-4 flex flex-col gap-2">
                 <button disabled={pending} onClick={salvar} className="rounded bg-[#FF9F40] text-[#1a1a1a] text-sm font-semibold px-3 py-1.5 disabled:opacity-60">Salvar simulação</button>
-                <button onClick={pdf} className="rounded border text-sm px-3 py-1.5">Gerar PDF</button>
+                <button onClick={gerarProposta} disabled={pending || !resultado} className="rounded border text-sm px-3 py-1.5">
+                  {pending ? 'Gerando...' : 'Gerar proposta'}
+                </button>
               </div>
+              {propostaUrl && (
+                <div className="mt-2 text-xs break-all">
+                  <a href={propostaUrl} target="_blank" rel="noopener noreferrer" className="underline text-[#1a2340]">Abrir proposta</a>
+                  <button type="button" className="ml-3 underline" onClick={() => navigator.clipboard.writeText(propostaUrl)}>Copiar link</button>
+                </div>
+              )}
             </>
           ) : (
             <p className="text-sm text-[#6b7280]">
