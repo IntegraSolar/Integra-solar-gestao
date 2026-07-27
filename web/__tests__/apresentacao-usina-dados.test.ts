@@ -15,7 +15,7 @@ const campos = {
   fatorCapacidade: 0.14, modalidade: 'GD2' as const, valorInvestimento: 154413.82,
   descontoLocacao: 0.2, pctFinanciado: 0, premissas: PREMISSAS_DEFAULT,
 }
-const empresa = { nome: 'Solar X', cnpj: '00.000.000/0001-00', telefone: '(63) 99999-9999', email: 'x@x.com', logoBase64: null }
+const empresa = { nome: 'Solar X', cnpj: '00.000.000/0001-00', endereco: null, telefone: '(63) 99999-9999', email: 'x@x.com', logoBase64: null }
 
 function montar() {
   const input = montarViabilidadeInput(campos, RGE)

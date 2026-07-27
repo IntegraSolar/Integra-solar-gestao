@@ -19,7 +19,7 @@ describe('proposta de usina não vaza dado interno', () => {
     }, RGE)
     const data = montarApresentacaoUsina({
       input, resultado: calcularViabilidade(input),
-      empresa: { nome: 'X', cnpj: null, telefone: null, email: null, logoBase64: null },
+      empresa: { nome: 'X', cnpj: null, endereco: null, telefone: null, email: null, logoBase64: null },
       clienteNome: null, clienteCidade: null, concessionariaNome: 'RGE',
       modeloPainel: '', modeloInversor: '',
       config: { cor_principal: '#0a0e1a', cor_secundaria: '#0a0e1a' },
