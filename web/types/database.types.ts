@@ -2367,6 +2367,59 @@ export type Database = {
           },
         ]
       }
+      simulador_viabilidade_apresentacoes: {
+        Row: {
+          active: boolean
+          cliente_cidade: string | null
+          cliente_nome: string | null
+          concessionaria_nome: string
+          created_at: string
+          id: string
+          input: Json
+          modelo_inversor: string | null
+          modelo_painel: string | null
+          organization_id: string
+          resultado: Json
+          token: string
+        }
+        Insert: {
+          active?: boolean
+          cliente_cidade?: string | null
+          cliente_nome?: string | null
+          concessionaria_nome: string
+          created_at?: string
+          id?: string
+          input: Json
+          modelo_inversor?: string | null
+          modelo_painel?: string | null
+          organization_id: string
+          resultado: Json
+          token: string
+        }
+        Update: {
+          active?: boolean
+          cliente_cidade?: string | null
+          cliente_nome?: string | null
+          concessionaria_nome?: string
+          created_at?: string
+          id?: string
+          input?: Json
+          modelo_inversor?: string | null
+          modelo_painel?: string | null
+          organization_id?: string
+          resultado?: Json
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "simulador_viabilidade_apresentacoes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       simulador_viabilidade: {
         Row: {
           cliente_cidade: string | null
