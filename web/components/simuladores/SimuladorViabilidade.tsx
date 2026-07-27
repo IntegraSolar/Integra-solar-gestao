@@ -6,11 +6,10 @@ import { salvarSimulacao, deleteSimulacao, type SimulacaoResumo } from '@/lib/si
 import { montarViabilidadeInput, PREMISSAS_DEFAULT, type CamposSimulador } from '@/lib/simuladores/viabilidade/montar-input'
 import { calcularViabilidade } from '@/lib/simuladores/viabilidade/engine'
 import { gerarPropostaUsina } from '@/lib/apresentacoes-usina/actions'
-import type { EmpresaProposta } from '@/lib/simuladores/proposta-empresa'
 import { HelpTooltip } from '@/components/ui/HelpTooltip'
 import { fracToPct, pctToFrac } from '@/lib/simuladores/viabilidade/pct'
 
-type Props = { concessionarias: ConcessionariaRow[]; simulacoes: SimulacaoResumo[]; empresa: EmpresaProposta }
+type Props = { concessionarias: ConcessionariaRow[]; simulacoes: SimulacaoResumo[] }
 
 const CAMPOS_INICIAIS: CamposSimulador = {
   numPaineis: 150, potenciaPainelWp: 600, numInversores: 1, potenciaInversorKw: 75,
@@ -43,7 +42,7 @@ const AJUDA_FATOR = 'Fator de capacidade: geração média em relação à capac
 const brl = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 const pct = (v: number) => `${(v * 100).toFixed(1)}%`
 
-export function SimuladorViabilidade({ concessionarias, simulacoes, empresa }: Props) {
+export function SimuladorViabilidade({ concessionarias, simulacoes }: Props) {
   const [concId, setConcId] = useState<string>(concessionarias[0]?.id ?? '')
   const [campos, setCampos] = useState<CamposSimulador>(CAMPOS_INICIAIS)
   const [avancadas, setAvancadas] = useState(false)
