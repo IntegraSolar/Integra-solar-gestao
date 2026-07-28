@@ -14,7 +14,8 @@ export type Premissas = {
   sunneSetupMicro: number
   sunneSetupMini: number
   jurosAnual: number
-  prazoMeses: number
+  carenciaMeses: number
+  amortizacaoAnos: number
   horizonteAnos: number
   anoInicial: number
   fioBSchedule: number[]
@@ -30,7 +31,8 @@ export const PREMISSAS_DEFAULT: Readonly<Premissas> = {
   sunneSetupMicro: 5000,
   sunneSetupMini: 10000,
   jurosAnual: 0.1,
-  prazoMeses: 12,
+  carenciaMeses: 6,
+  amortizacaoAnos: 12,
   horizonteAnos: 25,
   anoInicial: 2025,
   // Derivada do ano corrente: a escala da Lei 14.300 é por ano-calendário.
@@ -85,7 +87,8 @@ export function camposDoInput(input: ViabilidadeInput): CamposSimulador {
       sunneSetupMicro: input.sunneSetupMicro,
       sunneSetupMini: input.sunneSetupMini,
       jurosAnual: input.jurosAnual,
-      prazoMeses: input.prazoMeses,
+      carenciaMeses: input.carenciaMeses,
+      amortizacaoAnos: input.amortizacaoAnos,
       horizonteAnos: input.horizonteAnos,
       anoInicial: input.anoInicial,
       fioBSchedule: [...input.fioBSchedule],

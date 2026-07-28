@@ -5,8 +5,14 @@
 export type LinhaProjecaoView = {
   ano: string
   producao: string
+  tarifaBruta: string
+  fioBPct: string
+  tusdFioB: string
   tarifa: string
   receita: string
+  saldoDevedor: string
+  amortizacao: string
+  juros: string
   prestacao: string
   opex: string
   imposto: string

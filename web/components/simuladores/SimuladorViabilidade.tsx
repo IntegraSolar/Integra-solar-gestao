@@ -32,7 +32,8 @@ const PREMISSAS_LABEL: { key: keyof typeof PREMISSAS_DEFAULT; label: string; aju
   { key: 'degradacaoAnual', label: 'Indisponibilidade (%)', pct: true, ajuda: 'Perda anual de geração por degradação dos módulos e indisponibilidade do sistema. Ex.: 1,5 = 1,5% ao ano.' },
   { key: 'd23', label: 'Gestão (%)', pct: true, ajuda: 'Taxa de gestão do contrato, retida sobre a receita a cada ano. Ex.: 12,5 = 12,5%.' },
   { key: 'jurosAnual', label: 'Juros do financiamento (%)', pct: true, ajuda: 'Taxa de juros anual do financiamento do CAPEX. Só afeta o cenário com financiamento. Ex.: 10 = 10% ao ano.' },
-  { key: 'prazoMeses', label: 'Prazo do financiamento (meses)', ajuda: 'Número de parcelas do financiamento, em meses.' },
+  { key: 'carenciaMeses', label: 'Carência (meses)', ajuda: 'Período inicial em que se pagam só os juros, antes de começar a amortizar. Escala os juros do ano 0. Ex.: 6 = 6 meses.' },
+  { key: 'amortizacaoAnos', label: 'Amortização (anos)', ajuda: 'Prazo em que o valor financiado é quitado, em amortização constante (SAC). A prestação cai a cada ano conforme o saldo devedor diminui. Ex.: 12 = 12 anos.' },
   { key: 'horizonteAnos', label: 'Horizonte (anos)', ajuda: 'Período de análise do investimento. Payback, TIR e VPL são calculados dentro dessa janela. Padrão: 25 anos.' },
   { key: 'anoInicial', label: 'Ano inicial', ajuda: 'Ano de início da operação. Serve de base para a projeção e para a rampa do Fio B da Lei 14.300, que é por ano-calendário.' },
 ]
