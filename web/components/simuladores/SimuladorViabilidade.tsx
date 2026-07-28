@@ -2,8 +2,9 @@
 import Link from 'next/link'
 import { useMemo, useState, useTransition } from 'react'
 import type { ConcessionariaRow } from '@/lib/simuladores/viabilidade/concessionarias-actions'
-import { salvarSimulacao, deleteSimulacao, type SimulacaoResumo } from '@/lib/simuladores/viabilidade/simulacoes-actions'
-import { montarViabilidadeInput, PREMISSAS_DEFAULT, type CamposSimulador } from '@/lib/simuladores/viabilidade/montar-input'
+import { salvarSimulacao, deleteSimulacao, abrirPropostaDaSimulacao, type SimulacaoResumo } from '@/lib/simuladores/viabilidade/simulacoes-actions'
+import { montarViabilidadeInput, camposDoInput, PREMISSAS_DEFAULT, type CamposSimulador } from '@/lib/simuladores/viabilidade/montar-input'
+import type { ViabilidadeInput } from '@/lib/simuladores/viabilidade/types'
 import { calcularViabilidade } from '@/lib/simuladores/viabilidade/engine'
 import { gerarPropostaUsina } from '@/lib/apresentacoes-usina/actions'
 import { HelpTooltip } from '@/components/ui/HelpTooltip'
@@ -77,6 +78,7 @@ export function SimuladorViabilidade({ concessionarias, simulacoes }: Props) {
       const res = await salvarSimulacao({
         nome: nome || `${conc.nome} ${Math.round((resultado.kwp))}kWp`,
         concessionariaId: conc.id, clienteNome: clienteNome || null, clienteCidade: clienteCidade || null,
+        modeloPainel: modeloPainel || null, modeloInversor: modeloInversor || null,
         tir: resultado.capitalProprio.tir, vpl: resultado.capitalProprio.vpl,
         paybackAnos: resultado.capitalProprio.paybackAnos,
         input: input as unknown as Record<string, unknown>,
@@ -100,6 +102,32 @@ export function SimuladorViabilidade({ concessionarias, simulacoes }: Props) {
       const url = `${window.location.origin}/proposta-usina/${res.token}`
       setPropostaUrl(url)
       setMsg({ text: 'Proposta gerada.', erro: false })
+    })
+  }
+
+  function reabrir(s: SimulacaoResumo) {
+    setCampos(camposDoInput(s.input as ViabilidadeInput))
+    setConcId(s.concessionariaId ?? concessionarias[0]?.id ?? '')
+    setClienteNome(s.clienteNome ?? '')
+    setClienteCidade(s.clienteCidade ?? '')
+    setModeloPainel(s.modeloPainel ?? '')
+    setModeloInversor(s.modeloInversor ?? '')
+    setNome(s.nome)
+    setPropostaUrl(null)
+    setMsg({ text: `Simulação "${s.nome}" reaberta.`, erro: false })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function abrirProposta(s: SimulacaoResumo) {
+    // Token já vinculado: abre direto, sem ida ao servidor.
+    if (s.apresentacaoToken) {
+      window.open(`/proposta-usina/${s.apresentacaoToken}`, '_blank')
+      return
+    }
+    start(async () => {
+      const res = await abrirPropostaDaSimulacao(s.id)
+      if ('error' in res || !res.token) { setMsg({ text: res.error ?? 'Erro.', erro: true }); return }
+      window.open(`/proposta-usina/${res.token}`, '_blank')
     })
   }
 
@@ -225,7 +253,11 @@ export function SimuladorViabilidade({ concessionarias, simulacoes }: Props) {
                     <td className="py-1 pr-2 font-mono">{pct(s.tir)}</td>
                     <td className="py-1 pr-2 font-mono">{brl(s.vpl)}</td>
                     <td className="py-1 pr-2 font-mono">{s.paybackAnos}a</td>
-                    <td className="py-1 pr-2"><button className="text-[#c0392b]" onClick={() => excluir(s.id)}>excluir</button></td>
+                    <td className="py-1 pr-2 whitespace-nowrap">
+                      <button className="text-[#3b6fd6] mr-3" onClick={() => reabrir(s)}>reabrir</button>
+                      <button className="text-[#1f9d55] mr-3" disabled={pending} onClick={() => abrirProposta(s)}>proposta</button>
+                      <button className="text-[#c0392b]" onClick={() => excluir(s.id)}>excluir</button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
