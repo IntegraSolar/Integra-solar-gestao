@@ -56,6 +56,42 @@ export type CamposSimulador = {
   premissas?: Partial<Premissas>
 }
 
+/**
+ * Reconstrói os campos da tela a partir de um ViabilidadeInput salvo — para
+ * reabrir uma simulação. O input carrega todos os campos por-negócio e as 13
+ * premissas diretamente (ver montarViabilidadeInput), então nada se perde; só os
+ * campos derivados da concessionária (tusdFioB, tarifas) ficam de fora, e esses
+ * voltam sozinhos quando a concessionária é reaplicada.
+ */
+export function camposDoInput(input: ViabilidadeInput): CamposSimulador {
+  return {
+    numPaineis: input.numPaineis,
+    potenciaPainelWp: input.potenciaPainelWp,
+    numInversores: input.numInversores,
+    potenciaInversorKw: input.potenciaInversorKw,
+    fatorCapacidade: input.fatorCapacidade,
+    modalidade: input.modalidade === 'GD1' ? 'GD1' : 'GD2',
+    valorInvestimento: input.valorInvestimento,
+    descontoLocacao: input.descontoLocacao,
+    pctFinanciado: input.pctFinanciado,
+    premissas: {
+      reajusteTarifaAnual: input.reajusteTarifaAnual,
+      degradacaoAnual: input.degradacaoAnual,
+      tma: input.tma,
+      opexPct: input.opexPct,
+      impostoPct: input.impostoPct,
+      d23: input.d23,
+      sunneSetupMicro: input.sunneSetupMicro,
+      sunneSetupMini: input.sunneSetupMini,
+      jurosAnual: input.jurosAnual,
+      prazoMeses: input.prazoMeses,
+      horizonteAnos: input.horizonteAnos,
+      anoInicial: input.anoInicial,
+      fioBSchedule: [...input.fioBSchedule],
+    },
+  }
+}
+
 export function montarViabilidadeInput(campos: CamposSimulador, conc: ConcessionariaBruta): ViabilidadeInput {
   const p: Premissas = { ...PREMISSAS_DEFAULT, ...(campos.premissas ?? {}) }
   const derivados = concessionariaParaInputs(conc)

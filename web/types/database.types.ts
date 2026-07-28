@@ -2422,12 +2422,15 @@ export type Database = {
       }
       simulador_viabilidade: {
         Row: {
+          apresentacao_token: string | null
           cliente_cidade: string | null
           cliente_nome: string | null
           concessionaria_id: string | null
           created_at: string
           id: string
           input: Json
+          modelo_inversor: string | null
+          modelo_painel: string | null
           nome: string
           organization_id: string
           payback_anos: number
@@ -2436,12 +2439,15 @@ export type Database = {
           vpl: number
         }
         Insert: {
+          apresentacao_token?: string | null
           cliente_cidade?: string | null
           cliente_nome?: string | null
           concessionaria_id?: string | null
           created_at?: string
           id?: string
           input: Json
+          modelo_inversor?: string | null
+          modelo_painel?: string | null
           nome: string
           organization_id: string
           payback_anos?: number
@@ -2450,12 +2456,15 @@ export type Database = {
           vpl?: number
         }
         Update: {
+          apresentacao_token?: string | null
           cliente_cidade?: string | null
           cliente_nome?: string | null
           concessionaria_id?: string | null
           created_at?: string
           id?: string
           input?: Json
+          modelo_inversor?: string | null
+          modelo_painel?: string | null
           nome?: string
           organization_id?: string
           payback_anos?: number
