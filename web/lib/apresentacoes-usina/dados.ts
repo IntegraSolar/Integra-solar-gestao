@@ -109,10 +109,15 @@ export function montarApresentacaoUsina(s: SnapshotUsina): ApresentacaoUsinaData
       tabela: r.projecao.map((l) => ({
         ano: String(l.ano),
         producao: num(l.producaoKwh),
+        tarifa: num(l.tarifaLiquida, 4),
         receita: brl(l.receitaBruta),
+        prestacao: brl(l.prestacao),
         opex: brl(l.opex),
+        imposto: brl(l.imposto),
         fluxoProprio: brl(l.fluxoProprio),
-        acumulado: brl(l.fluxoProprioAcum),
+        acumuladoProprio: brl(l.fluxoProprioAcum),
+        fluxoFinanciado: brl(l.fluxoFinanciado),
+        acumuladoFinanciado: brl(l.fluxoFinanciadoAcum),
       })),
     },
   }

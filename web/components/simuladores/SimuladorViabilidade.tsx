@@ -12,10 +12,13 @@ import { fracToPct, pctToFrac } from '@/lib/simuladores/viabilidade/pct'
 
 type Props = { concessionarias: ConcessionariaRow[]; simulacoes: SimulacaoResumo[] }
 
+// Campos por-negócio começam em branco (0 / ''): o usuário preenche a usina de
+// cada projeto. Só as premissas avançadas seguem predefinidas (via premVal →
+// PREMISSAS_DEFAULT). pctFinanciado fica em 0 de propósito (0% é um valor real).
 const CAMPOS_INICIAIS: CamposSimulador = {
-  numPaineis: 150, potenciaPainelWp: 600, numInversores: 1, potenciaInversorKw: 75,
-  fatorCapacidade: 0.14, modalidade: 'GD2', valorInvestimento: 154413.82,
-  descontoLocacao: 0.2, pctFinanciado: 0,
+  numPaineis: 0, potenciaPainelWp: 0, numInversores: 0, potenciaInversorKw: 0,
+  fatorCapacidade: 0, modalidade: '', valorInvestimento: 0,
+  descontoLocacao: 0, pctFinanciado: 0,
 }
 
 // Premissas avançadas (chave do input → rótulo pt-BR, texto de ajuda e se o
@@ -43,6 +46,16 @@ const AJUDA_FATOR = 'Fator de capacidade: geração média em relação à capac
 const brl = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 const pct = (v: number) => `${(v * 100).toFixed(1)}%`
 
+// Exibe vazio quando o campo é 0 (0 = "ainda não preenchido" nestes campos).
+const nz = (v: number) => (v === 0 ? '' : String(v))
+const pctZ = (f: number) => (f === 0 ? '' : fracToPct(f))
+// Moeda por dígitos: "R$ 154.413,82" ⇄ número. Digitar trata os dígitos como centavos.
+const moedaFmt = (v: number) => (v === 0 ? '' : v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }))
+const moedaParse = (s: string) => {
+  const digitos = s.replace(/\D/g, '')
+  return digitos === '' ? 0 : Number(digitos) / 100
+}
+
 export function SimuladorViabilidade({ concessionarias, simulacoes }: Props) {
   const [concId, setConcId] = useState<string>(concessionarias[0]?.id ?? '')
   const [campos, setCampos] = useState<CamposSimulador>(CAMPOS_INICIAIS)
@@ -57,9 +70,15 @@ export function SimuladorViabilidade({ concessionarias, simulacoes }: Props) {
   const [pending, start] = useTransition()
 
   const conc = concessionarias.find((c) => c.id === concId)
+  // Só calcula quando os campos essenciais da usina estão preenchidos — evita
+  // resultado NaN/zerado enquanto o usuário ainda está digitando.
+  const preenchido =
+    campos.numPaineis > 0 && campos.potenciaPainelWp > 0 && campos.numInversores > 0 &&
+    campos.potenciaInversorKw > 0 && campos.fatorCapacidade > 0 &&
+    campos.valorInvestimento > 0 && campos.modalidade !== ''
   // Memoiza o input montado e deriva o resultado dele — garante que o input salvo/no PDF
   // é exatamente o que produziu os números na tela (uma única fonte).
-  const input = useMemo(() => (conc ? montarViabilidadeInput(campos, conc) : null), [campos, conc])
+  const input = useMemo(() => (conc && preenchido ? montarViabilidadeInput(campos, conc) : null), [campos, conc, preenchido])
   const resultado = useMemo(() => (input ? calcularViabilidade(input) : null), [input])
 
   const setNum = (k: keyof CamposSimulador, v: string) =>
@@ -163,18 +182,19 @@ export function SimuladorViabilidade({ concessionarias, simulacoes }: Props) {
               </select>
             </label>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 mt-3">
-              <label className="text-xs">Nº de painéis<input type="number" step="any" className={N} value={String(campos.numPaineis)} onChange={(e) => setNum('numPaineis', e.target.value)} /></label>
-              <label className="text-xs">Potência do painel (Wp)<input type="number" step="any" className={N} value={String(campos.potenciaPainelWp)} onChange={(e) => setNum('potenciaPainelWp', e.target.value)} /></label>
-              <label className="text-xs">Nº de inversores<input type="number" step="any" className={N} value={String(campos.numInversores)} onChange={(e) => setNum('numInversores', e.target.value)} /></label>
-              <label className="text-xs">Potência do inversor (kW)<input type="number" step="any" className={N} value={String(campos.potenciaInversorKw)} onChange={(e) => setNum('potenciaInversorKw', e.target.value)} /></label>
-              <label className="text-xs"><span className="inline-flex items-center">Fator de capacidade (%)<HelpTooltip content={AJUDA_FATOR} /></span><input type="number" step="any" className={N} value={fracToPct(campos.fatorCapacidade)} onChange={(e) => setNumPct('fatorCapacidade', e.target.value)} /></label>
+              <label className="text-xs">Nº de painéis<input type="number" step="any" className={N} value={nz(campos.numPaineis)} onChange={(e) => setNum('numPaineis', e.target.value)} /></label>
+              <label className="text-xs">Potência do painel (Wp)<input type="number" step="any" className={N} value={nz(campos.potenciaPainelWp)} onChange={(e) => setNum('potenciaPainelWp', e.target.value)} /></label>
+              <label className="text-xs">Nº de inversores<input type="number" step="any" className={N} value={nz(campos.numInversores)} onChange={(e) => setNum('numInversores', e.target.value)} /></label>
+              <label className="text-xs">Potência do inversor (kW)<input type="number" step="any" className={N} value={nz(campos.potenciaInversorKw)} onChange={(e) => setNum('potenciaInversorKw', e.target.value)} /></label>
+              <label className="text-xs"><span className="inline-flex items-center">Fator de capacidade (%)<HelpTooltip content={AJUDA_FATOR} /></span><input type="number" step="any" className={N} value={pctZ(campos.fatorCapacidade)} onChange={(e) => setNumPct('fatorCapacidade', e.target.value)} /></label>
               <label className="text-xs">Modalidade
-                <select className={N} value={campos.modalidade} onChange={(e) => setCampos((c) => ({ ...c, modalidade: e.target.value as 'GD1' | 'GD2' }))}>
+                <select className={N} value={campos.modalidade} onChange={(e) => setCampos((c) => ({ ...c, modalidade: e.target.value as 'GD1' | 'GD2' | '' }))}>
+                  <option value="">Selecione</option>
                   <option value="GD1">GD1</option><option value="GD2">GD2</option>
                 </select>
               </label>
-              <label className="text-xs"><span className="inline-flex items-center">CAPEX (R$)<HelpTooltip content={AJUDA_CAPEX} /></span><input type="number" step="any" className={N} value={String(campos.valorInvestimento)} onChange={(e) => setNum('valorInvestimento', e.target.value)} /></label>
-              <label className="text-xs"><span className="inline-flex items-center">Desconto do consumidor (%)<HelpTooltip content={AJUDA_DESCONTO} /></span><input type="number" step="any" className={N} value={fracToPct(campos.descontoLocacao)} onChange={(e) => setNumPct('descontoLocacao', e.target.value)} /></label>
+              <label className="text-xs"><span className="inline-flex items-center">CAPEX (R$)<HelpTooltip content={AJUDA_CAPEX} /></span><input type="text" inputMode="numeric" className={N} value={moedaFmt(campos.valorInvestimento)} onChange={(e) => setCampos((c) => ({ ...c, valorInvestimento: moedaParse(e.target.value) }))} /></label>
+              <label className="text-xs"><span className="inline-flex items-center">Desconto do consumidor (%)<HelpTooltip content={AJUDA_DESCONTO} /></span><input type="number" step="any" className={N} value={pctZ(campos.descontoLocacao)} onChange={(e) => setNumPct('descontoLocacao', e.target.value)} /></label>
               <label className="text-xs"><span className="inline-flex items-center">Financiamento (%)<HelpTooltip content={AJUDA_FINANCIAMENTO} /></span><input type="number" step="any" className={N} value={fracToPct(campos.pctFinanciado)} onChange={(e) => setNumPct('pctFinanciado', e.target.value)} /></label>
               <label className="text-xs">Modelo do painel<input className={N} value={modeloPainel} onChange={(e) => setModeloPainel(e.target.value)} /></label>
               <label className="text-xs">Modelo do inversor<input className={N} value={modeloInversor} onChange={(e) => setModeloInversor(e.target.value)} /></label>
@@ -231,10 +251,14 @@ export function SimuladorViabilidade({ concessionarias, simulacoes }: Props) {
                 </div>
               )}
             </>
-          ) : (
+          ) : !conc ? (
             <p className="text-sm text-[#6b7280]">
               Nenhuma concessionária configurada. Marque as que atende em{' '}
               <Link href="/simuladores/viabilidade-usina/concessionarias" className="underline font-medium text-[#1a2340]">Gerenciar concessionárias</Link>.
+            </p>
+          ) : (
+            <p className="text-sm text-[#6b7280]">
+              Preencha os dados da usina (nº de painéis, potências, fator de capacidade, modalidade e CAPEX) para ver o retorno.
             </p>
           )}
         </div>
