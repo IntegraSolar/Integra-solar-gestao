@@ -5,10 +5,15 @@
 export type LinhaProjecaoView = {
   ano: string
   producao: string
+  tarifa: string
   receita: string
+  prestacao: string
   opex: string
+  imposto: string
   fluxoProprio: string
-  acumulado: string
+  acumuladoProprio: string
+  fluxoFinanciado: string
+  acumuladoFinanciado: string
 }
 
 export type ApresentacaoUsinaData = {

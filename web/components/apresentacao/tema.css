@@ -267,6 +267,7 @@ body.apr-apresentando .apr__card { animation: none; }
 .apr-usina__linha dt { color: var(--apr-texto-suave, #667); }
 .apr-usina__linha dd { font-weight: 600; text-align: right; }
 .apr-usina__resumo { font-weight: 700; color: var(--apr-destaque); margin-bottom: .5rem; }
+.apr-usina__subtitulo { font-size: .8rem; color: var(--apr-texto-suave, #667); margin: -.25rem 0 .75rem; }
 .apr-usina__tabela { width: 100%; border-collapse: collapse; font-size: .8rem; }
 .apr-usina__tabela th, .apr-usina__tabela td { padding: .3rem .5rem; text-align: right; border-bottom: 1px solid rgba(0,0,0,.06); }
 .apr-usina__tabela th:first-child, .apr-usina__tabela td:first-child { text-align: left; }

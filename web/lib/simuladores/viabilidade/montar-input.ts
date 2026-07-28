@@ -49,7 +49,8 @@ export type CamposSimulador = {
   numInversores: number
   potenciaInversorKw: number
   fatorCapacidade: number
-  modalidade: Extract<ModalidadeGD, 'GD1' | 'GD2'>
+  // '' = ainda não escolhida na tela; ao calcular, montarViabilidadeInput assume GD2.
+  modalidade: Extract<ModalidadeGD, 'GD1' | 'GD2'> | ''
   valorInvestimento: number
   descontoLocacao: number
   pctFinanciado: number
@@ -101,7 +102,7 @@ export function montarViabilidadeInput(campos: CamposSimulador, conc: Concession
     numInversores: campos.numInversores,
     potenciaInversorKw: campos.potenciaInversorKw,
     fatorCapacidade: campos.fatorCapacidade,
-    modalidade: campos.modalidade,
+    modalidade: campos.modalidade === 'GD1' ? 'GD1' : 'GD2',
     valorInvestimento: campos.valorInvestimento,
     descontoLocacao: campos.descontoLocacao,
     pctFinanciado: campos.pctFinanciado,
