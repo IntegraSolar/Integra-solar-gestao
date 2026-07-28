@@ -78,7 +78,7 @@ describe('integração seed RGE -> concessionariaParaInputs -> motor', () => {
       degradacaoAnual: 0.015, tma: 0.10, descontoLocacao: 0.20,
       opexPct: 0.081199185409699712, impostoPct: 0.045, d23: 0.125,
       sunneSetupMicro: 5000, sunneSetupMini: 10000,
-      pctFinanciado: 0, jurosAnual: 0.10, prazoMeses: 12,
+      pctFinanciado: 0, jurosAnual: 0.10, carenciaMeses: 6, amortizacaoAnos: 12,
       fioBSchedule: [0.6, 0.75, 0.9, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
       horizonteAnos: 25, anoInicial: 2025,
       ...derivados, // tusdFioB, tarifaLocacaoBase, tarifaDemanda vêm da concessionária

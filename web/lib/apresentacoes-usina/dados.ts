@@ -82,7 +82,7 @@ export function montarApresentacaoUsina(s: SnapshotUsina): ApresentacaoUsinaData
       { rotulo: 'Percentual de imposto', valor: pct(i.impostoPct) },
       { rotulo: 'Receita bruta mensal prevista', valor: brl(receitaBrutaMensal) },
     ],
-    custos: custosProjeto(i),
+    custos: custosProjeto(i, r),
     financiamento: {
       resumo: financiado
         ? `${pct(i.pctFinanciado)} financiado`
@@ -91,7 +91,8 @@ export function montarApresentacaoUsina(s: SnapshotUsina): ApresentacaoUsinaData
         ? [
             { rotulo: 'Porcentagem financiada', valor: pct(i.pctFinanciado) },
             { rotulo: 'Taxa de juros (anual)', valor: pct(i.jurosAnual) },
-            { rotulo: 'Prazo (meses)', valor: String(i.prazoMeses) },
+            { rotulo: 'Carência', valor: `${i.carenciaMeses} meses` },
+            { rotulo: 'Amortização', valor: `${i.amortizacaoAnos} anos` },
             { rotulo: 'Recursos financiados', valor: brl(i.valorInvestimento * i.pctFinanciado) },
             { rotulo: 'Recursos próprios', valor: brl(i.valorInvestimento * (1 - i.pctFinanciado)) },
           ]
@@ -109,8 +110,14 @@ export function montarApresentacaoUsina(s: SnapshotUsina): ApresentacaoUsinaData
       tabela: r.projecao.map((l) => ({
         ano: String(l.ano),
         producao: num(l.producaoKwh),
+        tarifaBruta: num(l.tarifaBruta, 4),
+        fioBPct: pct(l.fioBPct),
+        tusdFioB: num(l.tusdFioB, 4),
         tarifa: num(l.tarifaLiquida, 4),
         receita: brl(l.receitaBruta),
+        saldoDevedor: brl(l.saldoDevedor),
+        amortizacao: brl(l.amortizacao),
+        juros: brl(l.juros),
         prestacao: brl(l.prestacao),
         opex: brl(l.opex),
         imposto: brl(l.imposto),

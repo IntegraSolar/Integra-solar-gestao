@@ -18,7 +18,7 @@ const INPUT: ViabilidadeInput = {
   degradacaoAnual: 0.015, tma: 0.10, descontoLocacao: 0.20,
   opexPct: 0.081199185409699712, impostoPct: 0.045, d23: 0.125,
   sunneSetupMicro: 5000, sunneSetupMini: 10000,
-  pctFinanciado: 0, jurosAnual: 0.10, prazoMeses: 12,
+  pctFinanciado: 0, jurosAnual: 0.10, carenciaMeses: 6, amortizacaoAnos: 12,
   fioBSchedule: [0.6, 0.75, 0.9, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
   horizonteAnos: 25, anoInicial: 2025,
 }
@@ -45,5 +45,49 @@ describe('calcularViabilidade (golden RGE)', () => {
   it('com financiamento 0% coincide com capital próprio', () => {
     expect(r.comFinanciamento.tir).toBeCloseTo(r.capitalProprio.tir, 8)
     expect(r.comFinanciamento.vpl).toBeCloseTo(r.capitalProprio.vpl, 2)
+  })
+})
+
+describe('financiamento SAC (cols P..U da planilha)', () => {
+  const rf = calcularViabilidade({ ...INPUT, pctFinanciado: 0.7 })
+  // C52 = -CAPEX·0,7 = -108089,674 ; amortização = C52/12 ; juros = saldo·10%.
+  const amort = (-154413.82 * 0.7) / 12
+
+  it('ano 0: saldo devedor cheio e juros da carência (6 meses)', () => {
+    const l0 = rf.projecao[0]
+    expect(l0.saldoDevedor).toBeCloseTo(-108089.674, 2)
+    expect(l0.juros).toBeCloseTo(-5404.4837, 2)   // -108089,674·0,10·(6/12)
+    expect(l0.amortizacao).toBe(0)
+    // fluxo financiado ano 0 = capital próprio (-30% do CAPEX) + juros carência
+    expect(l0.fluxoFinanciado).toBeCloseTo(-46324.146 - 5404.4837, 2)
+  })
+
+  it('ano 1: amortização constante + juros sobre o saldo cheio', () => {
+    const l1 = rf.projecao[1]
+    expect(l1.saldoDevedor).toBeCloseTo(-108089.674, 2)
+    expect(l1.amortizacao).toBeCloseTo(amort, 4)
+    expect(l1.juros).toBeCloseTo(-10808.9674, 2)
+    expect(l1.prestacao).toBeCloseTo(amort - 10808.9674, 2)
+    // AD = AB + S (prestação negativa)
+    expect(l1.fluxoFinanciado).toBeCloseTo(l1.fluxoProprio + l1.prestacao, 6)
+  })
+
+  it('ano 2: saldo cai pela amortização e juros acompanham', () => {
+    const l2 = rf.projecao[2]
+    expect(l2.saldoDevedor).toBeCloseTo(-99082.2012, 2)
+    expect(l2.juros).toBeCloseTo(-9908.2201, 2)
+  })
+
+  it('quita em 12 anos: saldo, juros e amortização zeram no ano 13', () => {
+    const l13 = rf.projecao[13]
+    expect(l13.saldoDevedor).toBe(0)
+    expect(l13.juros).toBe(0)
+    expect(l13.amortizacao).toBe(0)
+  })
+
+  it('o fluxo próprio não muda com financiamento', () => {
+    for (let i = 1; i < FLUXO_ESPERADO.length; i++) {
+      expect(rf.projecao[i].fluxoProprio).toBeCloseTo(FLUXO_ESPERADO[i], 2)
+    }
   })
 })

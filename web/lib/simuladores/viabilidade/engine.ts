@@ -13,22 +13,32 @@ export function calcularViabilidade(input: ViabilidadeInput): ViabilidadeResulta
   const producao1 = geracaoAnualBase * (1 - input.degradacaoAnual)
   const reinvestAno15 = (0.10 * input.valorInvestimento) * Math.pow(1 + 0.02, 15)
 
+  // Financiamento SAC (colunas P..U da planilha). Valores em sinal negativo,
+  // como na planilha (C52 = recursos financiados = -CAPEX·%; custo é negativo).
+  const financiadoSigned = -input.valorInvestimento * input.pctFinanciado // C52
+  const equityInicial = -input.valorInvestimento * (1 - input.pctFinanciado) // C51 (Q2)
+
   const projecao: LinhaProjecao[] = []
   const fluxoProprioArr: number[] = []
   const fluxoFinanciadoArr: number[] = []
 
-  // Ano 0 (investimento)
+  // Ano 0 (investimento). Próprio = CAPEX cheio (C37). Financiado = capital
+  // próprio (Q2) + juros da carência (S2 = U2 = R2·juros·carência/12).
+  const jurosCarencia = financiadoSigned * input.jurosAnual * (input.carenciaMeses / 12)
+  const fluxoFinanciado0 = equityInicial + jurosCarencia
   projecao.push({
-    ano: input.anoInicial, producaoKwh: 0, tarifaLiquida: 0, receitaBruta: 0,
-    prestacao: 0, opex: 0, imposto: 0,
+    ano: input.anoInicial, producaoKwh: 0, tarifaBruta: 0, fioBPct: 0, tusdFioB: 0,
+    tusdNaoCompensavel: 0, tarifaLiquida: 0, receitaBruta: 0,
+    saldoDevedor: financiadoSigned, prestacao: jurosCarencia, amortizacao: 0, juros: jurosCarencia,
+    custoDisponibilidade: 0, demandaGeracao: 0, arrendamento: 0, opex: 0, gestao: 0, imposto: 0,
     fluxoProprio: -input.valorInvestimento, fluxoProprioAcum: -input.valorInvestimento,
-    fluxoFinanciado: -input.valorInvestimento, fluxoFinanciadoAcum: -input.valorInvestimento,
+    fluxoFinanciado: fluxoFinanciado0, fluxoFinanciadoAcum: fluxoFinanciado0,
   })
   fluxoProprioArr.push(-input.valorInvestimento)
-  fluxoFinanciadoArr.push(-input.valorInvestimento)
+  fluxoFinanciadoArr.push(fluxoFinanciado0)
 
   let acumProprio = -input.valorInvestimento
-  let acumFinan = -input.valorInvestimento
+  let acumFinan = fluxoFinanciado0
 
   for (let t = 1; t <= input.horizonteAnos; t++) {
     const producao = t === 1 ? producao1 : producao1 * Math.pow(DEGRAD_FATOR, t - 1)
@@ -49,21 +59,34 @@ export function calcularViabilidade(input: ViabilidadeInput): ViabilidadeResulta
     const demandaMini = tipoUsina === 'Microusina'
       ? 0
       : -invTotalKw * 12 * input.tarifaDemanda * Math.pow(1 + input.reajusteTarifaAnual, t - 1)
+    // Custo de disponibilidade da UFV (col V) — só micro. NÃO entra no fluxo de
+    // caixa (AB/AD); serve apenas ao OPEX Acumulado (VP) dos custos totais.
+    const custoDisponibilidade = tipoUsina === 'Microusina'
+      ? -100 * 12 * Math.pow(1 + input.reajusteTarifaAnual, t)
+      : 0
     const arrendamento = 0
     const reinvest = t === 15 ? -reinvestAno15 : 0
 
-    // Financiamento (Price). Com pctFinanciado=0, tudo 0.
-    // TODO-financiamento: implementar Price real quando pctFinanciado>0 (sem gabarito do Excel hoje).
-    const prestacao = 0
+    // Financiamento SAC (cols R..U). Amortiza em t=1..amortizacaoAnos: saldo cai
+    // linearmente e o juro (saldo·taxa) acompanha; depois disso quita (0). Forma
+    // fechada — reproduz a recorrência ROUND(,5) da planilha sem resíduo de ponto
+    // flutuante que geraria uma 13ª parcela fantasma. Com pctFinanciado=0, tudo 0.
+    const quitado = t - 1 >= input.amortizacaoAnos
+    const saldoDevedor = quitado ? 0 : financiadoSigned * (1 - (t - 1) / input.amortizacaoAnos) // R(t)
+    const amortizacao = quitado ? 0 : financiadoSigned / input.amortizacaoAnos // T(t)
+    const juros = saldoDevedor * input.jurosAnual // U(t)
+    const prestacao = amortizacao + juros // S(t)
 
     const fluxoProprio = receita + reinvest + demandaMini + opex + gestao + imposto + arrendamento
-    const fluxoFinanciado = fluxoProprio - prestacao
+    const fluxoFinanciado = fluxoProprio + prestacao // AD = AB + S (S negativo)
     acumProprio += fluxoProprio
     acumFinan += fluxoFinanciado
 
     projecao.push({
-      ano: input.anoInicial + t, producaoKwh: producao, tarifaLiquida, receitaBruta: receita,
-      prestacao, opex, imposto,
+      ano: input.anoInicial + t, producaoKwh: producao, tarifaBruta: tarifaLoc, fioBPct: fioBpct,
+      tusdFioB: tusdFioBAplic, tusdNaoCompensavel: tusdNaoComp, tarifaLiquida, receitaBruta: receita,
+      saldoDevedor, prestacao, amortizacao, juros,
+      custoDisponibilidade, demandaGeracao: demandaMini, arrendamento, opex, gestao, imposto,
       fluxoProprio, fluxoProprioAcum: acumProprio,
       fluxoFinanciado, fluxoFinanciadoAcum: acumFinan,
     })

@@ -14,8 +14,14 @@ export function Projecao({ dados }: { dados: ApresentacaoUsinaData }) {
             <tr>
               <th>Ano</th>
               <th>Produção (kWh)</th>
+              <th>Tarifa bruta (R$/kWh)</th>
+              <th>% Fio B</th>
+              <th>TUSD Fio B (R$/kWh)</th>
               <th>Tarifa líq. (R$/kWh)</th>
               <th>Receita</th>
+              <th>Saldo devedor</th>
+              <th>Amortização</th>
+              <th>Juros</th>
               <th>Prestação</th>
               <th>OPEX</th>
               <th>Imposto</th>
@@ -30,8 +36,14 @@ export function Projecao({ dados }: { dados: ApresentacaoUsinaData }) {
               <tr key={l.ano}>
                 <td>{l.ano}</td>
                 <td>{l.producao}</td>
+                <td>{l.tarifaBruta}</td>
+                <td>{l.fioBPct}</td>
+                <td>{l.tusdFioB}</td>
                 <td>{l.tarifa}</td>
                 <td>{l.receita}</td>
+                <td>{l.saldoDevedor}</td>
+                <td>{l.amortizacao}</td>
+                <td>{l.juros}</td>
                 <td>{l.prestacao}</td>
                 <td>{l.opex}</td>
                 <td>{l.imposto}</td>
